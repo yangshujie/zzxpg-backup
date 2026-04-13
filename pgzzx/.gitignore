@@ -1,0 +1,50 @@
+######################################################################
+# Build Tools
+
+.gradle
+/build/
+!gradle/wrapper/gradle-wrapper.jar
+
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+######################################################################
+# IDE
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### JRebel ###
+rebel.xml
+### NetBeans ###
+nbproject/private/
+build/*
+nbbuild/
+dist/
+!ruoyi-modules/ruoyi-xxl-job-admin/src/main/resources/static/adminlte/dist/
+!ruoyi-modules/ruoyi-xxl-job-admin/src/main/resources/static/adminlte/dist/**
+nbdist/
+.nb-gradle/
+
+######################################################################
+# Others
+*.log
+logs/
+.VSCodeCounter/
+*.xml.versionsBackup
+*.swp
+
+!*/build/*.java
+!*/build/*.html
+!*/build/*.xml

@@ -1,0 +1,45 @@
+# Tomcat
+server:
+  port: 9305
+
+# Spring
+spring:
+  application:
+    name: zhpg-calc-executor
+  profiles:
+    active: dev
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+      config:
+        server-addr: 127.0.0.1:8848
+        file-extension: yml
+        shared-configs:
+          - application-${spring.profiles.active}.${spring.cloud.nacos.config.file-extension}
+
+# RemoteFileService（EnableRyFeignClients）需要 ${custom-config.file-ip}，Nacos 若配置了同名项会覆盖此处
+custom-config:
+  file-ip: 127.0.0.1:9300
+  minio:
+    bucketName: test
+
+# 算法服务配置（zgpg_algs）
+zhpg:
+  algs:
+    base-url: http://127.0.0.1:6090
+    connect-timeout-ms: 10000
+    read-timeout-ms: 120000
+    poll-interval-ms: 800
+    poll-max-wait-ms: 300000
+  callback:
+    url: http://127.0.0.1:9303
+  report:
+    local-save-dir: D:/zzxpg/report-output
+  calc:
+    # 数据输入模式：MOCK=模拟随机数据，EXTERNAL_API=通过外部接口获取真实数据
+    data-input-mode: EXTERNAL_API
+    external-data:
+      url: http://172.16.2.89:9501/evaluationData/list
+      connect-timeout-ms: 10000
+      read-timeout-ms: 20000

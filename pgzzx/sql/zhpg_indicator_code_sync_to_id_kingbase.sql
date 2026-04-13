@@ -1,0 +1,3 @@
+-- indicator_code 列已从 pgzc_indicator 删除时无需执行任何语句。
+-- 若旧库仍保留该列且需移除，可执行：
+-- ALTER TABLE public.pgzc_indicator DROP COLUMN IF EXISTS indicator_code;

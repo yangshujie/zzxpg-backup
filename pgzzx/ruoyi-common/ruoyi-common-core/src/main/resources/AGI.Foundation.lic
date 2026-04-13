@@ -1,0 +1,22 @@
+<License>
+
+  <Field name='Name'>Test</Field>
+  <Component name='Aircraft Propagation Library' />
+  <Component name='Auto-Routing Library' />
+  <Component name='Communications Library' />
+  <Component name='Dynamic Geometry Library' />
+  <Component name='Insight3D' />
+  <Component name='Navigation Advanced Library' />
+  <Component name='Navigation Accuracy Library' />
+  <Component name='Orbit Propagation Library' />
+  <Component name='Route Design Library' />
+  <Component name='Segment Propagation Library' />
+  <Component name='Spatial Analysis Library' />
+  <Component name='Terrain Analysis Library' />
+  <Component name='Tracking Library' />
+  <Component name='Radar Library' />
+  <Component name='TIREM Library' />
+ 
+  <Signature>A+7Plp5FBWF7tWCBC5bSpUs3rRlcgkVQ5DJyCubeXwUxUe3NbzMxUQ3Lq+ry9/sn3GIIgzt8hyKRfU5Qx3PH/SrP420i6nGUaTpMJjjmsFWWGjBJ0naqfL4f6eWaH2T/gKW59RKM74IbnuPJafoZRJU5TuBCeJchtoM4czdu2Z0=</Signature>
+</License>
+

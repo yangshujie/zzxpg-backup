@@ -1,0 +1,39 @@
+# Tomcat
+server:
+  port: 9201
+
+# Spring
+spring: 
+  application:
+    # 应用名称
+    name: ruoyi-system
+  profiles:
+    # 环境配置
+    active: dev
+  cloud:
+    nacos:
+      discovery:
+        # 服务注册地址
+        server-addr: 127.0.0.1:8848
+      config:
+        # 配置中心地址
+        server-addr: 127.0.0.1:8848
+        # 配置文件格式
+        file-extension: yml
+        # 共享配置
+        shared-configs:
+          - application-${spring.profiles.active}.${spring.cloud.nacos.config.file-extension}
+
+
+
+custom-config:
+  file-storage-path: D:\zgpg\ruoyi\${spring.application.name}\
+  algs-main-path: D:\zgpg\ruoyi\zgpg_algs\
+  algs-service-ip: 127.0.0.1
+  algs-service-port: 5000
+  get-mx-url: http://5.30.73.223:9096/mx/getMxData
+  minio:
+    bucketName: test
+    download-path: D:\\zgpg
+  file-ip: 127.0.0.1:9300
+  satType-list: BD3G01-3,JB1822-2

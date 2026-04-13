@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.page.mapper.TaskManageMapper">
+    
+    <resultMap type="TaskManage" id="TaskManageResult">
+    	<id     property="taskId"      column="task_id"      />
+        <result property="taskName"    column="task_name"    />
+        <result property="taskType"    column="task_type"    />
+        <result property="taskScheduled"     column="task_scheduled"     />
+        <result property="taskDescription"   column="task_description"   />
+        <result property="taskStatus"    column="task_status"    />
+        <result property="createBy"      column="create_by"      />
+        <result property="createTime"    column="create_time"    />
+        <result property="relatedReport"      column="related_report"      />
+        <result property="dataSource"      column="data_source"      />
+        <result property="dataSourceType"      column="data_source_type"      />
+        <result property="indicatorSet"      column="indicator_set"      />
+        <result property="progress"      column="progress"      />
+    </resultMap>
+    
+    <sql id="selectTaskVo">
+        select task_id, task_name, task_scheduled, task_type, task_description, task_status, create_by, create_time,
+                related_report, data_source, data_source_type, indicator_set, progress
+		from task_manage
+    </sql>
+    
+    <!-- 查询条件 -->
+	<sql id="sqlwhereSearch">
+		<where>
+			<if test="taskId !=null">
+				and task_id = #{taskId}
+			</if>
+			<if test="taskName !=null and taskName != ''">
+				and task_name = #{taskName}
+			</if>
+		</where>
+	</sql>
+
+    <!-- 查询条件是id -->
+    <sql id="sqlwhereIdSearch">
+        <where>
+            <if test="taskId !=null">
+                and task_id = #{taskId}
+            </if>
+        </where>
+    </sql>
+
+    <!-- 查询条件name -->
+    <sql id="sqlwhereNameSearch">
+        <where>
+            <if test="taskName !=null and taskName != ''">
+                and task_name = #{taskName}
+            </if>
+        </where>
+    </sql>
+
+
+    <!-- 查询条件type -->
+    <sql id="sqlwhereTypeSearch">
+        <where>
+            <if test="taskType !=null and taskType != ''">
+                and task_type = #{taskType}
+            </if>
+        </where>
+    </sql>
+
+
+    <!-- 查询条件subtype -->
+    <sql id="sqlwhereSubtypeSearch">
+        <where>
+            <if test="taskSubtype !=null and taskSubtype != ''">
+                and task_subtype = #{taskSubtype}
+            </if>
+        </where>
+    </sql>
+
+
+
+    <!-- 以id查询 -->
+    <select id="selectTask" parameterType="TaskManage" resultMap="TaskManageResult">
+        <include refid="selectTaskVo"/>
+        <include refid="sqlwhereIdSearch"/>
+    </select>
+
+
+    <!-- 以name查询 -->
+    <select id="selectTask" parameterType="TaskManage" resultMap="TaskManageResult">
+        <include refid="selectTaskVo"/>
+        <include refid="sqlwhereNameSearch"/>
+        from task_manage
+        where task_type = "定时任务", task_id = 1, task_description = ""
+    </select>
+
+
+    <select id="selectTaskList" parameterType="TaskManage" resultMap="TaskManageResult">
+        <include refid="selectTaskVo"/>
+        <where>
+			<if test="taskName != null and taskName != ''">
+				AND task_name like concat('%', #{taskName}, '%')
+			</if>
+			<if test="taskScheduled != null and taskScheduled != ''">
+				AND task_scheduled = #{taskScheduled}
+			</if>
+			<if test="taskType != null and taskType != ''">
+				AND task_type like concat('%', #{taskType}, '%')
+			</if>
+		</where>
+    </select>
+
+<!--    <select id="selectConfigList_jy" parameterType="SysConfig" resultMap="SysConfigResult">-->
+<!--        <include refid="selectConfigVo"/>-->
+<!--        <where>-->
+<!--            <if test="config.configName != null and config.configName != ''">-->
+<!--                AND config_name like concat('%', #{config.configName}, '%')-->
+<!--            </if>-->
+<!--            <if test="config.configType != null and config.configType != ''">-->
+<!--                AND config_type = #{config.configType}-->
+<!--            </if>-->
+<!--            <if test="config.configKey != null and config.configKey != ''">-->
+<!--                AND config_key like concat('%', #{config.configKey}, '%')-->
+<!--            </if>-->
+<!--            <if test="config.params.beginTime != null and config.params.beginTime != ''">&lt;!&ndash; 开始时间检索 &ndash;&gt;-->
+<!--                and date_format(create_time,'%y%m%d') &gt;= date_format(#{config.params.beginTime},'%y%m%d')-->
+<!--            </if>-->
+<!--            <if test="config.params.endTime != null and config.params.endTime != ''">&lt;!&ndash; 结束时间检索 &ndash;&gt;-->
+<!--                and date_format(create_time,'%y%m%d') &lt;= date_format(#{config.params.endTime},'%y%m%d')-->
+<!--            </if>-->
+<!--        </where>-->
+<!--    </select>-->
+
+
+    <select id="checkTaskNameUnique" parameterType="String" resultMap="TaskManageResult">
+        <include refid="selectTaskVo"/>
+        where task_name = #{taskName} limit 1
+    </select>
+
+
+<!--    <insert id="insertTask" parameterType="TaskManage">-->
+<!--        insert into task_manage (-->
+<!--			<if test="taskId != null and taskId != '' ">task_id,</if>-->
+<!--			<if test="taskName != null and taskName != '' ">task_name,</if>-->
+<!--			<if test="taskType != null and taskType != '' ">task_type,</if>-->
+<!--			<if test="taskScheduled != null and taskScheduled != '' ">task_scheduled,</if>-->
+<!--			<if test="taskDescription != null and taskDescription != ''">task_description,</if>-->
+<!--			<if test="taskStatus != null and taskStatus != ''">task_status,</if>-->
+<!--            <if test="createBy != null and createBy != ''">creator,</if>-->
+<!--            <if test="relatedReport != null and relatedReport != ''">related_report,</if>-->
+<!-- 			create_time-->
+<!--        )values(-->
+<!--			<if test="taskId != null and taskId != ''">#{taskId},</if>-->
+<!--			<if test="taskName != null and taskName != ''">#{taskName},</if>-->
+<!--			<if test="taskType != null and taskType != ''">#{taskType},</if>-->
+<!--			<if test="taskScheduled != null and taskScheduled != ''">#{taskScheduled},</if>-->
+<!--			<if test="taskDescription != null and taskDescription != ''">#{taskDescription},</if>-->
+<!--			<if test="taskStatus != null and taskStatus != ''">#{taskStatus},</if>-->
+<!--            <if test="createBy != null and createBy != ''">#{createBy},</if>-->
+<!--            <if test="relatedReport != null and relatedReport != ''">#{relatedReport},</if>-->
+<!-- 			sysdate()-->
+<!--		)-->
+<!--    </insert>-->
+
+
+
+
+    <update id="updateTask" parameterType="TaskManage">
+        update task_manage
+        <set>
+            <if test="taskId != null and taskId != ''">task_id = #{taskId},</if>
+            <if test="taskName != null and taskName != ''">task_name = #{taskName},</if>
+            <if test="taskType != null and taskType != ''">task_type = #{taskType},</if>
+            <if test="taskScheduled != null and taskScheduled != ''">task_scheduled = #{taskScheduled},</if>
+            <if test="taskDescription != null and taskDescription != ''">task_description = #{taskDescription},</if>
+            <if test="taskStatus != null and taskStatus != ''">task_status = #{taskStatus},</if>
+            <if test="createBy != null and createBy != ''">creator = #{createBy},</if>
+            <if test="relatedReport != null and relatedReport != ''">related_report = #{relatedReport},</if>
+<!--            <if test="progress != null and progress != ''">progress = #{progress},</if>-->
+            progress = #{progress}
+        </set>
+        where task_name = #{taskName}
+    </update>
+
+
+
+
+
+    <delete id="deleteTaskById" parameterType="Long">
+        delete from task_manage where task_id = #{taskId}
+    </delete>
+
+
+    <delete id="deleteTaskByName" parameterType="String">
+        delete from task_name where task_name = #{taskName}
+    </delete>
+
+
+
+    <delete id="deleteTaskByIds" parameterType="Long">
+        delete from sys_config where config_id in 
+        <foreach item="taskId" collection="array" open="(" separator="," close=")">
+        	#{configId}
+        </foreach>
+    </delete>
+
+<!--    foreach主要是用于一个循环，大部分用到的是循环的生成sql，下面说一下动态foreach的属性：-->
+<!--    foreach元素的属性主要有item，index，collection，open，separator，close。-->
+<!--    1、collection表示如何来得到这个集合，如果传入的直接为一个List，那么collection值就为list，如果直接传入的为一个array不可变数组，那么collection值就为array，如果传入的为一个dto，比如dto里面的array变量名为idLists，那么collection的值就为idLists。-->
+<!--    2、item表示集合中每一个元素进行迭代时的别名，比如item为value，那么，每次获取的都使用#{value}即可-->
+<!--    3、index指定一个名字，用于表示在迭代过程中，每次迭代到的位置，一般很少使用这个-->
+<!--    4、open表示该语句以什么开始-->
+<!--    5、separator表示在每次进行迭代之间以什么符号作为分隔符-->
+<!--    6、close表示以什么结束-->
+<!--    二、原理：-->
+<!--    动态SQL，最后都会根据条件拼成SQL，foreach也不例外，原理为：-->
+<!--    首先根据collection来得到集合，然后写入open字符，然后开始遍历：-->
+<!--    每次遍历，都会执行里面的条件得到生成的sql，然后加入separator，遍历完成之后，加入close字符。-->
+
+
+
+    <!-- 以type查询 -->
+    <select id="selectTaskByType" parameterType="TaskManage" resultMap="TaskManageResult">
+        <include refid="selectTaskVo"/>
+        <include refid="sqlwhereTypeSearch"/>
+    </select>
+
+
+
+
+    <!-- 以subtype查询 -->
+    <select id="selectTaskBySubType" parameterType="TaskManage" resultMap="TaskManageResult">
+        <include refid="selectTaskVo"/>
+        <include refid="sqlwhereSubtypeSearch"/>
+    </select>
+
+
+
+
+
+
+
+
+
+</mapper>
+
+
+
+
+
