@@ -3,7 +3,7 @@ import { ElMessage } from 'element-plus'
 
 // 创建专门用于外部数据的请求实例，避免使用默认的 /dev-api 前缀
 const externalService = axios.create({
-  baseURL: '/external-data-api',
+  baseURL: '/huage-api',
   timeout: 10000
 })
 

@@ -237,6 +237,20 @@ public class CalcExecutorService {
         return sum / Math.max(1, rows);
     }
 
+    /**
+     * 兼容性提取字段名：支持字符串 "field" 和对象 {"field": "中文名"} 两种格式。
+     */
+    private static String extractFieldName(Object item) {
+        if (item == null) return null;
+        if (item instanceof String) return (String) item;
+        if (item instanceof Map) {
+            Map<?, ?> map = (Map<?, ?>) item;
+            if (map.isEmpty()) return null;
+            return String.valueOf(map.keySet().iterator().next());
+        }
+        return String.valueOf(item);
+    }
+
 
     private ExternalDataContext loadExternalDataContext(CalcExecuteRequest request, JSONObject cc, JSONArray roots) {
         String resolvedMode = cc == null ? null : cc.getString("dataInputMode");
@@ -399,9 +413,12 @@ public class CalcExecutorService {
                 JSONObject row = (JSONObject) rowRaw;
                 if (fields != null && !fields.isEmpty()) {
                     for (int j = 0; j < fields.size(); j++) {
-                        Double one = asDouble(row.get(fields.getString(j)));
-                        if (one != null) {
-                            values.add(one);
+                        String fieldName = extractFieldName(fields.get(j));
+                        if (StringUtils.hasText(fieldName)) {
+                            Double one = asDouble(row.get(fieldName));
+                            if (one != null) {
+                                values.add(one);
+                            }
                         }
                     }
                 } else {

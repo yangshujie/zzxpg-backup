@@ -51,7 +51,7 @@ public class EvalIndicator extends BaseEntity {
     @TableField("system_type")
     private String systemType;
 
-    @Excel(name = "指标类型")
+    @Excel(name = "指标类型", readConverterExp = "space_recon=航天侦察,space_domain_awareness=太空态势感知,space_defense=太空攻防,space_track_control=航天测运控,space_launch=航天发射,sea_based_space=海基航天,无=无")
     @ApiModelProperty(value = "指标类型（装备类型/无）")
     private String indicatorType;
 

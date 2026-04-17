@@ -11,8 +11,8 @@
     <div class="external-data-selector">
       <el-form :inline="true" :model="queryParams" class="demo-form-inline">
         <el-form-item label="分中心">
-          <el-select v-model="queryParams.source" placeholder="选择分中心" clearable filterable @change="handleSourceChange">
-            <el-option v-for="o in sourceOptions" :key="o" :label="o" :value="o" />
+          <el-select v-model="queryParams.sourceSystem" placeholder="选择分中心" clearable filterable @change="handleSourceChange">
+            <el-option v-for="dict in zhpg_equipment_type" :key="dict.value" :label="dict.label" :value="dict.value" />
           </el-select>
         </el-form-item>
         <el-form-item label="目录/表">
@@ -37,7 +37,11 @@
             @select-all="handleSelectAll"
           >
             <el-table-column type="selection" width="55" align="center" />
-            <el-table-column label="分中心" align="center" prop="sourceSystem" show-overflow-tooltip />
+            <el-table-column label="分中心" align="center" prop="sourceSystem" show-overflow-tooltip>
+              <template #default="scope">
+                {{ getSourceLabel(scope.row.sourceSystem) }}
+              </template>
+            </el-table-column>
             <el-table-column label="目录" align="center" prop="tableName" show-overflow-tooltip />
             <el-table-column label="字段" align="center" prop="fieldName" show-overflow-tooltip />
             <el-table-column label="中文描述" align="center" prop="fieldComment" show-overflow-tooltip>
@@ -98,6 +102,9 @@
 import { ref, reactive, computed, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { listExternalData } from '@/api/zhpg/externalData'
+import { useDict } from '@/utils/dict'
+
+const { zhpg_equipment_type } = useDict('zhpg_equipment_type')
 
 const props = defineProps({
   visible: { type: Boolean, default: false }
@@ -116,7 +123,7 @@ watch(() => props.visible, (newVal) => {
 })
 
 const selections = ref([])
-const sourceOptions = ref(['太空侦察', '太空态势感知', '太空攻防', '航天测运控', '航天发射', '海基航天'])
+// const sourceOptions = ref(['太空侦察', '太空态势感知', '太空攻防', '航天测运控', '航天发射', '海基航天'])
 
 // 暂存所有选中的字段，结构：{ tableName: { source: '', fields: Map<fieldName, fieldComment> } }
 const tempStorage = reactive({})
@@ -124,7 +131,7 @@ const tempStorage = reactive({})
 const queryParams = reactive({
   pageNum: 1,
   pageSize: 10,
-  source: '',
+  sourceSystem: '',
   tableName: ''
 })
 
@@ -133,8 +140,17 @@ async function getList() {
   loading.value = true
   try {
     const res = await listExternalData(queryParams)
-    dataList.value = res.rows || []
-    total.value = res.total || 0
+    // 兼容 RuoYi 标准格式 和 MyBatis-Plus IPage 格式 (data.records)
+    if (res.rows !== undefined) {
+      dataList.value = res.rows || []
+      total.value = res.total || 0
+    } else if (res.data && res.data.records !== undefined) {
+      dataList.value = res.data.records || []
+      total.value = res.data.total || 0
+    } else {
+      dataList.value = []
+      total.value = 0
+    }
   } finally {
     loading.value = false
   }
@@ -146,7 +162,7 @@ function handleQuery() {
 }
 
 function resetQuery() {
-  queryParams.source = ''
+  queryParams.sourceSystem = ''
   queryParams.tableName = ''
   handleQuery()
 }
@@ -246,6 +262,13 @@ function handleSelectionChange(newSelections) {
   selections.value = newSelections
 }
 
+/** 检查分中心显示标签 */
+function getSourceLabel(val) {
+  if (!val) return ''
+  const dict = zhpg_equipment_type.value.find(item => item.value === val)
+  return dict ? dict.label : val
+}
+
 /** 监听分中心变化，如果已有选择则提醒 */
 function handleSourceChange(val) {
   const existingTables = Object.keys(tempStorage)
@@ -260,7 +283,7 @@ function handleSourceChange(val) {
         clearAllSelected()
         handleQuery()
       }).catch(() => {
-        queryParams.source = tempStorage[firstTable].source
+        queryParams.sourceSystem = tempStorage[firstTable].source
       })
       return
     }

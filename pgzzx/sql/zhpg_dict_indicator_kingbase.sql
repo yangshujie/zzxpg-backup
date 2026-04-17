@@ -37,13 +37,13 @@ SELECT base.b + ROW_NUMBER() OVER (ORDER BY v.sort),
        CAST(NULL AS VARCHAR)
 FROM (
          VALUES
-             (1, '航天侦察', 'SPACE_RECON'),
-             (2, '太空态势感知', 'SPACE_SITUATIONAL_AWARENESS'),
-             (3, '太空攻防', 'SPACE_OFFENSE_DEFENSE'),
-             (4, '航天测运控', 'SPACE_TTC'),
-             (5, '航天发射', 'SPACE_LAUNCH'),
-             (6, '海基航天', 'SEA_BASED_SPACE'),
-             (7, '体系聚合', 'SYSTEM_AGGREGATION')
+             (1, '航天侦察', 'space_recon'),
+             (2, '太空态势感知', 'space_domain_awareness'),
+             (3, '太空攻防', 'space_defense'),
+             (4, '航天测运控', 'space_track_control'),
+             (5, '航天发射', 'space_launch'),
+             (6, '海基航天', 'sea_based_space'),
+             (7, '体系聚合', '无')
      ) AS v (sort, dict_label, dict_value)
          CROSS JOIN (SELECT COALESCE(MAX(dict_code), 0) AS b FROM ry.sys_dict_data) AS base;
 

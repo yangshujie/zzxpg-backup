@@ -47,6 +47,7 @@
                 :precision="8"
                 controls-position="right"
                 class="wtl-num"
+                @change="lastEditedUid = c.uid"
               />
             </div>
           </el-col>
@@ -90,6 +91,7 @@ const suppressRestore = ref(false)
 const selectedParent = ref(null)
 const selectedParentUid = ref('')
 const lastValidateOk = ref(null)
+const lastEditedUid = ref('')
 
 const parentTitle = computed(() => selectedParent.value?.label || '—')
 
@@ -137,6 +139,7 @@ function onOpened() {
   const pick = firstParentInTree(props.treeData)
   selectedParent.value = pick
   selectedParentUid.value = pick?.uid || ''
+  lastEditedUid.value = ''
   nextTick(() => {
     if (pick?.uid && treeRef.value?.setCurrentKey) {
       treeRef.value.setCurrentKey(pick.uid)
@@ -166,6 +169,7 @@ function restoreSnapshot() {
 function onTreePick(data) {
   selectedParent.value = data
   selectedParentUid.value = data?.uid || ''
+  lastEditedUid.value = ''
   lastValidateOk.value = null
 }
 
@@ -242,6 +246,33 @@ function averageAmongSiblings() {
     lastValidateOk.value = true
     ElMessage.info('当前子节点权重之和已为 1，无需平均')
     return
+  }
+
+  // 新逻辑：全部已填写且总和不为 1，若有最后手动修改项，则固定该项平摊其余项
+  const editUid = lastEditedUid.value
+  if (editUid && list.some(item => item.uid === editUid)) {
+    const fixedNode = list.find(item => item.uid === editUid)
+    const fixedVal = numWeight(fixedNode.weight)
+    const others = list.filter(item => item.uid !== editUid)
+
+    if (others.length > 0) {
+      const remainder = 1 - fixedVal
+      if (remainder < -SUM_EPS) {
+        ElMessage.warning(`手动修改项权重为 ${fixedVal.toFixed(4)}，已超过 1，无法平摊其余项`)
+        return
+      }
+      const m = others.length
+      const base = Math.round((remainder / m) * PREC) / PREC
+      let acc = 0
+      for (let k = 0; k < m - 1; k++) {
+        others[k].weight = base
+        acc += base
+      }
+      others[m - 1].weight = Math.round((remainder - acc) * PREC) / PREC
+      lastValidateOk.value = Math.abs(sumChildWeights(list) - 1) <= SUM_EPS
+      ElMessage.success(`已固定修改项「${fixedNode.label || '未命名'}」，平衡其余项权重`)
+      return
+    }
   }
 
   ElMessage.warning(

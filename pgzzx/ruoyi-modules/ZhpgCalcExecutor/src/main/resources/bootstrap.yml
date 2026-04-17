@@ -38,7 +38,7 @@ zhpg:
     local-save-dir: D:/zzxpg/report-output
   calc:
     # 数据输入模式：MOCK=模拟随机数据，EXTERNAL_API=通过外部接口获取真实数据
-    data-input-mode: EXTERNAL_API
+    data-input-mode: MOCK
     external-data:
       url: http://172.16.2.89:9501/evaluationData/list
       connect-timeout-ms: 10000
