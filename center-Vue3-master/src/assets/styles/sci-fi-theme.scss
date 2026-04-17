@@ -1,0 +1,640 @@
+:root {
+  --mc-bg: #eef5ff;
+  --mc-bg-elevated: #ffffff;
+  --mc-surface: rgba(255, 255, 255, 0.92);
+  --mc-surface-soft: rgba(245, 249, 255, 0.9);
+  --mc-panel-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(245, 250, 255, 0.94));
+  --mc-panel-bg-soft: linear-gradient(180deg, rgba(248, 251, 255, 0.98), rgba(240, 246, 255, 0.94));
+  --mc-hero-bg:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(233, 243, 255, 0.92)),
+    radial-gradient(circle at top right, rgba(34, 211, 238, 0.12), transparent 42%);
+  --mc-hero-overlay:
+    linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.06), transparent),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent 28%);
+  --mc-card-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(244, 249, 255, 0.94));
+  --mc-metric-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(238, 245, 255, 0.94));
+  --mc-node-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(241, 247, 255, 0.94));
+  --mc-soft-block-bg: rgba(244, 249, 255, 0.86);
+  --mc-chip-bg: rgba(255, 255, 255, 0.82);
+  --mc-track-bg: rgba(223, 235, 252, 0.92);
+  --mc-border: rgba(116, 149, 192, 0.22);
+  --mc-border-strong: rgba(34, 211, 238, 0.24);
+  --mc-dialog-bg: #f8fbff;
+  --mc-dialog-header-bg: #f4f9ff;
+  --mc-primary: #0891b2;
+  --mc-primary-strong: #0ea5e9;
+  --mc-secondary: #2563eb;
+  --mc-success: #059669;
+  --mc-warning: #d97706;
+  --mc-danger: #e11d48;
+  --mc-text-primary: #10203a;
+  --mc-text-secondary: #4c6484;
+  --mc-text-tertiary: #7187a6;
+  --mc-shadow: 0 18px 48px rgba(110, 139, 183, 0.16);
+  --mc-app-bg:
+    radial-gradient(circle at top left, rgba(34, 211, 238, 0.1), transparent 24%),
+    radial-gradient(circle at right top, rgba(59, 130, 246, 0.08), transparent 28%),
+    linear-gradient(180deg, #edf4fb 0%, #f7fbff 100%);
+  --mc-grid-line: rgba(120, 154, 200, 0.08);
+  --mc-glow-bg: radial-gradient(circle, rgba(34, 211, 238, 0.08) 0%, transparent 68%);
+
+  --el-color-primary: var(--mc-primary-strong);
+
+  /* 亮色模式 Element Plus 文字对比度 */
+  --el-text-color-primary: #1e293b;
+  --el-text-color-regular: #334155;
+  --el-text-color-secondary: #64748b;
+  --el-text-color-placeholder: #94a3b8;
+}
+
+html.dark {
+  --mc-bg: #07111f;
+  --mc-bg-elevated: #0b1730;
+  --mc-surface: rgba(10, 20, 38, 0.92);
+  --mc-surface-soft: rgba(13, 24, 46, 0.82);
+  --mc-panel-bg: linear-gradient(180deg, rgba(14, 23, 42, 0.94), rgba(10, 18, 34, 0.92));
+  --mc-panel-bg-soft: linear-gradient(180deg, rgba(11, 22, 40, 0.96), rgba(8, 15, 29, 0.92));
+  --mc-hero-bg:
+    linear-gradient(135deg, rgba(9, 18, 38, 0.98), rgba(11, 26, 54, 0.88)),
+    radial-gradient(circle at top right, rgba(34, 211, 238, 0.18), transparent 42%);
+  --mc-hero-overlay:
+    linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.08), transparent),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 28%);
+  --mc-card-bg: linear-gradient(180deg, rgba(14, 23, 42, 0.94), rgba(10, 18, 34, 0.92));
+  --mc-metric-bg: linear-gradient(180deg, rgba(11, 22, 40, 0.96), rgba(8, 15, 29, 0.92));
+  --mc-node-bg: linear-gradient(180deg, rgba(13, 24, 44, 0.98), rgba(8, 15, 30, 0.92));
+  --mc-soft-block-bg: rgba(8, 16, 31, 0.82);
+  --mc-chip-bg: rgba(8, 16, 31, 0.7);
+  --mc-track-bg: rgba(20, 35, 62, 0.9);
+  --mc-border: rgba(86, 122, 173, 0.28);
+  --mc-border-strong: rgba(34, 211, 238, 0.32);
+  --mc-dialog-bg: #0b1730;
+  --mc-dialog-header-bg: #0e1d37;
+  --mc-primary: #6ee7f9;
+  --mc-primary-strong: #22d3ee;
+  --mc-secondary: #38bdf8;
+  --mc-success: #34d399;
+  --mc-warning: #fbbf24;
+  --mc-danger: #fb7185;
+  --mc-text-primary: #edf4ff;
+  --mc-text-secondary: #8ea7c7;
+  --mc-text-tertiary: #6e85a5;
+  --mc-shadow: 0 24px 80px rgba(2, 8, 23, 0.55);
+  --mc-app-bg:
+    radial-gradient(circle at top left, rgba(34, 211, 238, 0.14), transparent 28%),
+    radial-gradient(circle at right top, rgba(59, 130, 246, 0.12), transparent 30%),
+    linear-gradient(180deg, #07111f 0%, #050d18 100%);
+  --mc-grid-line: rgba(120, 154, 200, 0.04);
+  --mc-glow-bg: radial-gradient(circle, rgba(34, 211, 238, 0.1) 0%, transparent 68%);
+
+  --el-color-primary: var(--mc-primary-strong);
+  --el-bg-color: #081222;
+  --el-bg-color-page: #07111f;
+  --el-bg-color-overlay: #0d1a30;
+  --el-fill-color-blank: rgba(10, 20, 38, 0.92);
+  --el-fill-color-light: rgba(17, 30, 55, 0.9);
+  --el-fill-color: rgba(14, 25, 46, 0.94);
+  --el-fill-color-dark: rgba(7, 15, 28, 0.95);
+  --el-text-color-primary: var(--mc-text-primary);
+  --el-text-color-regular: var(--mc-text-secondary);
+  --el-text-color-secondary: var(--mc-text-tertiary);
+  --el-border-color: var(--mc-border);
+  --el-border-color-light: rgba(86, 122, 173, 0.18);
+  --el-border-color-lighter: rgba(86, 122, 173, 0.1);
+  --el-mask-color: rgba(3, 10, 26, 0.62);
+  --el-overlay-color-lighter: rgba(3, 10, 26, 0.72);
+  --el-box-shadow-light: 0 16px 40px rgba(2, 8, 23, 0.45);
+
+  color-scheme: dark;
+  background: var(--mc-app-bg);
+}
+
+html,
+body,
+#app,
+.app-wrapper,
+.main-container,
+.app-main {
+  background: transparent;
+  color: var(--mc-text-primary);
+}
+
+html {
+  background: var(--mc-app-bg);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(var(--mc-grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--mc-grid-line) 1px, transparent 1px);
+  background-size: 120px 120px;
+  mask-image: radial-gradient(circle at center, black 24%, transparent 86%);
+  opacity: 0.45;
+}
+
+/* 右上角光晕 */
+body::after {
+  content: "";
+  position: fixed;
+  right: -12vw;
+  top: -16vh;
+  width: 42vw;
+  height: 42vw;
+  border-radius: 50%;
+  background: var(--mc-glow-bg);
+  pointer-events: none;
+  filter: blur(20px);
+  z-index: 0;
+}
+
+/* 亮色模式侧边栏 - 深蓝渐变 */
+.sidebar-container {
+  background:
+    linear-gradient(180deg, #1a2744 0%, #132039 50%, #0f1a2e 100%) !important;
+  border-right: 1px solid rgba(148, 180, 224, 0.12);
+}
+
+.sidebar-container .el-menu {
+  background: transparent !important;
+}
+
+html.dark .sidebar-container {
+  background:
+    linear-gradient(180deg, rgba(6, 14, 27, 0.98), rgba(7, 13, 25, 0.92)) !important;
+  border-right: 1px solid rgba(86, 122, 173, 0.2);
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.02);
+}
+
+/* 亮色模式顶栏 - 毛玻璃 */
+.navbar {
+  background: rgba(255, 255, 255, 0.72) !important;
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  border-bottom: 1px solid rgba(148, 180, 224, 0.18) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
+}
+
+/* 亮色模式标签栏 */
+.tags-view-container {
+  background: rgba(248, 251, 255, 0.82) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(148, 180, 224, 0.14) !important;
+}
+
+html.dark .navbar {
+  background: rgba(7, 16, 31, 0.76) !important;
+  border-bottom: 1px solid rgba(86, 122, 173, 0.16) !important;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 8px 24px rgba(2, 8, 23, 0.22) !important;
+}
+
+html.dark .tags-view-container {
+  background: rgba(8, 17, 32, 0.72) !important;
+  border-bottom: 1px solid rgba(86, 122, 173, 0.14) !important;
+  box-shadow: none !important;
+}
+
+/* 亮色模式侧边栏菜单项 */
+.sidebar-container .el-menu-item,
+.sidebar-container .el-sub-menu__title,
+.sidebar-container .menu-title {
+  color: #bfcbd9 !important;
+}
+
+.sidebar-container .el-menu-item .svg-icon,
+.sidebar-container .el-sub-menu__title .svg-icon {
+  color: #8fabc8 !important;
+}
+
+.sidebar-container .el-menu-item:hover,
+.sidebar-container .el-sub-menu__title:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+}
+
+.sidebar-container .el-menu-item.is-active {
+  color: #fff !important;
+  background: linear-gradient(90deg, rgba(14, 165, 233, 0.28), rgba(56, 189, 248, 0.08)) !important;
+  box-shadow: inset 3px 0 0 #0ea5e9 !important;
+  border-radius: 8px !important;
+}
+
+.sidebar-container .el-sub-menu.is-active > .el-sub-menu__title {
+  color: #ffffff !important;
+}
+
+.sidebar-logo-container {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* ========== 亮色模式 - 文字可读性修复 ========== */
+
+/* 表单标签 */
+.el-form-item__label {
+  color: #334155 !important;
+  font-weight: 600;
+}
+
+/* 表格文字 */
+.el-table {
+  color: #334155 !important;
+  border-radius: 16px !important;
+  overflow: hidden;
+}
+
+.el-table th.el-table__cell {
+  background: rgba(241, 247, 255, 0.9) !important;
+  color: #1e293b !important;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.el-table td.el-table__cell {
+  color: #334155 !important;
+}
+
+/* 输入框 */
+.el-input__wrapper {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-radius: 10px !important;
+  box-shadow: inset 0 0 0 1px rgba(148, 180, 224, 0.3) !important;
+  transition: all 0.2s !important;
+}
+
+.el-input__inner {
+  color: #1e293b !important;
+}
+
+.el-input__inner::placeholder {
+  color: #94a3b8 !important;
+}
+
+.el-input__wrapper.is-focus {
+  box-shadow: inset 0 0 0 1px var(--mc-primary-strong, #0ea5e9), 0 0 0 3px rgba(14, 165, 233, 0.08) !important;
+}
+
+.el-select .el-select__wrapper {
+  border-radius: 10px !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+}
+
+.el-select .el-select__wrapper .el-select__selected-item,
+.el-select .el-select__wrapper .el-select__placeholder {
+  color: #334155 !important;
+}
+
+.el-select .el-select__wrapper .el-select__placeholder.is-transparent {
+  color: #94a3b8 !important;
+}
+
+/* 内容区域卡片 */
+.app-container .el-card {
+  background: var(--mc-card-bg, rgba(255, 255, 255, 0.96)) !important;
+  border: 1px solid var(--mc-border, rgba(116, 149, 192, 0.22)) !important;
+  box-shadow: 0 4px 16px rgba(110, 139, 183, 0.1) !important;
+  border-radius: 16px !important;
+}
+
+.app-container .el-card:hover {
+  box-shadow: 0 8px 30px rgba(110, 139, 183, 0.16) !important;
+  transform: translateY(-1px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 按钮 */
+.el-button--primary {
+  background: linear-gradient(135deg, var(--mc-primary, #0891b2), var(--mc-primary-strong, #0ea5e9)) !important;
+  border: none !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(14, 165, 233, 0.25);
+}
+
+.el-button--primary:hover {
+  box-shadow: 0 8px 22px rgba(14, 165, 233, 0.32);
+  transform: translateY(-1px);
+  color: #ffffff !important;
+}
+
+.el-button--default {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border: 1px solid rgba(148, 180, 224, 0.35) !important;
+  color: #334155 !important;
+}
+
+.el-button--default:hover {
+  color: var(--mc-primary-strong, #0ea5e9) !important;
+  border-color: var(--mc-primary-strong, #0ea5e9) !important;
+}
+
+.el-button.is-plain {
+  color: #334155 !important;
+}
+
+.el-button--primary.is-plain {
+  background: rgba(14, 165, 233, 0.08) !important;
+  border: 1px solid rgba(14, 165, 233, 0.3) !important;
+  color: var(--mc-primary-strong, #0ea5e9) !important;
+}
+
+.el-button--primary.is-plain:hover {
+  background: linear-gradient(135deg, var(--mc-primary, #0891b2), var(--mc-primary-strong, #0ea5e9)) !important;
+  color: #ffffff !important;
+}
+
+/* 弹窗 */
+.el-dialog {
+  background: var(--mc-dialog-bg, #f8fbff) !important;
+  border: 1px solid rgba(148, 180, 224, 0.18) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 24px 80px rgba(50, 80, 130, 0.16) !important;
+}
+
+.el-dialog__header {
+  background: var(--mc-dialog-header-bg, #f4f9ff) !important;
+  border-bottom: 1px solid rgba(148, 180, 224, 0.16) !important;
+}
+
+.el-dialog__title {
+  color: #1e293b !important;
+  font-weight: 700;
+}
+
+/* 下拉菜单 */
+.el-select-dropdown,
+.el-dropdown-menu,
+.el-picker-panel {
+  background: rgba(255, 255, 255, 0.98) !important;
+  border: 1px solid rgba(148, 180, 224, 0.2) !important;
+  box-shadow: 0 12px 40px rgba(50, 80, 130, 0.12) !important;
+  border-radius: 12px !important;
+}
+
+.el-select-dropdown__item {
+  color: #334155 !important;
+}
+
+.el-select-dropdown__item.is-selected {
+  color: var(--mc-primary-strong, #0ea5e9) !important;
+  font-weight: 600;
+}
+
+.el-dropdown-menu__item {
+  color: #334155 !important;
+}
+
+/* 导航栏文字 */
+.navbar .right-menu .right-menu-item {
+  color: #334155 !important;
+}
+
+.navbar .right-menu .right-menu-item:hover {
+  color: var(--mc-primary-strong, #0ea5e9) !important;
+}
+
+/* 面包屑 */
+.el-breadcrumb__inner,
+.el-breadcrumb__inner a {
+  color: #475569 !important;
+}
+
+.el-breadcrumb__inner a:hover {
+  color: var(--mc-primary-strong, #0ea5e9) !important;
+}
+
+/* 标签页文字 */
+.tags-view-container .tags-view-item {
+  color: #475569 !important;
+}
+
+.tags-view-container .tags-view-item.active {
+  color: #ffffff !important;
+}
+
+/* 复选框、开关等 */
+.el-checkbox__label {
+  color: #334155 !important;
+}
+
+.el-switch__label {
+  color: #334155 !important;
+}
+
+/* 分页器文字 */
+.el-pagination {
+  color: #334155 !important;
+}
+
+/* 描述列表/详情 */
+.el-descriptions__label {
+  color: #64748b !important;
+}
+
+.el-descriptions__content {
+  color: #1e293b !important;
+}
+
+/* 工具栏图标按钮修复 */
+.el-icon {
+  color: inherit;
+}
+
+html.dark .el-menu {
+  border-right: none !important;
+}
+
+html.dark .el-menu-item,
+html.dark .el-sub-menu__title {
+  color: var(--mc-text-secondary) !important;
+  border-radius: 14px;
+}
+
+html.dark .el-menu-item:hover,
+html.dark .el-sub-menu__title:hover {
+  background: rgba(34, 211, 238, 0.08) !important;
+  color: var(--mc-text-primary) !important;
+}
+
+html.dark .el-menu-item.is-active {
+  color: var(--mc-primary) !important;
+  background:
+    linear-gradient(90deg, rgba(34, 211, 238, 0.18), rgba(34, 211, 238, 0.04)) !important;
+  box-shadow: inset 3px 0 0 rgba(34, 211, 238, 0.6), 0 0 0 1px rgba(34, 211, 238, 0.12);
+}
+
+html.dark .sidebar-logo-container {
+  border-bottom: 1px solid rgba(86, 122, 173, 0.16) !important;
+}
+
+html.dark .el-card,
+html.dark .el-dialog,
+html.dark .el-drawer,
+html.dark .el-message-box {
+  border: 1px solid rgba(86, 122, 173, 0.2) !important;
+  box-shadow: var(--mc-shadow) !important;
+}
+
+html.dark .el-card {
+  background:
+    linear-gradient(180deg, rgba(11, 22, 40, 0.96), rgba(7, 15, 28, 0.94)) !important;
+  border-radius: 20px !important;
+}
+
+html.dark .el-card__header,
+html.dark .el-dialog__header {
+  border-bottom: 1px solid rgba(86, 122, 173, 0.16);
+  background: var(--mc-dialog-header-bg, #0e1d37);
+}
+
+html.dark .el-dialog {
+  background: var(--mc-dialog-bg, #0b1730) !important;
+  border-radius: 24px !important;
+}
+
+html.dark .el-dialog__title,
+html.dark .el-drawer__title {
+  color: var(--mc-text-primary) !important;
+}
+
+html.dark .el-table {
+  background: transparent !important;
+  color: var(--mc-text-secondary) !important;
+  --el-table-border-color: rgba(86, 122, 173, 0.14);
+  --el-table-header-bg-color: rgba(18, 33, 58, 0.9);
+  --el-table-row-hover-bg-color: rgba(34, 211, 238, 0.08);
+  --el-table-tr-bg-color: transparent;
+}
+
+html.dark .el-table th.el-table__cell {
+  background: rgba(18, 33, 58, 0.88) !important;
+  color: var(--mc-primary) !important;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(86, 122, 173, 0.2);
+}
+
+html.dark .el-table td.el-table__cell {
+  background: transparent !important;
+  border-bottom: 1px solid rgba(86, 122, 173, 0.1);
+}
+
+html.dark .el-table__inner-wrapper::before {
+  display: none;
+}
+
+html.dark .el-input__wrapper,
+html.dark .el-select__wrapper,
+html.dark .el-textarea__inner,
+html.dark .el-input-number__decrease,
+html.dark .el-input-number__increase {
+  background: rgba(8, 17, 32, 0.88) !important;
+  box-shadow: inset 0 0 0 1px rgba(86, 122, 173, 0.22) !important;
+  color: var(--mc-text-primary) !important;
+}
+
+html.dark .el-input__wrapper.is-focus,
+html.dark .el-select__wrapper.is-focused,
+html.dark .el-textarea__inner:focus {
+  box-shadow: inset 0 0 0 1px rgba(34, 211, 238, 0.42), 0 0 0 4px rgba(34, 211, 238, 0.08) !important;
+}
+
+html.dark .el-select-dropdown,
+html.dark .el-dropdown-menu,
+html.dark .el-picker-panel {
+  background: rgba(9, 18, 34, 0.98) !important;
+  border: 1px solid rgba(86, 122, 173, 0.22) !important;
+  box-shadow: var(--mc-shadow) !important;
+}
+
+html.dark .el-button {
+  border-radius: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+html.dark .el-button--primary {
+  border: none !important;
+  background: linear-gradient(135deg, #0891b2, #22d3ee) !important;
+  box-shadow: 0 10px 22px rgba(34, 211, 238, 0.22);
+}
+
+html.dark .el-button--primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(34, 211, 238, 0.28);
+}
+
+html.dark .el-button--default,
+html.dark .el-button.is-plain {
+  background: rgba(10, 19, 37, 0.82) !important;
+  border-color: rgba(86, 122, 173, 0.24) !important;
+  color: var(--mc-text-primary) !important;
+}
+
+html.dark .el-progress-bar__outer {
+  background: rgba(20, 35, 62, 0.82) !important;
+}
+
+html.dark .el-progress-bar__inner {
+  background: linear-gradient(90deg, #22d3ee, #38bdf8) !important;
+}
+
+html.dark .el-form-item__label,
+html.dark .el-descriptions__label {
+  color: var(--mc-text-secondary) !important;
+}
+
+html.dark .el-step__title {
+  color: var(--mc-text-secondary) !important;
+}
+
+html.dark .el-step__title.is-process,
+html.dark .el-step__title.is-finish {
+  color: var(--mc-text-primary) !important;
+}
+
+html.dark .el-step__head.is-process .el-step__icon,
+html.dark .el-step__head.is-finish .el-step__icon {
+  background: rgba(34, 211, 238, 0.12);
+  border-color: rgba(34, 211, 238, 0.36);
+}
+
+html.dark .el-tree {
+  background: transparent !important;
+  color: var(--mc-text-secondary) !important;
+}
+
+html.dark .el-tree-node__content:hover,
+html.dark .el-tree-node:focus > .el-tree-node__content {
+  background: rgba(34, 211, 238, 0.08) !important;
+}
+
+html.dark .el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content {
+  background: rgba(34, 211, 238, 0.12) !important;
+  color: var(--mc-text-primary) !important;
+}
+
+html.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+html.dark ::-webkit-scrollbar-track {
+  background: rgba(4, 10, 22, 0.88);
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: rgba(65, 93, 132, 0.72);
+  border-radius: 999px;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(56, 189, 248, 0.72);
+}

@@ -1,0 +1,3188 @@
+{
+    "path": {
+        "/api/interface/monitor": {
+            "post": {
+                "tags": [
+                    "接口监控管理"
+                ],
+                "summary": "添加监控记录",
+                "operationId": "addUsingPOST_4",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "*/*"
+                ],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "dto",
+                        "description": "dto",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/InterfaceMonitorDTO",
+                            "originalRef": "InterfaceMonitorDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "201": {
+                        "description": "Created"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "Authorization": [
+                            "global"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/api/interface/monitor/abnormal": {
+            "get": {
+                "tags": [
+                    "接口监控管理"
+                ],
+                "summary": "查询异常记录",
+                "operationId": "queryAbnormalUsingGET",
+                "produces": [
+                    "*/*"
+                ],
+                "parameters": [
+                    {
+                        "name": "threshold",
+                        "in": "query",
+                        "description": "threshold",
+                        "required": false,
+                        "type": "integer",
+                        "default": 0,
+                        "format": "int32"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/R«List«InterfaceMonitor对象»»",
+                            "originalRef": "R«List«InterfaceMonitor对象»»"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "Authorization": [
+                            "global"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/api/interface/monitor/batch": {
+            "post": {
+                "tags": [
+                    "接口监控管理"
+                ],
+                "summary": "批量添加监控记录",
+                "operationId": "batchAddUsingPOST",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "*/*"
+                ],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "list",
+                        "description": "list",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/InterfaceMonitorDTO",
+                                "originalRef": "InterfaceMonitorDTO"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/R«boolean»",
+                            "originalRef": "R«boolean»"
+                        }
+                    },
+                    "201": {
+                        "description": "Created"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "Authorization": [
+                            "global"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/api/interface/monitor/page": {
+            "get": {
+                "tags": [
+                    "接口监控管理"
+                ],
+                "summary": "分页查询监控记录",
+                "operationId": "queryPageUsingGET_1",
+                "produces": [
+                    "*/*"
+                ],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "query",
+                        "description": "query",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/InterfaceMonitorQuery",
+                            "originalRef": "InterfaceMonitorQuery"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/R«IPage«InterfaceMonitorDTO»»",
+                            "originalRef": "R«IPage«InterfaceMonitorDTO»»"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "Authorization": [
+                            "global"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/api/interface/monitor/recent/{interfaceId}/{limit}": {
+            "get": {
+                "tags": [
+                    "接口监控管理"
+                ],
+                "summary": "查询最新监控记录",
+                "operationId": "queryRecentUsingGET",
+                "produces": [
+                    "*/*"
+                ],
+                "parameters": [
+                    {
+                        "name": "interfaceId",
+                        "in": "query",
+                        "description": "interfaceId",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "limit",
+                        "required": false,
+                        "type": "integer",
+                        "default": 10,
+                        "format": "int32"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/R«List«InterfaceMonitor对象»»",
+                            "originalRef": "R«List«InterfaceMonitor对象»»"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "Authorization": [
+                            "global"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/api/interface/monitor/statistics/{interfaceId}": {
+            "get": {
+                "tags": [
+                    "接口监控管理"
+                ],
+                "summary": "统计接口监控数据",
+                "operationId": "statisticsUsingGET",
+                "produces": [
+                    "*/*"
+                ],
+                "parameters": [
+                    {
+                        "name": "endTime",
+                        "in": "query",
+                        "description": "endTime",
+                        "required": false,
+                        "type": "string"
+                    },
+                    {
+                        "name": "interfaceId",
+                        "in": "path",
+                        "description": "interfaceId",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "name": "startTime",
+                        "in": "query",
+                        "description": "startTime",
+                        "required": false,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/R«Map«string,object»»",
+                            "originalRef": "R«Map«string,object»»"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "Authorization": [
+                            "global"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/collectForm": {
+            "post": {
+                "tags": [
+                    "采集表单管理"
+                ],
+                "summary": "新增采集表单",
+                "operationId": "addUsingPOST",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "*/*"
+                ],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "collectForm",
+                        "description": "collectForm",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/CollectForm",
+                            "originalRef": "CollectForm"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "201": {
+                        "description": "Created"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "Authorization": [
+                            "global"
+                        ]
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "采集表单管理"
+                ],
+                "summary": "修改采集表单",
+                "operationId": "editUsingPUT",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "*/*"
+                ],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "collectForm",
+                        "description": "collectForm",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/CollectForm",
+                            "originalRef": "CollectForm"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "201": {
+                        "description": "Created"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "Authorization": [
+                            "global"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/collectForm/changeStatus/{id}": {
+            "put": {
+                "tags": [
+                    "采集表单管理"
+                ],
+                "summary": "变更采集状态",
+                "operationId": "changeStatusUsingPUT",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "*/*"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "主键ID",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "状态：NOT_ISSUED(未下发)/COLLECTING(采集中)/COMPLETED(已完成)",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "201": {
+                        "description": "Created"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "Authorization": [
+                            "global"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/collectForm/generateItems": {
+            "post": {
+                "tags": [
+                    "采集表单管理"
+                ],
+                "summary": "接收指标体系内容并按分中心生成多张采集表单（每中心一张，仅含本分中心数据项）；写入采集表单表与采集表单数据项表并返回详情",
+                "operationId": "generateItemsUsingPOST",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "*/*"
+                ],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "dto",
+                        "description": "dto",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/评估需求表对象",
+                            "originalRef": "评估需求表对象"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "201": {
+                        "description": "Created"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "Authorization": [
+                            "global"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/collectForm/issue/batch": {
+            "post": {
+                "tags": [
+                    "采集表单管理"
+                ],
+                "summary": "批量下发采集表单到各自分中心，规则同单条下发；返回每张表单的下发结果",
+                "operationId": "issueBatchUsingPOST",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "*/*"
+                ],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "dto",
+                        "description": "dto",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/采集表单批量下发参数",
+                            "originalRef": "采集表单批量下发参数"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "201": {
+                        "description": "Created"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "Authorization": [
+                            "global"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/collectForm/issue/{id}": {
+            "post": {
+                "tags": [
+                    "采集表单管理"
+                ],
+                "summary": "下发采集表单到分中心：按 issuingUnit 匹配 Nacos 中 external.system.interface-path.subsystem 的地址，POST JSON（collectForm）；仅未下发状态可下发，成功则置为采集中",
+                "operationId": "issueUsingPOST",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "*/*"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "采集表单主键ID",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "201": {
+                        "description": "Created"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "Authorization": [
+                            "global"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/collectForm/list": {
+            "get": {
+                "tags": [
+                    "采集表单管理"
+                ],
+                "summary": "分页查询采集表单",
+                "operationId": "listUsingGET",
+                "produces": [
+                    "*/*"
+                ],
+                "parameters": [
+                    {
+                        "name": "collectStatus",
+                        "in": "query",
+                        "description": "采集状态",
+                        "required": false,
+                        "type": "string"
+                    },
+                    {
+                        "name": "formCode",
+                        "in": "query",
+                        "description": "采集表单识别码",
+                        "required": false,
+                        "type": "string"
+                    },
+                    {
+                        "name": "formName",
+                        "in": "query",
+                        "description": "采集表单名称",
+                        "required": false,
+                        "type": "string"
+                    },
+                    {
+                        "name": "invokeType",
+                        "in": "query",
+                        "description": "引接类型",
+                        "required": false,
+                        "type": "string"
+                    },
+                    {
+                        "name": "requireCode",
+                        "in": "query",
+                        "description": "需求标识",
+                        "required": false,
+                        "type": "string"
+                    },
+                    {
+                        "name": "requireName",
+                        "in": "query",
+                        "description": "需求名称",
+                        "required": false,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/TableDataInfo",
+                            "originalRef": "TableDataInfo"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "Authorization": [
+                            "global"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/collectForm/{ids}": {
+            "delete": {
+                "tags": [
+                    "采集表单管理"
+                ],
+                "summary": "删除采集表单",
+                "operationId": "removeUsingDELETE",
+                "produces": [
+                    "*/*"
+                ],
+                "parameters": [
+                    {
+                        "name": "ids",
+                        "in": "path",
+                        "description": "主键ID，多个用逗号分隔",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "Authorization": [
+                            "global"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/collectForm/{id}": {
+            "get": {
+                "tags": [
+                    "采集表单管理"
+                ],
+                "summary": "获取采集表单详情（含数据项列表）",
+                "operationId": "getInfoUsingGET",
+                "produces": [
+                    "*/*"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "主键ID",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "Authorization": [
+                            "global"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/evaluationData": {
+            "post": {
+                "tags": [
+                    "评估数据管理"
+                ],
+                "summary": "新增评估数据",
+                "operationId": "addUsingPOST_1",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "*/*"
+                ],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "evaluationData",
+                        "description": "evaluationData",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/EvaluationData",
+                            "originalRef": "EvaluationData"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "201": {
+                        "description": "Created"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "Authorization": [
+                            "global"
+                        ]
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "评估数据管理"
+                ],
+                "summary": "修改评估数据",
+                "operationId": "editUsingPUT_1",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "*/*"
+                ],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "evaluationData",
+                        "description": "evaluationData",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/EvaluationData",
+                            "originalRef": "EvaluationData"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "201": {
+                        "description": "Created"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "Authorization": [
+                            "global"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/evaluationData/list": {
+            "get": {
+                "tags": [
+                    "评估数据管理"
+                ],
+                "summary": "查询评估数据列表",
+                "operationId": "listUsingGET_1",
+                "produces": [
+                    "*/*"
+                ],
+                "parameters": [
+                    {
+                        "name": "evaluationTaskId",
+                        "in": "query",
+                        "description": "评估任务ID",
+                        "required": false,
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "name": "indicatorCodes",
+                        "in": "query",
+                        "description": "评估指标标识列表（精确匹配，IN 查询）；可重复参数如 indicatorCodes=a&indicatorCodes=b，或单项内逗号分隔",
+                        "required": false,
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "Authorization": [
+                            "global"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/evaluationData/{ids}": {
+            "delete": {
+                "tags": [
+                    "评估数据管理"
+                ],
+                "summary": "删除评估数据",
+                "operationId": "removeUsingDELETE_1",
+                "produces": [
+                    "*/*"
+                ],
+                "parameters": [
+                    {
+                        "name": "ids",
+                        "in": "path",
+                        "description": "主键ID，多个用逗号分隔",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "Authorization": [
+                            "global"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/evaluationData/{id}": {
+            "get": {
+                "tags": [
+                    "评估数据管理"
+                ],
+                "summary": "获取评估数据详情",
+                "operationId": "getInfoUsingGET_1",
+                "produces": [
+                    "*/*"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "主键ID",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "Authorization": [
+                            "global"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/fieldMappingRelation/save": {
+            "post": {
+                "tags": [
+                    "�ֶ�ӳ����·����"
+                ],
+                "summary": "�����ֶ�ӳ����·",
+                "operationId": "saveUsingPOST",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "*/*"
+                ],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "dto",
+                        "description": "dto",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/FieldMappingChainSaveDTO",
+                            "originalRef": "FieldMappingChainSaveDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "201": {
+                        "description": "Created"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "Authorization": [
+                            "global"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/fieldMappingRelation/{mappingCode}": {
+            "get": {
+                "tags": [
+                    "�ֶ�ӳ����·����"
+                ],
+                "summary": "��ѯ�ֶ�ӳ����·",
+                "operationId": "getByCodeUsingGET",
+                "produces": [
+                    "*/*"
+                ],
+                "parameters": [
+                    {
+                        "name": "mappingCode",
+                        "in": "path",
+                        "description": "ӳ����·����",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "Authorization": [
+                            "global"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/integration/task": {
+            "post": {
+                "tags": [
+                    "汇总整编任务管理"
+                ],
+                "summary": "新增汇总整编任务",
+                "operationId": "addUsingPOST_2",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "*/*"
+                ],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "dto",
+                        "description": "dto",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/IntegrationTaskDTO",
+                            "originalRef": "IntegrationTaskDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "201": {
+                        "description": "Created"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "Authorization": [
+                            "global"
+                        ]
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "汇总整编任务管理"
+                ],
+                "summary": "修改汇总整编任务",
+                "operationId": "editUsingPUT_2",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "*/*"
+                ],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "dto",
+                        "description": "dto",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/IntegrationTaskDTO",
+                            "originalRef": "IntegrationTaskDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "201": {
+                        "description": "Created"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "Authorization": [
+                            "global"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/integration/task/list": {
+            "get": {
+                "tags": [
+                    "汇总整编任务管理"
+                ],
+                "summary": "分页查询汇总整编任务",
+                "operationId": "listUsingGET_2",
+                "produces": [
+                    "*/*"
+                ],
+                "parameters": [
+                    {
+                        "name": "pageNum",
+                        "in": "query",
+                        "description": "页码",
+                        "required": false,
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    {
+                        "name": "pageSize",
+                        "in": "query",
+                        "description": "每页大小",
+                        "required": false,
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    {
+                        "name": "projectName",
+                        "in": "query",
+                        "description": "评估工程名称筛选",
+                        "required": false,
+                        "type": "string"
+                    },
+                    {
+                        "name": "requirementName",
+                        "in": "query",
+                        "description": "评估需求名称筛选",
+                        "required": false,
+                        "type": "string"
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "状态过滤",
+                        "required": false,
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    {
+                        "name": "taskName",
+                        "in": "query",
+                        "description": "任务名称模糊查询",
+                        "required": false,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "Authorization": [
+                            "global"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/integration/task/trigger/{taskId}": {
+            "post": {
+                "tags": [
+                    "汇总整编任务管理"
+                ],
+                "summary": "手动触发整编任务执行",
+                "operationId": "triggerUsingPOST",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "*/*"
+                ],
+                "parameters": [
+                    {
+                        "name": "taskId",
+                        "in": "path",
+                        "description": "taskId",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "201": {
+                        "description": "Created"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "Authorization": [
+                            "global"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/integration/task/{taskIds}": {
+            "delete": {
+                "tags": [
+                    "汇总整编任务管理"
+                ],
+                "summary": "删除汇总整编任务",
+                "operationId": "removeUsingDELETE_2",
+                "produces": [
+                    "*/*"
+                ],
+                "parameters": [
+                    {
+                        "name": "taskIds",
+                        "in": "path",
+                        "description": "taskIds",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "Authorization": [
+                            "global"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/integration/task/{taskId}": {
+            "get": {
+                "tags": [
+                    "汇总整编任务管理"
+                ],
+                "summary": "获取任务详细信息",
+                "operationId": "getInfoUsingGET_2",
+                "produces": [
+                    "*/*"
+                ],
+                "parameters": [
+                    {
+                        "name": "taskId",
+                        "in": "path",
+                        "description": "taskId",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "Authorization": [
+                            "global"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/pgzzx/sjcl/interface/info": {
+            "post": {
+                "tags": [
+                    "接口信息管理"
+                ],
+                "summary": "新增接口",
+                "operationId": "addUsingPOST_3",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "*/*"
+                ],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "dto",
+                        "description": "dto",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/InterfaceInfoDTO",
+                            "originalRef": "InterfaceInfoDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "201": {
+                        "description": "Created"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "Authorization": [
+                            "global"
+                        ]
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "接口信息管理"
+                ],
+                "summary": "更新接口",
+                "operationId": "updateUsingPUT",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "*/*"
+                ],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "dto",
+                        "description": "dto",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/InterfaceInfoDTO",
+                            "originalRef": "InterfaceInfoDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "201": {
+                        "description": "Created"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "Authorization": [
+                            "global"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/pgzzx/sjcl/interface/info/batch": {
+            "delete": {
+                "tags": [
+                    "接口信息管理"
+                ],
+                "summary": "批量删除接口",
+                "operationId": "batchDeleteUsingDELETE",
+                "produces": [
+                    "*/*"
+                ],
+                "parameters": [
+                    {
+                        "name": "ids",
+                        "in": "query",
+                        "description": "ids",
+                        "required": true,
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "format": "int64"
+                        },
+                        "collectionFormat": "multi"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "Authorization": [
+                            "global"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/pgzzx/sjcl/interface/info/import/{id}/{count}": {
+            "put": {
+                "tags": [
+                    "接口信息管理"
+                ],
+                "summary": "更新引接统计",
+                "operationId": "updateImportCountUsingPUT",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "*/*"
+                ],
+                "parameters": [
+                    {
+                        "name": "count",
+                        "in": "path",
+                        "description": "count",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "id",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "201": {
+                        "description": "Created"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "Authorization": [
+                            "global"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/pgzzx/sjcl/interface/info/page": {
+            "get": {
+                "tags": [
+                    "接口信息管理"
+                ],
+                "summary": "分页查询接口信息",
+                "operationId": "queryPageUsingGET",
+                "produces": [
+                    "*/*"
+                ],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "query",
+                        "description": "query",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/InterfaceInfoQuery",
+                            "originalRef": "InterfaceInfoQuery"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "Authorization": [
+                            "global"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/pgzzx/sjcl/interface/info/status/{id}/{status}": {
+            "put": {
+                "tags": [
+                    "接口信息管理"
+                ],
+                "summary": "更新接口状态",
+                "operationId": "updateStatusUsingPUT",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "*/*"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "id",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "name": "status",
+                        "in": "path",
+                        "description": "status",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int32"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "201": {
+                        "description": "Created"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "Authorization": [
+                            "global"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/pgzzx/sjcl/interface/info/{id}": {
+            "get": {
+                "tags": [
+                    "接口信息管理"
+                ],
+                "summary": "查询接口详情",
+                "operationId": "getByIdUsingGET",
+                "produces": [
+                    "*/*"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "id",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "Authorization": [
+                            "global"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/tableCreationRecord": {
+            "post": {
+                "tags": [
+                    "建表记录管理"
+                ],
+                "summary": "新建建表记录",
+                "operationId": "addUsingPOST_5",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "*/*"
+                ],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "record",
+                        "description": "record",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/TableCreationRecord",
+                            "originalRef": "TableCreationRecord"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "201": {
+                        "description": "Created"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "Authorization": [
+                            "global"
+                        ]
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "建表记录管理"
+                ],
+                "summary": "修改建表记录",
+                "operationId": "editUsingPUT_3",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "*/*"
+                ],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "record",
+                        "description": "record",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/TableCreationRecord",
+                            "originalRef": "TableCreationRecord"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "201": {
+                        "description": "Created"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "Authorization": [
+                            "global"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/tableCreationRecord/list": {
+            "get": {
+                "tags": [
+                    "建表记录管理"
+                ],
+                "summary": "分页查询建表记录",
+                "operationId": "listUsingGET_3",
+                "produces": [
+                    "*/*"
+                ],
+                "parameters": [
+                    {
+                        "name": "fieldName",
+                        "in": "query",
+                        "description": "字段名称（模糊查询）",
+                        "required": false,
+                        "type": "string"
+                    },
+                    {
+                        "name": "sourceSystem",
+                        "in": "query",
+                        "description": "来源系统（精确查询）",
+                        "required": false,
+                        "type": "string"
+                    },
+                    {
+                        "name": "tableName",
+                        "in": "query",
+                        "description": "表名称（模糊查询）",
+                        "required": false,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/TableDataInfo",
+                            "originalRef": "TableDataInfo"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "Authorization": [
+                            "global"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/tableCreationRecord/{ids}": {
+            "delete": {
+                "tags": [
+                    "建表记录管理"
+                ],
+                "summary": "删除建表记录",
+                "operationId": "removeUsingDELETE_3",
+                "produces": [
+                    "*/*"
+                ],
+                "parameters": [
+                    {
+                        "name": "ids",
+                        "in": "path",
+                        "description": "记录ID列表，逗号分隔",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "Authorization": [
+                            "global"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/tableCreationRecord/{id}": {
+            "get": {
+                "tags": [
+                    "建表记录管理"
+                ],
+                "summary": "获取建表记录详情",
+                "operationId": "getInfoUsingGET_3",
+                "produces": [
+                    "*/*"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "记录ID",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "Authorization": [
+                            "global"
+                        ]
+                    }
+                ]
+            }
+        }
+    },
+    "definitions": {
+        "CollectForm": {
+            "type": "object",
+            "required": [
+                "collectStatus",
+                "collectTime",
+                "formCode",
+                "formName"
+            ],
+            "properties": {
+                "collectRequirement": {
+                    "type": "string",
+                    "description": "采集要求"
+                },
+                "collectStatus": {
+                    "type": "string",
+                    "description": "采集状态：NOT_ISSUED(未下发)/COLLECTING(采集中)/COMPLETED(已完成)"
+                },
+                "collectTime": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "采集时间"
+                },
+                "createBy": {
+                    "type": "string",
+                    "description": "创建者"
+                },
+                "createTime": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "创建时间"
+                },
+                "evaluationProjectId": {
+                    "type": "string",
+                    "description": "评估工程标识"
+                },
+                "evaluationProjectName": {
+                    "type": "string",
+                    "description": "评估工程名称"
+                },
+                "formCode": {
+                    "type": "string",
+                    "description": "采集表单识别码"
+                },
+                "formName": {
+                    "type": "string",
+                    "description": "采集表单名称"
+                },
+                "id": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "主键ID"
+                },
+                "invokeType": {
+                    "type": "string",
+                    "description": "引接类型"
+                },
+                "issuingUnit": {
+                    "type": "string",
+                    "description": "下发单位"
+                },
+                "items": {
+                    "type": "array",
+                    "description": "数据项列表",
+                    "items": {
+                        "$ref": "#/definitions/CollectFormItem",
+                        "originalRef": "CollectFormItem"
+                    }
+                },
+                "remark": {
+                    "type": "string",
+                    "description": "备注(描述)"
+                },
+                "requireCode": {
+                    "type": "string",
+                    "description": "需求标识"
+                },
+                "requireName": {
+                    "type": "string",
+                    "description": "需求名称"
+                },
+                "updateBy": {
+                    "type": "string",
+                    "description": "修改者"
+                },
+                "updateTime": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "修改时间"
+                }
+            },
+            "title": "CollectForm",
+            "description": "采集表单管理"
+        },
+        "CollectFormItem": {
+            "type": "object",
+            "required": [
+                "dataItemName",
+                "formId"
+            ],
+            "properties": {
+                "dataConstraint": {
+                    "type": "string",
+                    "description": "数据约束"
+                },
+                "dataItemName": {
+                    "type": "string",
+                    "description": "数据项名称"
+                },
+                "dataSourceId": {
+                    "type": "string",
+                    "description": "数据源ID"
+                },
+                "fieldCode": {
+                    "type": "string",
+                    "description": "字段标识"
+                },
+                "formId": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "关联的采集表单ID"
+                },
+                "id": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "主键ID"
+                },
+                "indicatorCode": {
+                    "type": "string",
+                    "description": "指标标识"
+                },
+                "relatedIndicator": {
+                    "type": "string",
+                    "description": "关联指标"
+                },
+                "sortOrder": {
+                    "type": "integer",
+                    "format": "int32",
+                    "description": "排序号"
+                },
+                "tableCode": {
+                    "type": "string",
+                    "description": "表标识"
+                },
+                "timeRangeEnd": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "时间范围-结束"
+                },
+                "timeRangeStart": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "时间范围-开始"
+                }
+            },
+            "title": "CollectFormItem",
+            "description": "采集表单数据项"
+        },
+        "EvaluationData": {
+            "type": "object",
+            "required": [
+                "dataItemCode",
+                "dataJson",
+                "evaluationTaskId",
+                "indicatorCode",
+                "tableCode"
+            ],
+            "properties": {
+                "createBy": {
+                    "type": "string",
+                    "description": "创建者"
+                },
+                "createTime": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "创建时间"
+                },
+                "dataItemCode": {
+                    "type": "string",
+                    "description": "数据项标识"
+                },
+                "dataJson": {
+                    "type": "string",
+                    "description": "数据JSON数组（JSON 文本，如 [{\"key\":\"value\"}]）"
+                },
+                "evaluationTaskId": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "评估任务ID"
+                },
+                "id": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "主键ID"
+                },
+                "indicatorCode": {
+                    "type": "string",
+                    "description": "评估指标标识"
+                },
+                "remark": {
+                    "type": "string",
+                    "description": "备注(描述)"
+                },
+                "tableCode": {
+                    "type": "string",
+                    "description": "表标识"
+                },
+                "updateBy": {
+                    "type": "string",
+                    "description": "修改者"
+                },
+                "updateTime": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "修改时间"
+                }
+            },
+            "title": "EvaluationData",
+            "description": "评估数据管理"
+        },
+        "FieldMappingChainSaveDTO": {
+            "type": "object",
+            "required": [
+                "mappingCode",
+                "nodes"
+            ],
+            "properties": {
+                "bizCode": {
+                    "type": "string",
+                    "example": "REQ-10001",
+                    "description": "ҵ�����"
+                },
+                "mappingCode": {
+                    "type": "string",
+                    "example": "MAP-20260407-001",
+                    "description": "ӳ����·����"
+                },
+                "nodes": {
+                    "type": "array",
+                    "description": "ӳ����·�ڵ��б���˳����",
+                    "items": {
+                        "$ref": "#/definitions/FieldMappingNodeDTO",
+                        "originalRef": "FieldMappingNodeDTO"
+                    }
+                }
+            },
+            "title": "FieldMappingChainSaveDTO",
+            "description": "�ֶ�ӳ����·��������"
+        },
+        "FieldMappingNodeDTO": {
+            "type": "object",
+            "required": [
+                "fieldName",
+                "tableName"
+            ],
+            "properties": {
+                "fieldName": {
+                    "type": "string",
+                    "example": "a1",
+                    "description": "�ֶ���"
+                },
+                "tableName": {
+                    "type": "string",
+                    "example": "A",
+                    "description": "����"
+                }
+            },
+            "title": "FieldMappingNodeDTO",
+            "description": "�ֶ�ӳ����·�ڵ�"
+        },
+        "IPage«InterfaceMonitorDTO»": {
+            "type": "object",
+            "properties": {
+                "current": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "pages": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "records": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/InterfaceMonitorDTO",
+                        "originalRef": "InterfaceMonitorDTO"
+                    }
+                },
+                "size": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "total": {
+                    "type": "integer",
+                    "format": "int64"
+                }
+            },
+            "title": "IPage«InterfaceMonitorDTO»"
+        },
+        "IndicatorNodeDTO": {
+            "type": "object",
+            "properties": {
+                "children": {
+                    "type": "array",
+                    "description": "子节点",
+                    "items": {
+                        "$ref": "#/definitions/IndicatorNodeDTO",
+                        "originalRef": "IndicatorNodeDTO"
+                    }
+                },
+                "id": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "节点ID"
+                },
+                "label": {
+                    "type": "string",
+                    "description": "节点名称"
+                }
+            },
+            "title": "IndicatorNodeDTO"
+        },
+        "IntegrationTaskDTO": {
+            "type": "object",
+            "required": [
+                "projectId",
+                "requirementCode",
+                "requirementName",
+                "taskName"
+            ],
+            "properties": {
+                "deadlineTime": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "截止时间"
+                },
+                "projectId": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "评估工程ID"
+                },
+                "requirementCode": {
+                    "type": "string",
+                    "description": "评估需求标识"
+                },
+                "requirementName": {
+                    "type": "string",
+                    "description": "评估需求名称"
+                },
+                "taskId": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "任务ID"
+                },
+                "taskName": {
+                    "type": "string",
+                    "description": "任务名称"
+                }
+            },
+            "title": "IntegrationTaskDTO",
+            "description": "任务保存/修改参数"
+        },
+        "InterfaceFieldMappingDTO": {
+            "type": "object",
+            "required": [
+                "sourceField",
+                "targetField"
+            ],
+            "properties": {
+                "sourceField": {
+                    "type": "string",
+                    "example": "a",
+                    "description": "源字段名"
+                },
+                "targetField": {
+                    "type": "string",
+                    "example": "plan_code",
+                    "description": "目标字段名"
+                }
+            },
+            "title": "InterfaceFieldMappingDTO",
+            "description": "接口字段映射DTO"
+        },
+        "InterfaceInfoDTO": {
+            "type": "object",
+            "required": [
+                "interfaceName"
+            ],
+            "properties": {
+                "connectConfig": {
+                    "type": "string",
+                    "description": "连接配置(JSON格式)"
+                },
+                "createTime": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "创建时间"
+                },
+                "creator": {
+                    "type": "string",
+                    "description": "创建人姓名"
+                },
+                "dataCategory": {
+                    "type": "string",
+                    "example": "结构化",
+                    "description": "引接数据类别"
+                },
+                "id": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "接口Id"
+                },
+                "importPeriod": {
+                    "type": "string",
+                    "example": "0 0/5 * * * ?",
+                    "description": "引接周期(Cron表达式)"
+                },
+                "interfaceName": {
+                    "type": "string",
+                    "example": "机房A环境数据库引接",
+                    "description": "接口名称"
+                },
+                "interfaceStatus": {
+                    "type": "integer",
+                    "format": "int32",
+                    "example": 1,
+                    "description": "接口状态"
+                },
+                "lastImportTime": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "最近一次成功引接时间"
+                },
+                "processStrategy": {
+                    "type": "string",
+                    "example": "OVERWRITE",
+                    "description": "处理方式"
+                },
+                "protocolType": {
+                    "type": "string",
+                    "example": "JDBC",
+                    "description": "协议配置类型"
+                },
+                "sourceSystem": {
+                    "type": "string",
+                    "example": "分中心",
+                    "description": "引接来源系统"
+                },
+                "tableFieldMappings": {
+                    "type": "array",
+                    "description": "字段映射关系",
+                    "items": {
+                        "$ref": "#/definitions/InterfaceFieldMappingDTO",
+                        "originalRef": "InterfaceFieldMappingDTO"
+                    }
+                },
+                "targetTable": {
+                    "type": "string",
+                    "description": "目标表名"
+                },
+                "totalImportCount": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "累计引接总条数"
+                },
+                "updateTime": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "更新时间"
+                }
+            },
+            "title": "InterfaceInfoDTO",
+            "description": "接口配置传输对象"
+        },
+        "InterfaceInfoQuery": {
+            "type": "object",
+            "properties": {
+                "dataCategory": {
+                    "type": "string",
+                    "description": "数据类别"
+                },
+                "endTime": {
+                    "type": "string",
+                    "example": "2026-03-31 23:59:59",
+                    "description": "搜索结束时间"
+                },
+                "id": {
+                    "type": "string",
+                    "description": "接口Id"
+                },
+                "interfaceName": {
+                    "type": "string",
+                    "description": "接口名称(模糊查询)"
+                },
+                "interfaceStatus": {
+                    "type": "integer",
+                    "format": "int32",
+                    "description": "接口状态"
+                },
+                "pageNum": {
+                    "type": "integer",
+                    "format": "int32",
+                    "description": "pageNum"
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "format": "int32",
+                    "description": "pageSize"
+                },
+                "sourceSystem": {
+                    "type": "string",
+                    "description": "数据来源系统"
+                },
+                "startTime": {
+                    "type": "string",
+                    "example": "2026-03-01 00:00:00",
+                    "description": "搜索开始时间"
+                }
+            },
+            "title": "InterfaceInfoQuery",
+            "description": "接口配置列表查询条件"
+        },
+        "InterfaceMonitorDTO": {
+            "type": "object",
+            "properties": {
+                "createTime": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "记录产生时间"
+                },
+                "failureCount": {
+                    "type": "integer",
+                    "format": "int64",
+                    "example": 2,
+                    "description": "本次失败条数"
+                },
+                "interfaceId": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "关联接口ID"
+                },
+                "interfaceName": {
+                    "type": "string",
+                    "description": "接口名称"
+                },
+                "monitorId": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "监控记录唯一标识"
+                },
+                "requestCount": {
+                    "type": "integer",
+                    "format": "int64",
+                    "example": 1000,
+                    "description": "本次采集总数"
+                },
+                "responseTime": {
+                    "type": "number",
+                    "format": "float",
+                    "example": 125.5,
+                    "description": "响应时长(ms)"
+                },
+                "status": {
+                    "type": "integer",
+                    "format": "int32",
+                    "description": "执行结果状态"
+                },
+                "successCount": {
+                    "type": "integer",
+                    "format": "int64",
+                    "example": 998,
+                    "description": "本次成功引接条数"
+                }
+            },
+            "title": "InterfaceMonitorDTO",
+            "description": "接口监控传输对象"
+        },
+        "InterfaceMonitorQuery": {
+            "type": "object",
+            "properties": {
+                "endTime": {
+                    "type": "string",
+                    "description": "统计结束时间"
+                },
+                "interfaceId": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "指定引接接口ID"
+                },
+                "pageNum": {
+                    "type": "integer",
+                    "format": "int32",
+                    "description": "pageNum"
+                },
+                "pageSize": {
+                    "type": "integer",
+                    "format": "int32",
+                    "description": "pageSize"
+                },
+                "startTime": {
+                    "type": "string",
+                    "description": "统计开始时间"
+                },
+                "status": {
+                    "type": "integer",
+                    "format": "int32",
+                    "description": "执行状态"
+                }
+            },
+            "title": "InterfaceMonitorQuery",
+            "description": "监控历史记录查询条件"
+        },
+        "InterfaceMonitor对象": {
+            "type": "object",
+            "required": [
+                "interfaceId"
+            ],
+            "properties": {
+                "createTime": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "任务执行开始时间"
+                },
+                "errorMsg": {
+                    "type": "string",
+                    "description": "错误信息摘要"
+                },
+                "failureCount": {
+                    "type": "integer",
+                    "format": "int64",
+                    "example": 2,
+                    "description": "本次失败条数"
+                },
+                "interfaceId": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "关联接口ID"
+                },
+                "monitorId": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "监控记录唯一标识"
+                },
+                "requestCount": {
+                    "type": "integer",
+                    "format": "int64",
+                    "example": 1000,
+                    "description": "本次请求/采集总数"
+                },
+                "responseTime": {
+                    "type": "number",
+                    "format": "float",
+                    "example": 125.5,
+                    "description": "响应时长(ms)"
+                },
+                "status": {
+                    "type": "integer",
+                    "format": "int32",
+                    "example": 1,
+                    "description": "执行结果状态"
+                },
+                "successCount": {
+                    "type": "integer",
+                    "format": "int64",
+                    "example": 998,
+                    "description": "本次成功引接条数"
+                }
+            },
+            "title": "InterfaceMonitor对象",
+            "description": "数据接口运行监控记录"
+        },
+        "R«IPage«InterfaceMonitorDTO»»": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "format": "int32"
+                },
+                "data": {
+                    "$ref": "#/definitions/IPage«InterfaceMonitorDTO»",
+                    "originalRef": "IPage«InterfaceMonitorDTO»"
+                },
+                "error": {
+                    "type": "boolean"
+                },
+                "msg": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            },
+            "title": "R«IPage«InterfaceMonitorDTO»»"
+        },
+        "R«List«InterfaceMonitor对象»»": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "format": "int32"
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/InterfaceMonitor对象",
+                        "originalRef": "InterfaceMonitor对象"
+                    }
+                },
+                "error": {
+                    "type": "boolean"
+                },
+                "msg": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            },
+            "title": "R«List«InterfaceMonitor对象»»"
+        },
+        "R«Map«string,object»»": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "format": "int32"
+                },
+                "data": {
+                    "type": "object"
+                },
+                "error": {
+                    "type": "boolean"
+                },
+                "msg": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            },
+            "title": "R«Map«string,object»»"
+        },
+        "R«boolean»": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "format": "int32"
+                },
+                "data": {
+                    "type": "boolean"
+                },
+                "error": {
+                    "type": "boolean"
+                },
+                "msg": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            },
+            "title": "R«boolean»"
+        },
+        "TableCreationRecord": {
+            "type": "object",
+            "required": [
+                "fieldName",
+                "sourceSystem",
+                "tableName"
+            ],
+            "properties": {
+                "createTime": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "创建时间"
+                },
+                "creator": {
+                    "type": "string",
+                    "description": "创建人",
+                    "minLength": 0,
+                    "maxLength": 64
+                },
+                "fieldComment": {
+                    "type": "string",
+                    "description": "字段注释",
+                    "minLength": 0,
+                    "maxLength": 255
+                },
+                "fieldName": {
+                    "type": "string",
+                    "description": "字段名称",
+                    "minLength": 0,
+                    "maxLength": 128
+                },
+                "fieldType": {
+                    "type": "string",
+                    "description": "字段类型",
+                    "minLength": 0,
+                    "maxLength": 32
+                },
+                "id": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "主键ID"
+                },
+                "sourceSystem": {
+                    "type": "string",
+                    "description": "来源系统",
+                    "minLength": 0,
+                    "maxLength": 64
+                },
+                "tableName": {
+                    "type": "string",
+                    "description": "表名称",
+                    "minLength": 0,
+                    "maxLength": 128
+                }
+            },
+            "title": "TableCreationRecord",
+            "description": "建表记录"
+        },
+        "TableDataInfo": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "format": "int32"
+                },
+                "msg": {
+                    "type": "string"
+                },
+                "rows": {
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    }
+                },
+                "total": {
+                    "type": "integer",
+                    "format": "int64"
+                }
+            },
+            "title": "TableDataInfo"
+        },
+        "评估需求表对象": {
+            "type": "object",
+            "properties": {
+                "completeness": {
+                    "type": "string",
+                    "description": "完备度"
+                },
+                "deadline": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "截至时间"
+                },
+                "designType": {
+                    "type": "integer",
+                    "format": "int32",
+                    "description": "设计类型 1独立设计 2协同设计"
+                },
+                "equipList": {
+                    "type": "array",
+                    "description": "待评zb",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "evaluationGoal": {
+                    "type": "array",
+                    "description": "评估目标",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "evaluationLevel": {
+                    "type": "integer",
+                    "format": "int32",
+                    "description": "评估级别   1 zb级  2 系统级  3 体系级  4 任务级"
+                },
+                "evaluationPurpose": {
+                    "type": "string",
+                    "description": "评估目的"
+                },
+                "evaluationType": {
+                    "type": "integer",
+                    "format": "int32",
+                    "description": "评估类型 1 zb效能 2 体系贡献率  3 能力成熟度  4 zz适用性"
+                },
+                "projectId": {
+                    "type": "integer",
+                    "format": "int32",
+                    "description": "对应工程id"
+                },
+                "projectName": {
+                    "type": "string",
+                    "description": "工程名称"
+                },
+                "requirementId": {
+                    "type": "integer",
+                    "format": "int32",
+                    "description": "需求ID"
+                },
+                "requirementName": {
+                    "type": "string",
+                    "description": "需求名称"
+                },
+                "status": {
+                    "type": "integer",
+                    "format": "int32",
+                    "description": "状态 1 草稿 2 已发布"
+                },
+                "supportEquip": {
+                    "type": "array",
+                    "description": "陪试zb",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "testType": {
+                    "type": "array",
+                    "description": "试验类型",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "treeData": {
+                    "description": "指标体系树形数据",
+                    "$ref": "#/definitions/IndicatorNodeDTO",
+                    "originalRef": "IndicatorNodeDTO"
+                }
+            },
+            "title": "评估需求表对象"
+        },
+        "采集表单批量下发参数": {
+            "type": "object",
+            "required": [
+                "ids"
+            ],
+            "properties": {
+                "ids": {
+                    "type": "array",
+                    "description": "采集表单主键ID列表",
+                    "items": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                }
+            },
+            "title": "采集表单批量下发参数"
+        }
+    }
+}

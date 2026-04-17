@@ -1,0 +1,4386 @@
+{
+  "indicatorSystem": {
+    "treeData": {
+      "label": "验证JB1801整星",
+      "id": "0",
+      "children": [
+        {
+          "label": "数管分系统",
+          "significance": "一般",
+          "children": [
+            {
+              "label": "总线",
+              "significance": "一般",
+              "children": [
+                {
+                  "label": "CAN总线A",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "复位次数",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMX283",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "系统不可用率",
+                              "id": 810,
+                              "children": [],
+                              "isOk": true,
+                              "score": 0,
+                              "significance": "一般",
+                              "effectionMethod": "sigmoid",
+                              "type": "效益性",
+                              "computeType": 1,
+                              "computeRule": {
+                                "data": "TMX283",
+                                "method": {
+                                  "node": [
+                                    {
+                                      "type": "start",
+                                      "value": "TMX283",
+                                      "id": "1_1686142568624"
+                                    },
+                                    {
+                                      "type": "algo",
+                                      "value": 313,
+                                      "id": "2_1686142569550",
+                                      "config": [
+                                        {
+                                          "name": "config",
+                                          "field": "",
+                                          "type": "",
+                                          "description": "",
+                                          "defaultValue": ""
+                                        }
+                                      ],
+                                      "url": "algs/character/systemLoss.zip",
+                                      "baseFlag": 0,
+                                      "algoType": "属性值计算方法",
+                                      "subtype": ""
+                                    },
+                                    {
+                                      "type": "result",
+                                      "value": "",
+                                      "id": "3_1686142572485"
+                                    }
+                                  ],
+                                  "lineList": [
+                                    {
+                                      "sourceId": "1_1686142568624",
+                                      "targetId": "2_1686142569550"
+                                    },
+                                    {
+                                      "sourceId": "2_1686142569550",
+                                      "targetId": "3_1686142572485"
+                                    }
+                                  ]
+                                }
+                              },
+                              "nocancha": 1,
+                              "exceptFlag": "0"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "中心控制模块",
+              "significance": "一般",
+              "children": [
+                {
+                  "label": "星务计算机处理器A机",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR043",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR043",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "BD/GPS模块",
+              "significance": "一般",
+              "children": [
+                {
+                  "label": "BD/GPS模块",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "电压",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMX057",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMX057",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "conductionAlgorithm": {
+            "name": "串联",
+            "k": 0.03,
+            "coef_k": "",
+            "workList": [
+              1,
+              1,
+              1
+            ],
+            "r": ""
+          },
+          "type": ""
+        },
+        {
+          "label": "姿控分系统",
+          "significance": "一般",
+          "children": [
+            {
+              "label": "姿态敏感器",
+              "significance": "一般",
+              "children": [
+                {
+                  "label": "星敏",
+                  "children": [
+                    {
+                      "label": "星敏A",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "电压",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "TMZ096",
+                              "significance": "一般",
+                              "children": [
+                                {
+                                  "label": "均值",
+                                  "significance": "一般",
+                                  "children": [],
+                                  "effectionMethod": "高斯",
+                                  "type": "区间效益型",
+                                  "computeRule": {
+                                    "data": "TMZ096",
+                                    "method": "均值"
+                                  },
+                                  "isOk": true,
+                                  "nocancha": 1
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "label": "温度",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "TMZ177",
+                              "significance": "一般",
+                              "children": [
+                                {
+                                  "label": "均值",
+                                  "significance": "一般",
+                                  "children": [],
+                                  "effectionMethod": "高斯",
+                                  "type": "区间效益型",
+                                  "computeRule": {
+                                    "data": "TMZ177",
+                                    "method": "均值"
+                                  },
+                                  "isOk": true,
+                                  "nocancha": 1
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "label": "星敏B",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "电压",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "TMZ097",
+                              "significance": "一般",
+                              "children": [
+                                {
+                                  "label": "均值",
+                                  "significance": "一般",
+                                  "children": [],
+                                  "effectionMethod": "高斯",
+                                  "type": "区间效益型",
+                                  "computeRule": {
+                                    "data": "TMZ097",
+                                    "method": "均值"
+                                  },
+                                  "isOk": true,
+                                  "nocancha": 1
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "label": "温度",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "TMZ194",
+                              "significance": "一般",
+                              "children": [
+                                {
+                                  "label": "均值",
+                                  "significance": "一般",
+                                  "children": [],
+                                  "effectionMethod": "高斯",
+                                  "type": "区间效益型",
+                                  "computeRule": {
+                                    "data": "TMZ194",
+                                    "method": "均值"
+                                  },
+                                  "isOk": true,
+                                  "nocancha": 1
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "significance": "一般",
+                  "conductionAlgorithm": {
+                    "name": "表决",
+                    "k": "",
+                    "coef_k": 0.03,
+                    "workList": [
+                      1,
+                      1
+                    ],
+                    "r": 1
+                  },
+                  "type": ""
+                },
+                {
+                  "label": "陀螺",
+                  "children": [
+                    {
+                      "label": "陀螺A",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "温度",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "TMZ098",
+                              "significance": "一般",
+                              "children": [
+                                {
+                                  "label": "均值",
+                                  "significance": "一般",
+                                  "children": [],
+                                  "effectionMethod": "高斯",
+                                  "type": "区间效益型",
+                                  "computeRule": {
+                                    "data": "TMZ098",
+                                    "method": "均值"
+                                  },
+                                  "isOk": true,
+                                  "nocancha": 1
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "label": "陀螺B",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "温度",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "TMZ099",
+                              "significance": "一般",
+                              "children": [
+                                {
+                                  "label": "均值",
+                                  "significance": "一般",
+                                  "children": [],
+                                  "effectionMethod": "高斯",
+                                  "type": "区间效益型",
+                                  "computeRule": {
+                                    "data": "TMZ099",
+                                    "method": "均值"
+                                  },
+                                  "isOk": true,
+                                  "nocancha": 1
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "significance": "一般",
+                  "conductionAlgorithm": {
+                    "name": "表决",
+                    "k": "",
+                    "coef_k": 0.03,
+                    "workList": [
+                      1,
+                      1
+                    ],
+                    "r": 1
+                  },
+                  "type": ""
+                }
+              ],
+              "conductionAlgorithm": {
+                "name": "串联",
+                "k": 0.01,
+                "coef_k": "",
+                "workList": [
+                  1,
+                  1
+                ],
+                "r": ""
+              },
+              "type": ""
+            },
+            {
+              "label": "姿态控制器",
+              "significance": "一般",
+              "children": [
+                {
+                  "label": "星务计算机A",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR043",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR043",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "执行机构",
+              "significance": "一般",
+              "children": [
+                {
+                  "label": "反作用轮A",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "电压",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMZ269",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMZ269",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "label": "电流",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMZ039",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMZ039",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMZ152",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMZ152",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "反作用轮B",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "电流",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMZ040",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMZ040",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "label": "电压",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMZ270",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMZ270",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMZ153",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMZ153",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "反作用轮C",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "电压",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMZ271",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMZ271",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMZ154",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMZ154",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "label": "电流",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMZ041",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMZ041",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "反作用轮D",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "电压",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMZ272",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMZ272",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMZ155",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMZ155",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "label": "电流",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMZ042",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMZ042",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "conductionAlgorithm": {
+                "name": "表决",
+                "k": "",
+                "coef_k": 0.03,
+                "workList": [
+                  1,
+                  1,
+                  1,
+                  1
+                ],
+                "r": 3
+              },
+              "type": ""
+            }
+          ],
+          "conductionAlgorithm": {
+            "name": "串联",
+            "k": 0.01,
+            "coef_k": "",
+            "workList": [
+              1,
+              1,
+              1
+            ],
+            "r": ""
+          },
+          "type": ""
+        },
+        {
+          "label": "推进分系统",
+          "significance": "一般",
+          "children": [
+            {
+              "label": "储箱",
+              "significance": "一般",
+              "children": [
+                {
+                  "label": "贮箱",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "压力",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMZ213",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMZ213",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR054",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR054",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "管路",
+              "significance": "一般",
+              "children": [
+                {
+                  "label": "自锁阀1",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR062",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR062",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "自锁阀2",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR062",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR062",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "推力器",
+              "significance": "一般",
+              "children": [
+                {
+                  "label": "推力器A1",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR055",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR055",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "推力器A2",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR056",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR056",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "推力器B1",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR057",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR057",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "推力器B2",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR058",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR058",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "conductionAlgorithm": {
+                "name": "串联",
+                "k": 0.0001,
+                "coef_k": "",
+                "workList": [
+                  1,
+                  1,
+                  1,
+                  1
+                ],
+                "r": ""
+              },
+              "type": ""
+            }
+          ],
+          "conductionAlgorithm": {
+            "name": "串联",
+            "k": 0.0001,
+            "coef_k": "",
+            "workList": [
+              1,
+              1,
+              1
+            ],
+            "r": ""
+          },
+          "type": ""
+        },
+        {
+          "label": "测控分系统",
+          "id": "0",
+          "children": [
+            {
+              "label": "上行",
+              "significance": "一般",
+              "children": [
+                {
+                  "label": "扩频应答机/测控固放",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "应答机A接收机",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "温度",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "TMC018",
+                              "significance": "一般",
+                              "children": [
+                                {
+                                  "label": "均值",
+                                  "significance": "一般",
+                                  "children": [],
+                                  "effectionMethod": "高斯",
+                                  "type": "区间效益型",
+                                  "computeRule": {
+                                    "data": "TMC018",
+                                    "method": "均值"
+                                  },
+                                  "isOk": true,
+                                  "nocancha": 1
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "label": "电平",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "TMC012",
+                              "significance": "一般",
+                              "children": [
+                                {
+                                  "label": "均值",
+                                  "significance": "一般",
+                                  "children": [],
+                                  "effectionMethod": "高斯",
+                                  "type": "区间效益型",
+                                  "computeRule": {
+                                    "data": "TMC012",
+                                    "method": "均值"
+                                  },
+                                  "isOk": true,
+                                  "nocancha": 1
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "下行",
+              "significance": "一般",
+              "children": [
+                {
+                  "label": "微波网络",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "中继固放",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "温度",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "TMC020",
+                              "significance": "一般",
+                              "children": [
+                                {
+                                  "label": "均值",
+                                  "significance": "一般",
+                                  "children": [],
+                                  "effectionMethod": "高斯",
+                                  "type": "区间效益型",
+                                  "computeRule": {
+                                    "data": "TMC020",
+                                    "method": "均值"
+                                  },
+                                  "isOk": true,
+                                  "nocancha": 1
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "label": "电流",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "TMC017",
+                              "significance": "一般",
+                              "children": [
+                                {
+                                  "label": "均值",
+                                  "significance": "一般",
+                                  "children": [],
+                                  "effectionMethod": "高斯",
+                                  "type": "区间效益型",
+                                  "computeRule": {
+                                    "data": "TMC017",
+                                    "method": "均值"
+                                  },
+                                  "isOk": true,
+                                  "nocancha": 1
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "label": "功率",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "TMC016",
+                              "significance": "一般",
+                              "children": [
+                                {
+                                  "label": "均值",
+                                  "significance": "一般",
+                                  "children": [],
+                                  "effectionMethod": "高斯",
+                                  "type": "区间效益型",
+                                  "computeRule": {
+                                    "data": "TMC016",
+                                    "method": "均值"
+                                  },
+                                  "isOk": true,
+                                  "nocancha": 1
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "扩频应答机/测控固放",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "应答机A发射机",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "功率",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "TMC006",
+                              "significance": "一般",
+                              "children": [
+                                {
+                                  "label": "均值",
+                                  "significance": "一般",
+                                  "children": [],
+                                  "effectionMethod": "高斯",
+                                  "type": "区间效益型",
+                                  "computeRule": {
+                                    "data": "TMC006",
+                                    "method": "均值"
+                                  },
+                                  "isOk": true,
+                                  "nocancha": 1
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "label": "温度",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "TMC018",
+                              "significance": "一般",
+                              "children": [
+                                {
+                                  "label": "均值",
+                                  "significance": "一般",
+                                  "children": [],
+                                  "effectionMethod": "高斯",
+                                  "type": "区间效益型",
+                                  "computeRule": {
+                                    "data": "TMC018",
+                                    "method": "均值"
+                                  },
+                                  "isOk": true,
+                                  "nocancha": 1
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "conductionAlgorithm": {
+                "name": "串联",
+                "k": 0.05,
+                "coef_k": "",
+                "workList": [
+                  1,
+                  1
+                ],
+                "r": ""
+              },
+              "type": ""
+            }
+          ],
+          "significance": "一般",
+          "conductionAlgorithm": {
+            "name": "串联",
+            "k": 0.05,
+            "coef_k": "",
+            "workList": [
+              1,
+              1
+            ],
+            "r": ""
+          },
+          "type": ""
+        },
+        {
+          "label": "热控分系统",
+          "significance": "一般",
+          "children": [
+            {
+              "label": "热控分系统",
+              "significance": "一般",
+              "children": [
+                {
+                  "label": "载荷舱1",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR031",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR031",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "载荷舱2",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR032",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR032",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "载荷舱3",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR027",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR027",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "载荷舱4",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR036",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR036",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "载荷舱5",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR030",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR030",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "平台舱9",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMN027",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMN027",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "平台舱10",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMN028",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMN028",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "平台舱11",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMN029",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMN029",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "平台舱12",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR041",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR041",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "平台舱13",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR046",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR046",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "平台舱14",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR069",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR069",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "平台舱15",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR050",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR050",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "平台舱16",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR052",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR052",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "平台舱17",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR063",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR063",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "平台舱18",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR064",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR064",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "平台舱19",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR055",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR055",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "平台舱20",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR056",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR056",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "平台舱21",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR057",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR057",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "平台舱22",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR058",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR058",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "平台舱23",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR054",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR054",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "index": "",
+              "conductionAlgorithm": {
+                "name": "并联",
+                "k": "",
+                "coef_k": "",
+                "workList": [
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1
+                ],
+                "r": "",
+                "config": []
+              },
+              "WeightAssignAlgorithm": 136,
+              "weightAssignAlgorithmParamsJson": {
+                "data": [
+                  {
+                    "name": "data",
+                    "type": "",
+                    "description": ""
+                  }
+                ],
+                "config": []
+              }
+            }
+          ]
+        },
+        {
+          "label": "能源分系统",
+          "significance": "一般",
+          "children": [
+            {
+              "label": "发电模块",
+              "significance": "一般",
+              "children": [
+                {
+                  "label": "太阳电池阵+Y翼",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMN030",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMN030",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "储能模块",
+              "significance": "一般",
+              "children": [
+                {
+                  "label": "锂离子蓄电池组",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMN027",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMN027",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "label": "电压",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMN014",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMN014",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "控制模块",
+              "significance": "一般",
+              "children": [
+                {
+                  "label": "电源控制器",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "充放电电流",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMN017",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMN017",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "conductionAlgorithm": {
+            "name": "串联",
+            "k": 0.01,
+            "coef_k": "",
+            "workList": [
+              1,
+              1,
+              1
+            ],
+            "r": ""
+          },
+          "type": ""
+        }
+      ],
+      "significance": "一般",
+      "conductionAlgorithm": {
+        "name": "并联",
+        "k": 0,
+        "coef_k": "",
+        "workList": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "r": ""
+      },
+      "type": "",
+      "isOk": false
+    }
+  },
+  "indicatorSystemWeight": {
+    "treeData": {
+      "label": "验证JB1801整星",
+      "id": "0",
+      "children": [
+        {
+          "label": "数管分系统",
+          "significance": "一般",
+          "children": [
+            {
+              "label": "总线",
+              "significance": "一般",
+              "children": [
+                {
+                  "label": "CAN总线A",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "复位次数",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMX283",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "系统不可用率",
+                              "id": 810,
+                              "children": [],
+                              "isOk": true,
+                              "score": 0,
+                              "significance": "一般",
+                              "effectionMethod": "sigmoid",
+                              "type": "效益性",
+                              "computeType": 1,
+                              "computeRule": {
+                                "data": "TMX283",
+                                "method": {
+                                  "node": [
+                                    {
+                                      "type": "start",
+                                      "value": "TMX283",
+                                      "id": "1_1686142568624"
+                                    },
+                                    {
+                                      "type": "algo",
+                                      "value": 313,
+                                      "id": "2_1686142569550",
+                                      "config": [
+                                        {
+                                          "name": "config",
+                                          "field": "",
+                                          "type": "",
+                                          "description": "",
+                                          "defaultValue": ""
+                                        }
+                                      ],
+                                      "url": "algs/character/systemLoss.zip",
+                                      "baseFlag": 0,
+                                      "algoType": "属性值计算方法",
+                                      "subtype": ""
+                                    },
+                                    {
+                                      "type": "result",
+                                      "value": "",
+                                      "id": "3_1686142572485"
+                                    }
+                                  ],
+                                  "lineList": [
+                                    {
+                                      "sourceId": "1_1686142568624",
+                                      "targetId": "2_1686142569550"
+                                    },
+                                    {
+                                      "sourceId": "2_1686142569550",
+                                      "targetId": "3_1686142572485"
+                                    }
+                                  ]
+                                }
+                              },
+                              "nocancha": 1,
+                              "exceptFlag": "0"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "中心控制模块",
+              "significance": "一般",
+              "children": [
+                {
+                  "label": "星务计算机处理器A机",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR043",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR043",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "BD/GPS模块",
+              "significance": "一般",
+              "children": [
+                {
+                  "label": "BD/GPS模块",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "电压",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMX057",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMX057",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "conductionAlgorithm": {
+            "name": "串联",
+            "k": 0.03,
+            "coef_k": "",
+            "workList": [
+              1,
+              1,
+              1
+            ],
+            "r": ""
+          },
+          "type": ""
+        },
+        {
+          "label": "姿控分系统",
+          "significance": "一般",
+          "children": [
+            {
+              "label": "姿态敏感器",
+              "significance": "一般",
+              "children": [
+                {
+                  "label": "星敏",
+                  "children": [
+                    {
+                      "label": "星敏A",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "电压",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "TMZ096",
+                              "significance": "一般",
+                              "children": [
+                                {
+                                  "label": "均值",
+                                  "significance": "一般",
+                                  "children": [],
+                                  "effectionMethod": "高斯",
+                                  "type": "区间效益型",
+                                  "computeRule": {
+                                    "data": "TMZ096",
+                                    "method": "均值"
+                                  },
+                                  "isOk": true,
+                                  "nocancha": 1
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "label": "温度",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "TMZ177",
+                              "significance": "一般",
+                              "children": [
+                                {
+                                  "label": "均值",
+                                  "significance": "一般",
+                                  "children": [],
+                                  "effectionMethod": "高斯",
+                                  "type": "区间效益型",
+                                  "computeRule": {
+                                    "data": "TMZ177",
+                                    "method": "均值"
+                                  },
+                                  "isOk": true,
+                                  "nocancha": 1
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "label": "星敏B",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "电压",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "TMZ097",
+                              "significance": "一般",
+                              "children": [
+                                {
+                                  "label": "均值",
+                                  "significance": "一般",
+                                  "children": [],
+                                  "effectionMethod": "高斯",
+                                  "type": "区间效益型",
+                                  "computeRule": {
+                                    "data": "TMZ097",
+                                    "method": "均值"
+                                  },
+                                  "isOk": true,
+                                  "nocancha": 1
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "label": "温度",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "TMZ194",
+                              "significance": "一般",
+                              "children": [
+                                {
+                                  "label": "均值",
+                                  "significance": "一般",
+                                  "children": [],
+                                  "effectionMethod": "高斯",
+                                  "type": "区间效益型",
+                                  "computeRule": {
+                                    "data": "TMZ194",
+                                    "method": "均值"
+                                  },
+                                  "isOk": true,
+                                  "nocancha": 1
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "significance": "一般",
+                  "conductionAlgorithm": {
+                    "name": "表决",
+                    "k": "",
+                    "coef_k": 0.03,
+                    "workList": [
+                      1,
+                      1
+                    ],
+                    "r": 1
+                  },
+                  "type": ""
+                },
+                {
+                  "label": "陀螺",
+                  "children": [
+                    {
+                      "label": "陀螺A",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "温度",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "TMZ098",
+                              "significance": "一般",
+                              "children": [
+                                {
+                                  "label": "均值",
+                                  "significance": "一般",
+                                  "children": [],
+                                  "effectionMethod": "高斯",
+                                  "type": "区间效益型",
+                                  "computeRule": {
+                                    "data": "TMZ098",
+                                    "method": "均值"
+                                  },
+                                  "isOk": true,
+                                  "nocancha": 1
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "label": "陀螺B",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "温度",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "TMZ099",
+                              "significance": "一般",
+                              "children": [
+                                {
+                                  "label": "均值",
+                                  "significance": "一般",
+                                  "children": [],
+                                  "effectionMethod": "高斯",
+                                  "type": "区间效益型",
+                                  "computeRule": {
+                                    "data": "TMZ099",
+                                    "method": "均值"
+                                  },
+                                  "isOk": true,
+                                  "nocancha": 1
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "significance": "一般",
+                  "conductionAlgorithm": {
+                    "name": "表决",
+                    "k": "",
+                    "coef_k": 0.03,
+                    "workList": [
+                      1,
+                      1
+                    ],
+                    "r": 1
+                  },
+                  "type": ""
+                }
+              ],
+              "conductionAlgorithm": {
+                "name": "串联",
+                "k": 0.01,
+                "coef_k": "",
+                "workList": [
+                  1,
+                  1
+                ],
+                "r": ""
+              },
+              "type": ""
+            },
+            {
+              "label": "姿态控制器",
+              "significance": "一般",
+              "children": [
+                {
+                  "label": "星务计算机A",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR043",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR043",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "执行机构",
+              "significance": "一般",
+              "children": [
+                {
+                  "label": "反作用轮A",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "电压",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMZ269",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMZ269",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "label": "电流",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMZ039",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMZ039",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMZ152",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMZ152",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "反作用轮B",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "电流",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMZ040",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMZ040",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "label": "电压",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMZ270",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMZ270",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMZ153",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMZ153",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "反作用轮C",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "电压",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMZ271",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMZ271",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMZ154",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMZ154",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "label": "电流",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMZ041",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMZ041",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "反作用轮D",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "电压",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMZ272",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMZ272",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMZ155",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMZ155",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "label": "电流",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMZ042",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMZ042",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "conductionAlgorithm": {
+                "name": "表决",
+                "k": "",
+                "coef_k": 0.03,
+                "workList": [
+                  1,
+                  1,
+                  1,
+                  1
+                ],
+                "r": 3
+              },
+              "type": ""
+            }
+          ],
+          "conductionAlgorithm": {
+            "name": "串联",
+            "k": 0.01,
+            "coef_k": "",
+            "workList": [
+              1,
+              1,
+              1
+            ],
+            "r": ""
+          },
+          "type": ""
+        },
+        {
+          "label": "推进分系统",
+          "significance": "一般",
+          "children": [
+            {
+              "label": "储箱",
+              "significance": "一般",
+              "children": [
+                {
+                  "label": "贮箱",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "压力",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMZ213",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMZ213",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR054",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR054",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "管路",
+              "significance": "一般",
+              "children": [
+                {
+                  "label": "自锁阀1",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR062",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR062",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "自锁阀2",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR062",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR062",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "推力器",
+              "significance": "一般",
+              "children": [
+                {
+                  "label": "推力器A1",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR055",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR055",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "推力器A2",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR056",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR056",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "推力器B1",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR057",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR057",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "推力器B2",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR058",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR058",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "conductionAlgorithm": {
+                "name": "串联",
+                "k": 0.0001,
+                "coef_k": "",
+                "workList": [
+                  1,
+                  1,
+                  1,
+                  1
+                ],
+                "r": ""
+              },
+              "type": ""
+            }
+          ],
+          "conductionAlgorithm": {
+            "name": "串联",
+            "k": 0.0001,
+            "coef_k": "",
+            "workList": [
+              1,
+              1,
+              1
+            ],
+            "r": ""
+          },
+          "type": ""
+        },
+        {
+          "label": "测控分系统",
+          "id": "0",
+          "children": [
+            {
+              "label": "上行",
+              "significance": "一般",
+              "children": [
+                {
+                  "label": "扩频应答机/测控固放",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "应答机A接收机",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "温度",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "TMC018",
+                              "significance": "一般",
+                              "children": [
+                                {
+                                  "label": "均值",
+                                  "significance": "一般",
+                                  "children": [],
+                                  "effectionMethod": "高斯",
+                                  "type": "区间效益型",
+                                  "computeRule": {
+                                    "data": "TMC018",
+                                    "method": "均值"
+                                  },
+                                  "isOk": true,
+                                  "nocancha": 1
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "label": "电平",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "TMC012",
+                              "significance": "一般",
+                              "children": [
+                                {
+                                  "label": "均值",
+                                  "significance": "一般",
+                                  "children": [],
+                                  "effectionMethod": "高斯",
+                                  "type": "区间效益型",
+                                  "computeRule": {
+                                    "data": "TMC012",
+                                    "method": "均值"
+                                  },
+                                  "isOk": true,
+                                  "nocancha": 1
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "下行",
+              "significance": "一般",
+              "children": [
+                {
+                  "label": "微波网络",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "中继固放",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "温度",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "TMC020",
+                              "significance": "一般",
+                              "children": [
+                                {
+                                  "label": "均值",
+                                  "significance": "一般",
+                                  "children": [],
+                                  "effectionMethod": "高斯",
+                                  "type": "区间效益型",
+                                  "computeRule": {
+                                    "data": "TMC020",
+                                    "method": "均值"
+                                  },
+                                  "isOk": true,
+                                  "nocancha": 1
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "label": "电流",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "TMC017",
+                              "significance": "一般",
+                              "children": [
+                                {
+                                  "label": "均值",
+                                  "significance": "一般",
+                                  "children": [],
+                                  "effectionMethod": "高斯",
+                                  "type": "区间效益型",
+                                  "computeRule": {
+                                    "data": "TMC017",
+                                    "method": "均值"
+                                  },
+                                  "isOk": true,
+                                  "nocancha": 1
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "label": "功率",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "TMC016",
+                              "significance": "一般",
+                              "children": [
+                                {
+                                  "label": "均值",
+                                  "significance": "一般",
+                                  "children": [],
+                                  "effectionMethod": "高斯",
+                                  "type": "区间效益型",
+                                  "computeRule": {
+                                    "data": "TMC016",
+                                    "method": "均值"
+                                  },
+                                  "isOk": true,
+                                  "nocancha": 1
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "扩频应答机/测控固放",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "应答机A发射机",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "功率",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "TMC006",
+                              "significance": "一般",
+                              "children": [
+                                {
+                                  "label": "均值",
+                                  "significance": "一般",
+                                  "children": [],
+                                  "effectionMethod": "高斯",
+                                  "type": "区间效益型",
+                                  "computeRule": {
+                                    "data": "TMC006",
+                                    "method": "均值"
+                                  },
+                                  "isOk": true,
+                                  "nocancha": 1
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "label": "温度",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "TMC018",
+                              "significance": "一般",
+                              "children": [
+                                {
+                                  "label": "均值",
+                                  "significance": "一般",
+                                  "children": [],
+                                  "effectionMethod": "高斯",
+                                  "type": "区间效益型",
+                                  "computeRule": {
+                                    "data": "TMC018",
+                                    "method": "均值"
+                                  },
+                                  "isOk": true,
+                                  "nocancha": 1
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "conductionAlgorithm": {
+                "name": "串联",
+                "k": 0.05,
+                "coef_k": "",
+                "workList": [
+                  1,
+                  1
+                ],
+                "r": ""
+              },
+              "type": ""
+            }
+          ],
+          "significance": "一般",
+          "conductionAlgorithm": {
+            "name": "串联",
+            "k": 0.05,
+            "coef_k": "",
+            "workList": [
+              1,
+              1
+            ],
+            "r": ""
+          },
+          "type": ""
+        },
+        {
+          "label": "热控分系统",
+          "significance": "一般",
+          "children": [
+            {
+              "label": "热控分系统",
+              "significance": "一般",
+              "children": [
+                {
+                  "label": "载荷舱1",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR031",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR031",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "载荷舱2",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR032",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR032",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "载荷舱3",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR027",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR027",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "载荷舱4",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR036",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR036",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "载荷舱5",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR030",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR030",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "平台舱9",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMN027",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMN027",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "平台舱10",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMN028",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMN028",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "平台舱11",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMN029",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMN029",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "平台舱12",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR041",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR041",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "平台舱13",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR046",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR046",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "平台舱14",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR069",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR069",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "平台舱15",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR050",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR050",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "平台舱16",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR052",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR052",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "平台舱17",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR063",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR063",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "平台舱18",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR064",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR064",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "平台舱19",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR055",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR055",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "平台舱20",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR056",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR056",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "平台舱21",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR057",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR057",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "平台舱22",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR058",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR058",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "平台舱23",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMR054",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMR054",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "index": "",
+              "conductionAlgorithm": {
+                "name": "并联",
+                "k": "",
+                "coef_k": "",
+                "workList": [
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1
+                ],
+                "r": "",
+                "config": []
+              },
+              "WeightAssignAlgorithm": 136,
+              "weightAssignAlgorithmParamsJson": {
+                "data": [
+                  {
+                    "name": "data",
+                    "type": "",
+                    "description": ""
+                  }
+                ],
+                "config": []
+              }
+            }
+          ]
+        },
+        {
+          "label": "能源分系统",
+          "significance": "一般",
+          "children": [
+            {
+              "label": "发电模块",
+              "significance": "一般",
+              "children": [
+                {
+                  "label": "太阳电池阵+Y翼",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMN030",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMN030",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "储能模块",
+              "significance": "一般",
+              "children": [
+                {
+                  "label": "锂离子蓄电池组",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "温度",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMN027",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMN027",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "label": "电压",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMN014",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMN014",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "控制模块",
+              "significance": "一般",
+              "children": [
+                {
+                  "label": "电源控制器",
+                  "significance": "一般",
+                  "children": [
+                    {
+                      "label": "充放电电流",
+                      "significance": "一般",
+                      "children": [
+                        {
+                          "label": "TMN017",
+                          "significance": "一般",
+                          "children": [
+                            {
+                              "label": "均值",
+                              "significance": "一般",
+                              "children": [],
+                              "effectionMethod": "高斯",
+                              "type": "区间效益型",
+                              "computeRule": {
+                                "data": "TMN017",
+                                "method": "均值"
+                              },
+                              "isOk": true,
+                              "nocancha": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "conductionAlgorithm": {
+            "name": "串联",
+            "k": 0.01,
+            "coef_k": "",
+            "workList": [
+              1,
+              1,
+              1
+            ],
+            "r": ""
+          },
+          "type": ""
+        }
+      ],
+      "significance": "一般",
+      "conductionAlgorithm": {
+        "name": "并联",
+        "k": 0,
+        "coef_k": "",
+        "workList": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "r": ""
+      },
+      "type": "",
+      "isOk": false
+    }
+  }
+}

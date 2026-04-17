@@ -1,0 +1,30 @@
+
+/** 将全局赋权/传导配置同步到所有非叶子节点 */
+function syncGlobalAlgoToAllNodes(nodes) {
+  for (const node of nodes || []) {
+    const isLeaf = !node.children || node.children.length === 0
+    if (!isLeaf) {
+      // 非叶子节点：同步全局赋权算法（如果全局已配置）
+      if (form.weightAssignAlgorithm) {
+        node.weightAssignAlgorithm = form.weightAssignAlgorithm
+      }
+      // 非叶子节点：同步全局传导算法（如果全局已配置）
+      if (form.conductionAlgorithm) {
+        node.conductionAlgorithm = form.conductionAlgorithm
+      }
+      // 递归处理子节点
+      if (node.children?.length) {
+        syncGlobalAlgoToAllNodes(node.children)
+      }
+    }
+  }
+}
+
+/** 保存全局配置并同步到所有节点 */
+function saveGlobalAlgoAndSyncToNodes() {
+  // 同步全局配置到所有节点
+  syncGlobalAlgoToAllNodes(treeData.value)
+  // 关闭对话框
+  globalAlgoDialogVisible.value = false
+  ElMessage.success('全局配置已同步到所有节点')
+}

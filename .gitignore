@@ -4,6 +4,8 @@
 .history/
 
 **/target/
+**/node_modules/
+**/dist/
 **/logs/
 **/*.log
 **/*.iml

@@ -1,0 +1,293 @@
+@use 'variables' as *;
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+  background-color: $bg-color;
+  color: $text-color-primary;
+  overflow: hidden;
+}
+
+#app {
+  height: 100%;
+}
+
+// Element Plus Overrides for Tech Theme
+:root {
+  --el-color-primary: #{$primary-color};
+  --el-color-success: #{$success-color};
+  --el-color-warning: #{$warning-color};
+  --el-color-danger: #{$danger-color};
+  --el-color-info: #{$info-color};
+  --el-bg-color: #{$bg-color};
+  --el-text-color-primary: #{$text-color-primary};
+  --el-text-color-regular: #{$text-color-secondary};
+  --el-border-color: #{$border-color};
+  --el-border-color-light: #{$border-color};
+  --el-fill-color-blank: transparent;
+  --el-color-success-light-9: rgba(240, 249, 235, 0.6);
+}
+
+.el-button {
+  background: rgba(0, 242, 255, 0.1);
+  border: 1px solid $primary-color;
+  color: $primary-color;
+  box-shadow: 0 0 5px rgba(0, 242, 255, 0.2);
+  transition: all 0.3s;
+
+  &:hover,
+  &:focus {
+    background: rgba(0, 242, 255, 0.2);
+    box-shadow: 0 0 15px rgba(0, 242, 255, 0.4);
+    color: #fff;
+    border-color: #fff;
+  }
+
+  &.el-button--primary {
+    background: linear-gradient(90deg, $primary-color 0%, darken($primary-color, 15%) 100%);
+    color: #ffffff;
+    font-weight: bold;
+    border: none; // Remove border to make gradient cleaner
+
+    &:hover,
+    &:focus {
+      background: linear-gradient(90deg, lighten($primary-color, 10%) 0%, $primary-color 100%);
+      box-shadow: 0 0 20px rgba(0, 242, 255, 0.6);
+      color: #fff;
+    }
+  }
+}
+
+.el-card {
+  background: $card-bg-color !important;
+  border: 1px solid $border-color !important;
+  color: $text-color-primary !important;
+  backdrop-filter: $backdrop-filter;
+  box-shadow: $box-shadow-base !important;
+
+  .el-card__header {
+    border-bottom: 1px solid $border-color;
+    font-weight: bold;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+}
+
+.el-table {
+  background-color: transparent !important;
+  --el-table-bg-color: transparent;
+  --el-table-tr-bg-color: transparent;
+  --el-table-header-bg-color: rgba(0, 242, 255, 0.1);
+  --el-table-row-hover-bg-color: rgba(0, 242, 255, 0.05);
+  --el-table-border-color: #{$border-color};
+  color: $text-color-primary;
+
+  th.el-table__cell {
+    background-color: rgba(0, 242, 255, 0.1) !important;
+    color: $primary-color;
+    font-weight: bold;
+    border-bottom: 1px solid $primary-color;
+  }
+
+  td.el-table__cell {
+    border-bottom: 1px solid $border-color;
+  }
+
+  // Fix header text color specifically if needed
+  .el-table__header-wrapper th {
+    color: $primary-color !important;
+  }
+
+  // Fix background for fixed columns to prevent transparent overlapping
+  .el-table-fixed-column--left,
+  .el-table-fixed-column--right,
+  .el-table__fixed-right,
+  .el-table__fixed-left {
+    background-color: $sider-bg-color !important;
+  }
+
+  th.el-table-fixed-column--left,
+  th.el-table-fixed-column--right,
+  th.el-table__fixed-right,
+  th.el-table__fixed-left {
+    background-color: #0c2538 !important; // Solid approximation of rgba(0, 242, 255, 0.1) over dark background
+  }
+
+  // Ensure solid hover color for fixed columns so they don't appear transparent
+  .el-table__row:hover>td,
+  .el-table__row:hover>td.el-table-fixed-column--right,
+  .el-table__row:hover>td.el-table-fixed-column--left,
+  .el-table__row:hover>td.el-table__fixed-right,
+  .el-table__row:hover>td.el-table__fixed-left {
+    background-color: #102e46 !important; // Solid representation of row hover color 
+  }
+}
+
+.el-table--striped .el-table__row--striped td.el-table__cell {
+  background: rgba(0, 242, 255, 0.03) !important;
+}
+
+.el-input__wrapper,
+.el-textarea__inner {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  box-shadow: 0 0 0 1px $border-color inset !important;
+  color: $text-color-primary !important;
+
+  &:hover,
+  &.is-focus {
+    box-shadow: 0 0 0 1px $primary-color inset !important;
+  }
+}
+
+// Scrollbar
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: $border-color;
+  border-radius: 4px;
+
+  &:hover {
+    background: $primary-color;
+  }
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+// 通用容器 - 兼容迁移的管理模块
+.app-container {
+  padding: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+// 通用工具类
+.mb8 { margin-bottom: 8px; }
+.mb12 { margin-bottom: 12px; }
+.mt8 { margin-top: 8px; }
+.mt12 { margin-top: 12px; }
+
+// 管理页面工具栏行
+.toolbar-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  .toolbar-btns {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+}
+
+// 表格操作列按钮组
+.table-ops {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+// 指标体系工作台弹窗布局
+.zhpg-indicator-tree-dialog {
+  .el-dialog__body {
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 120px);
+    overflow: hidden;
+  }
+  .zhpg-indicator-dialog-layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    height: 100%;
+  }
+  .zhpg-indicator-meta-sidebar {
+    width: 280px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--el-border-color);
+    display: flex;
+    flex-direction: column;
+  }
+  .zhpg-indicator-meta-scrollbar {
+    flex: 1;
+  }
+  .zhpg-indicator-meta-panel {
+    padding: 12px 16px;
+    &--stretch { min-height: 100%; }
+  }
+  .zhpg-indicator-meta-panel-header {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+  }
+  .zhpg-indicator-meta-form {
+    .el-form-item { margin-bottom: 14px; }
+    .el-form-item__label { font-size: 12px; }
+  }
+  .zhpg-sidebar-section-head {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--el-text-color-secondary);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin: 10px 0 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+  }
+  .zhpg-sidebar-form-item {
+    .el-form-item__content { flex-wrap: nowrap; }
+    &--tight { .el-form-item { margin-bottom: 10px; } }
+    &--desc { .el-form-item__content { align-items: flex-start; } }
+  }
+  .zhpg-sidebar-alert { margin-top: 8px; font-size: 12px; }
+  .zhpg-workmode-radio-group { flex-wrap: wrap; }
+  .zhpg-global-algo-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+  .zhpg-global-algo-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+  .zhpg-algo-tag { font-size: 11px; }
+  .zhpg-indicator-workbench-region {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 0 16px 0 16px;
+  }
+  .zhpg-indicator-workbench-region-title {
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 0 8px;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+    margin-bottom: 8px;
+  }
+}
+
+// 对比查看弹窗
+.compare-container {
+  display: flex;
+  gap: 20px;
+  min-height: 300px;
+  .compare-pane {
+    flex: 1;
+    border: 1px solid var(--el-border-color);
+    border-radius: 4px;
+    padding: 12px;
+  }
+  .compare-pane-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+  }
+}

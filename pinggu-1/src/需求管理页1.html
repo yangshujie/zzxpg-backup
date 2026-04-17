@@ -1,0 +1,1449 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>评估需求管理</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+    :root {
+      --bg: #0d1117;
+      --panel: #161b22;
+      --card: #1c2330;
+      --hover: #21262d;
+      --border: #30363d;
+      --border2: #2d3748;
+      --accent: #2f81f7;
+      --accent2: #3fb950;
+      --accent3: #d29922;
+      --accent4: #f85149;
+      --accent5: #bc8cff;
+      --text: #e6edf3;
+      --text2: #c9d1d9;
+      --dim: #7d8590;
+      --dim2: #586069;
+      --jam: #ff6b35;
+      --jam-bg: rgba(255, 107, 53, .10);
+      --jam-border: rgba(255, 107, 53, .28);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Noto Sans SC", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      font-size: 13px;
+    }
+
+    /* topbar */
+    .topbar {
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      padding: 0 20px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--dim);
+      cursor: pointer;
+    }
+
+    .logo:hover {
+      color: var(--text);
+    }
+
+    .logo-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--jam);
+      box-shadow: 0 0 7px var(--jam);
+    }
+
+    .tb-divider {
+      color: var(--border);
+      font-size: 16px;
+    }
+
+    .topbar-title {
+      font-size: 14px;
+      font-weight: 600;
+      flex: 1;
+    }
+
+    .tb-btn {
+      padding: 6px 13px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+      transition: .15s;
+      white-space: nowrap;
+    }
+
+    .tb-ghost {
+      background: transparent;
+      color: var(--dim);
+      border: 1px solid var(--border);
+    }
+
+    .tb-ghost:hover {
+      background: var(--hover);
+      color: var(--text);
+    }
+
+    .tb-accent {
+      background: rgba(47, 129, 247, .15);
+      color: var(--accent);
+      border: 1px solid rgba(47, 129, 247, .3);
+    }
+
+    .tb-accent:hover {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .tb-green {
+      background: rgba(63, 185, 80, .15);
+      color: var(--accent2);
+      border: 1px solid rgba(63, 185, 80, .3);
+    }
+
+    .tb-green:hover {
+      background: var(--accent2);
+      color: #0d1117;
+      font-weight: 700;
+    }
+
+    .tb-jam {
+      background: var(--jam-bg);
+      color: var(--jam);
+      border: 1px solid var(--jam-border);
+    }
+
+    .tb-jam:hover {
+      background: var(--jam);
+      color: #fff;
+    }
+
+    /* layout */
+    .body {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    .left-sidebar {
+      width: 200px;
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+      flex-shrink: 0;
+      padding: 16px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .sb-lbl {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--dim2);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 8px 8px 4px;
+    }
+
+    .sb-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--dim);
+      transition: .15s;
+      border: 1px solid transparent;
+    }
+
+    .sb-item:hover {
+      background: var(--hover);
+      color: var(--text);
+    }
+
+    .sb-item.active {
+      background: var(--jam-bg);
+      color: var(--jam);
+      border-color: var(--jam-border);
+    }
+
+    .sb-count {
+      margin-left: auto;
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 8px;
+      background: var(--hover);
+      color: var(--dim);
+    }
+
+    .sb-item.active .sb-count {
+      background: rgba(255, 107, 53, .2);
+      color: var(--jam);
+    }
+
+    /* main */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* filter bar */
+    .filter-bar {
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .search-box {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 5px 10px;
+      flex: 1;
+      max-width: 320px;
+    }
+
+    .search-box input {
+      border: none;
+      outline: none;
+      background: transparent;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 12px;
+      width: 100%;
+    }
+
+    .search-box input::placeholder {
+      color: var(--dim2);
+    }
+
+    .filter-tag {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      color: var(--dim);
+      transition: .12s;
+      white-space: nowrap;
+    }
+
+    .filter-tag:hover {
+      border-color: var(--dim);
+      color: var(--text);
+    }
+
+    .filter-tag.on {
+      background: var(--jam-bg);
+      border-color: var(--jam-border);
+      color: var(--jam);
+    }
+
+    .filter-tag.on-b {
+      background: rgba(47, 129, 247, .1);
+      border-color: rgba(47, 129, 247, .3);
+      color: var(--accent);
+    }
+
+    .filter-tag.on-g {
+      background: rgba(63, 185, 80, .1);
+      border-color: rgba(63, 185, 80, .3);
+      color: var(--accent2);
+    }
+
+    .sort-select {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--dim);
+      font-family: inherit;
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      outline: none;
+      cursor: pointer;
+      margin-left: auto;
+    }
+
+    /* list */
+    .req-list {
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* req card */
+    .req-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: stretch;
+      gap: 14px;
+      transition: .15s;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .req-card:hover {
+      border-color: var(--border2);
+      background: #1e2534;
+    }
+
+    .req-card.selected {
+      border-color: var(--jam-border);
+      background: rgba(255, 107, 53, .04);
+    }
+
+    .req-card-left {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      width: 36px;
+      flex-shrink: 0;
+    }
+
+    .rc-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      flex-shrink: 0;
+    }
+
+    .rc-status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+    }
+
+    .req-card-body {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .rc-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+      flex-wrap: wrap;
+    }
+
+    .rc-title {
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .rc-badge {
+      font-size: 10px;
+      padding: 1px 7px;
+      border-radius: 3px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .b-draft {
+      background: rgba(210, 153, 34, .12);
+      color: var(--accent3);
+      border: 1px solid rgba(210, 153, 34, .25);
+    }
+
+    .b-review {
+      background: rgba(47, 129, 247, .12);
+      color: var(--accent);
+      border: 1px solid rgba(47, 129, 247, .25);
+    }
+
+    .b-pub {
+      background: rgba(63, 185, 80, .12);
+      color: var(--accent2);
+      border: 1px solid rgba(63, 185, 80, .25);
+    }
+
+    .b-jam {
+      background: var(--jam-bg);
+      color: var(--jam);
+      border: 1px solid var(--jam-border);
+    }
+
+    .b-purple {
+      background: rgba(188, 140, 255, .1);
+      color: var(--accent5);
+      border: 1px solid rgba(188, 140, 255, .28);
+    }
+
+    .rc-meta {
+      display: flex;
+      gap: 14px;
+      font-size: 11px;
+      color: var(--dim);
+      flex-wrap: wrap;
+    }
+
+    .rc-desc {
+      font-size: 11.5px;
+      color: var(--dim);
+      line-height: 1.6;
+      margin-top: 5px;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;
+    }
+
+    .rc-progress {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-top: 8px;
+    }
+
+    .rcp-bar {
+      flex: 1;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+      max-width: 180px;
+    }
+
+    .rcp-fill {
+      height: 100%;
+      border-radius: 2px;
+    }
+
+    .rcp-label {
+      font-size: 10.5px;
+      color: var(--dim);
+    }
+
+    .req-card-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      justify-content: space-between;
+      flex-shrink: 0;
+      gap: 8px;
+    }
+
+    .rc-date {
+      font-size: 10.5px;
+      color: var(--dim2);
+      font-family: "JetBrains Mono", monospace;
+    }
+
+    .rc-actions {
+      display: flex;
+      gap: 5px;
+    }
+
+    .rc-act {
+      padding: 4px 10px;
+      border-radius: 5px;
+      font-size: 11px;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--dim);
+      font-family: inherit;
+      transition: .12s;
+      white-space: nowrap;
+    }
+
+    .rc-act:hover {
+      background: var(--hover);
+      color: var(--text);
+    }
+
+    .rc-act.primary {
+      background: var(--jam-bg);
+      border-color: var(--jam-border);
+      color: var(--jam);
+    }
+
+    .rc-act.primary:hover {
+      background: var(--jam);
+      color: #fff;
+    }
+
+    .rc-act.blue {
+      background: rgba(47, 129, 247, .1);
+      border-color: rgba(47, 129, 247, .28);
+      color: var(--accent);
+    }
+
+    .rc-act.blue:hover {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    /* empty state */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 60px 20px;
+      color: var(--dim);
+    }
+
+    .empty-icon {
+      font-size: 36px;
+      opacity: .4;
+    }
+
+    .empty-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--dim);
+    }
+
+    .empty-sub {
+      font-size: 12px;
+      text-align: center;
+      line-height: 1.7;
+    }
+
+    /* ── modal overlay ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .72);
+      backdrop-filter: blur(5px);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--panel);
+      border: 1px solid var(--border2);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, .6);
+    }
+
+    /* new req modal */
+    .modal-new {
+      width: min(600px, 90vw);
+    }
+
+    .modal-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .modal-title {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--dim);
+      font-size: 20px;
+      cursor: pointer;
+      padding: 2px 8px;
+      border-radius: 4px;
+      transition: .12s;
+    }
+
+    .modal-close:hover {
+      background: var(--hover);
+      color: var(--text);
+    }
+
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .modal-footer {
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    /* creation options */
+    .create-opts {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .create-opt {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 16px;
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: .15s;
+    }
+
+    .create-opt:hover {
+      border-color: var(--dim);
+      background: #1e2534;
+    }
+
+    .create-opt.selected {
+      border-color: var(--jam);
+      background: var(--jam-bg);
+    }
+
+    .co-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .co-title {
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .co-desc {
+      font-size: 11.5px;
+      color: var(--dim);
+      line-height: 1.65;
+    }
+
+    /* import modal */
+    .modal-import {
+      width: min(680px, 90vw);
+      max-height: 80vh;
+    }
+
+    .file-drop {
+      border: 2px dashed var(--border2);
+      border-radius: 10px;
+      padding: 30px;
+      text-align: center;
+      cursor: pointer;
+      transition: .15s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .file-drop:hover {
+      border-color: var(--jam);
+      background: var(--jam-bg);
+    }
+
+    .file-drop-icon {
+      font-size: 32px;
+      opacity: .6;
+    }
+
+    .file-drop-title {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .file-drop-sub {
+      font-size: 11.5px;
+      color: var(--dim);
+    }
+
+    .import-plan-list {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      margin-top: 14px;
+    }
+
+    .import-plan-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      cursor: pointer;
+      transition: .12s;
+    }
+
+    .import-plan-item:hover {
+      border-color: var(--dim);
+    }
+
+    .import-plan-item.sel {
+      border-color: var(--accent);
+      background: rgba(47, 129, 247, .05);
+    }
+
+    .ipi-icon {
+      font-size: 18px;
+    }
+
+    .ipi-name {
+      font-size: 12.5px;
+      font-weight: 600;
+      flex: 1;
+    }
+
+    .ipi-meta {
+      font-size: 11px;
+      color: var(--dim);
+    }
+
+    .ipi-check {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: .12s;
+    }
+
+    .import-plan-item.sel .ipi-check {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    /* template modal */
+    .modal-tmpl {
+      width: min(680px, 90vw);
+      max-height: 80vh;
+    }
+
+    .tmpl-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+    }
+
+    .tmpl-card {
+      padding: 13px;
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: 9px;
+      cursor: pointer;
+      transition: .15s;
+    }
+
+    .tmpl-card:hover {
+      border-color: var(--dim);
+    }
+
+    .tmpl-card.sel {
+      border-color: var(--jam);
+      background: var(--jam-bg);
+    }
+
+    .tc-icon {
+      font-size: 20px;
+      margin-bottom: 7px;
+    }
+
+    .tc-name {
+      font-size: 12.5px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .tc-desc {
+      font-size: 11px;
+      color: var(--dim);
+      line-height: 1.6;
+    }
+
+    .tc-tags {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      margin-top: 7px;
+    }
+
+    .tc-tag {
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 3px;
+    }
+
+    /* toast */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 9px 16px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 600;
+      display: none;
+      z-index: 9999;
+      pointer-events: none;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, .4);
+    }
+
+    .toast.show {
+      display: block;
+    }
+
+    .t-ok {
+      background: var(--accent2);
+      color: #0d1117;
+    }
+
+    .t-info {
+      background: var(--jam);
+      color: #fff;
+    }
+
+    .t-warn {
+      background: var(--accent3);
+      color: #0d1117;
+    }
+
+    /* scrollbar */
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 2px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="logo" onclick="toast('返回首页','info')">
+      <div class="logo-dot"></div>评估需求设计系统
+    </div>
+    <span class="tb-divider">›</span>
+    <div class="topbar-title">评估需求管理</div>
+    <button class="tb-btn tb-ghost" onclick="openImportModal()">📥 导入评估方案</button>
+    <button class="tb-btn tb-ghost" onclick="openTmplModal()">📋 加载模板</button>
+    <button class="tb-btn tb-jam" onclick="openNewModal()">＋ 新增需求</button>
+  </div>
+
+  <div class="body">
+
+    <!-- Left sidebar -->
+    <div class="left-sidebar">
+      <div class="sb-lbl">状态筛选</div>
+      <div class="sb-item active" onclick="filterStatus(this,'all')"><span>📄</span>全部需求<span class="sb-count">6</span>
+      </div>
+      <div class="sb-item" onclick="filterStatus(this,'draft')"><span>✏️</span>草稿<span class="sb-count">2</span></div>
+      <div class="sb-item" onclick="filterStatus(this,'review')"><span>🔍</span>审核中<span class="sb-count">1</span></div>
+      <div class="sb-item" onclick="filterStatus(this,'pub')"><span>✅</span>已发布<span class="sb-count">3</span></div>
+    </div>
+
+    <!-- Main -->
+    <div class="main">
+
+      <!-- Filter bar -->
+      <div class="filter-bar">
+        <div class="search-box">
+          <span style="color:var(--dim);font-size:13px;">🔍</span>
+          <input type="text" placeholder="搜索需求名称、装备、任务…" oninput="filterSearch(this.value)">
+        </div>
+        <span class="filter-tag on" onclick="toggleFilterTag(this)">全部</span>
+        <span class="filter-tag" onclick="toggleFilterTag(this)">装备级</span>
+        <span class="filter-tag" onclick="toggleFilterTag(this)">系统级</span>
+        <span class="filter-tag" onclick="toggleFilterTag(this)">体系级</span>
+        <select class="sort-select">
+          <option>最近修改</option>
+          <option>创建时间</option>
+          <option>完成度</option>
+          <option>名称</option>
+        </select>
+      </div>
+
+      <!-- List -->
+      <div class="req-list" id="req-list">
+
+        <!-- 需求1 -->
+        <div class="req-card" onclick="openReq(1)">
+          <div class="req-card-left">
+            <div class="rc-icon" style="background:linear-gradient(135deg,var(--jam),#8c3010);">🔫</div>
+            <div class="rc-status-dot" style="background:var(--accent3);" title="草稿"></div>
+          </div>
+          <div class="req-card-body">
+            <div class="rc-title-row">
+              <span class="rc-title">卫星通信干扰装备综合效能评估需求</span>
+              <span class="rc-badge b-draft">草稿</span>
+              <span class="rc-badge b-jam">通信干扰</span>
+              <span class="rc-badge"
+                style="background:rgba(63,185,80,.1);color:var(--accent2);border:1px solid rgba(63,185,80,.25);">装备级</span>
+            </div>
+            <div class="rc-meta">
+              <span>🛰️ 某型地面干扰装备（JAM-XX-A）</span>
+              <span>骨架：卫星通信干扰装备效能评估骨架 v1.0</span>
+              <span>26个指标 · 9个算子</span>
+            </div>
+            <div class="rc-desc">验证干扰装备对高轨卫星的感知引导、初始干扰、跳频跟踪再干扰及持续压制四大能力，以卫星地面系统通信中断数据为真值…</div>
+            <div class="rc-progress">
+              <div class="rcp-bar">
+                <div class="rcp-fill" style="width:85%;background:var(--accent3);"></div>
+              </div>
+              <span class="rcp-label" style="color:var(--accent3);">完成 85% · 5项低置信待处理</span>
+            </div>
+          </div>
+          <div class="req-card-right">
+            <span class="rc-date">2026-03-10</span>
+            <div class="rc-actions">
+              <button class="rc-act blue" onclick="event.stopPropagation();openReq(1)">编辑</button>
+              <button class="rc-act primary" onclick="event.stopPropagation();toast('已下发至分中心','ok')">下发</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 需求2 -->
+        <div class="req-card" onclick="toast('打开需求：通信侦察装备','info')">
+          <div class="req-card-left">
+            <div class="rc-icon" style="background:linear-gradient(135deg,#006870,#003540);">🔭</div>
+            <div class="rc-status-dot" style="background:var(--accent2);" title="已发布"></div>
+          </div>
+          <div class="req-card-body">
+            <div class="rc-title-row">
+              <span class="rc-title">通信侦察装备信号截获能力评估需求</span>
+              <span class="rc-badge b-pub">已发布</span>
+              <span class="rc-badge b-purple">侦察能力</span>
+              <span class="rc-badge"
+                style="background:rgba(63,185,80,.1);color:var(--accent2);border:1px solid rgba(63,185,80,.25);">装备级</span>
+            </div>
+            <div class="rc-meta">
+              <span>📡 某型宽带侦察装备（INT-YY-B）</span>
+              <span>骨架：通信侦察装备效能评估骨架 v2.1</span>
+              <span>18个指标 · 6个算子</span>
+            </div>
+            <div class="rc-desc">评估侦察装备对宽带通信信号的截获概率、信号识别率、参数测量精度等核心侦察能力指标…</div>
+            <div class="rc-progress">
+              <div class="rcp-bar">
+                <div class="rcp-fill" style="width:100%;background:var(--accent2);"></div>
+              </div>
+              <span class="rcp-label" style="color:var(--accent2);">完成 100% · 已通过完备度检查</span>
+            </div>
+          </div>
+          <div class="req-card-right">
+            <span class="rc-date">2026-02-28</span>
+            <div class="rc-actions">
+              <button class="rc-act" onclick="event.stopPropagation();toast('需求已复制','ok')">复制</button>
+              <button class="rc-act blue" onclick="event.stopPropagation();toast('打开查看','info')">查看</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 需求3 -->
+        <div class="req-card" onclick="toast('打开需求：体系贡献率','info')">
+          <div class="req-card-left">
+            <div class="rc-icon" style="background:linear-gradient(135deg,#4b1c9e,#2a0a60);">📊</div>
+            <div class="rc-status-dot" style="background:var(--accent2);" title="已发布"></div>
+          </div>
+          <div class="req-card-body">
+            <div class="rc-title-row">
+              <span class="rc-title">通信对抗装备体系贡献率评估需求</span>
+              <span class="rc-badge b-pub">已发布</span>
+              <span class="rc-badge b-purple">体系贡献率</span>
+              <span class="rc-badge"
+                style="background:rgba(188,140,255,.1);color:var(--accent5);border:1px solid rgba(188,140,255,.28);">体系级</span>
+            </div>
+            <div class="rc-meta">
+              <span>🔗 某型通信对抗装备体系</span>
+              <span>骨架：体系贡献率评估骨架 v1.3</span>
+              <span>31个指标 · 12个算子</span>
+            </div>
+            <div class="rc-desc">通过仿真与外场联合试验，定量评估通信对抗装备对整体作战体系的通信压制能力贡献率及抗毁性贡献…</div>
+            <div class="rc-progress">
+              <div class="rcp-bar">
+                <div class="rcp-fill" style="width:100%;background:var(--accent2);"></div>
+              </div>
+              <span class="rcp-label" style="color:var(--accent2);">完成 100% · 已发布至分中心</span>
+            </div>
+          </div>
+          <div class="req-card-right">
+            <span class="rc-date">2026-02-15</span>
+            <div class="rc-actions">
+              <button class="rc-act" onclick="event.stopPropagation();toast('需求已复制','ok')">复制</button>
+              <button class="rc-act blue" onclick="event.stopPropagation();toast('打开查看','info')">查看</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 需求4 -->
+        <div class="req-card" onclick="toast('打开需求：抗干扰能力','info')">
+          <div class="req-card-left">
+            <div class="rc-icon" style="background:linear-gradient(135deg,#1a4a25,#0a2010);">🛡️</div>
+            <div class="rc-status-dot" style="background:var(--accent);" title="审核中"></div>
+          </div>
+          <div class="req-card-body">
+            <div class="rc-title-row">
+              <span class="rc-title">通信装备抗干扰能力评估需求</span>
+              <span class="rc-badge b-review">审核中</span>
+              <span class="rc-badge"
+                style="background:rgba(63,185,80,.1);color:#6cd87e;border:1px solid rgba(63,185,80,.25);">抗干扰</span>
+              <span class="rc-badge"
+                style="background:rgba(210,153,34,.1);color:var(--accent3);border:1px solid rgba(210,153,34,.25);">系统级</span>
+            </div>
+            <div class="rc-meta">
+              <span>📻 某型跳频电台（COM-ZZ-C）</span>
+              <span>骨架：通信装备抗干扰骨架 v1.0</span>
+              <span>22个指标 · 8个算子</span>
+            </div>
+            <div class="rc-desc">评估跳频通信装备在复杂电磁环境下的跳频抗干扰能力、自适应频率规避能力及通信链路可靠性…</div>
+            <div class="rc-progress">
+              <div class="rcp-bar">
+                <div class="rcp-fill" style="width:93%;background:var(--accent);"></div>
+              </div>
+              <span class="rcp-label" style="color:var(--accent);">完成 93% · 待技术主管审核</span>
+            </div>
+          </div>
+          <div class="req-card-right">
+            <span class="rc-date">2026-03-08</span>
+            <div class="rc-actions">
+              <button class="rc-act blue" onclick="event.stopPropagation();toast('打开查看','info')">查看</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 需求5 -->
+        <div class="req-card" onclick="toast('打开需求：雷达抗干扰','info')">
+          <div class="req-card-left">
+            <div class="rc-icon" style="background:linear-gradient(135deg,#2a1a4e,#1a0a30);">📡</div>
+            <div class="rc-status-dot" style="background:var(--accent2);" title="已发布"></div>
+          </div>
+          <div class="req-card-body">
+            <div class="rc-title-row">
+              <span class="rc-title">雷达对抗侦察装备试验评估需求</span>
+              <span class="rc-badge b-pub">已发布</span>
+              <span class="rc-badge"
+                style="background:rgba(47,129,247,.1);color:var(--accent);border:1px solid rgba(47,129,247,.28);">雷达对抗</span>
+              <span class="rc-badge"
+                style="background:rgba(63,185,80,.1);color:var(--accent2);border:1px solid rgba(63,185,80,.25);">装备级</span>
+            </div>
+            <div class="rc-meta">
+              <span>🎯 某型雷达侦察装备（RES-AA-D）</span>
+              <span>骨架：雷达侦察效能评估骨架 v1.1</span>
+              <span>20个指标 · 7个算子</span>
+            </div>
+            <div class="rc-desc">评估雷达侦察装备的信号截获、参数识别、辐射源定位及多目标处理能力…</div>
+            <div class="rc-progress">
+              <div class="rcp-bar">
+                <div class="rcp-fill" style="width:100%;background:var(--accent2);"></div>
+              </div>
+              <span class="rcp-label" style="color:var(--accent2);">完成 100%</span>
+            </div>
+          </div>
+          <div class="req-card-right">
+            <span class="rc-date">2026-01-20</span>
+            <div class="rc-actions">
+              <button class="rc-act" onclick="event.stopPropagation();toast('需求已复制','ok')">复制</button>
+              <button class="rc-act blue" onclick="event.stopPropagation();toast('打开查看','info')">查看</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 需求6 草稿 -->
+        <div class="req-card" onclick="toast('打开草稿需求','info')">
+          <div class="req-card-left">
+            <div class="rc-icon" style="background:var(--hover);border:1px dashed var(--border2);">📝</div>
+            <div class="rc-status-dot" style="background:var(--border2);"></div>
+          </div>
+          <div class="req-card-body">
+            <div class="rc-title-row">
+              <span class="rc-title" style="color:var(--dim);">新建草稿 · 无人机中继通信干扰评估需求</span>
+              <span class="rc-badge b-draft">草稿</span>
+              <span class="rc-badge"
+                style="background:rgba(255,255,255,.04);color:var(--dim2);border:1px solid var(--border);">从0新建</span>
+            </div>
+            <div class="rc-meta">
+              <span>⚠ 未关联装备</span>
+              <span>未匹配骨架</span>
+            </div>
+            <div class="rc-desc" style="color:var(--dim2);">暂无描述 · 从空白模板创建，尚未填写任何内容…</div>
+            <div class="rc-progress">
+              <div class="rcp-bar">
+                <div class="rcp-fill" style="width:5%;background:var(--border2);"></div>
+              </div>
+              <span class="rcp-label" style="color:var(--dim2);">完成 5%</span>
+            </div>
+          </div>
+          <div class="req-card-right">
+            <span class="rc-date" style="color:var(--dim2);">2026-03-12</span>
+            <div class="rc-actions">
+              <button class="rc-act" onclick="event.stopPropagation();toast('已删除草稿','warn')"
+                style="color:var(--accent4);border-color:rgba(248,81,73,.2);">删除</button>
+              <button class="rc-act primary" onclick="event.stopPropagation();toast('进入编辑','info')">继续编辑</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 新增需求 Modal ── -->
+  <div class="modal-overlay" id="modal-new">
+    <div class="modal modal-new">
+      <div class="modal-header">
+        <div class="modal-title">新增评估需求</div>
+        <button class="modal-close" onclick="closeModal('modal-new')">×</button>
+      </div>
+      <div class="modal-body">
+        <div style="font-size:12px;color:var(--dim);margin-bottom:14px;">请选择需求创建方式：</div>
+        <div class="create-opts">
+          <div class="create-opt" id="opt-import" onclick="selectOpt('import')">
+            <div class="co-icon" style="background:linear-gradient(135deg,rgba(47,129,247,.25),rgba(47,129,247,.1));">📥
+            </div>
+            <div>
+              <div class="co-title">导入评估方案填充生成</div>
+              <div class="co-desc">上传或选择已有的评估方案文档（Word/PDF），系统自动解析并预填充评估目标、指标等要素，在此基础上编辑完善。</div>
+            </div>
+          </div>
+          <div class="create-opt" id="opt-blank" onclick="selectOpt('blank')">
+            <div class="co-icon" style="background:linear-gradient(135deg,rgba(255,107,53,.2),rgba(255,107,53,.05));">📝
+            </div>
+            <div>
+              <div class="co-title">从空白页面新建</div>
+              <div class="co-desc">不依赖任何模板，从零开始填写所有评估需求要素。适合全新类型的评估任务。</div>
+            </div>
+          </div>
+          <div class="create-opt" id="opt-tmpl" onclick="selectOpt('tmpl')">
+            <div class="co-icon" style="background:linear-gradient(135deg,rgba(188,140,255,.2),rgba(188,140,255,.05));">
+              📋</div>
+            <div>
+              <div class="co-title">加载骨架模板</div>
+              <div class="co-desc">从骨架库中选择一个任务骨架模板，系统自动预生成结构化需求框架，按提示补充实例化参数即可。</div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:16px;">
+          <div style="font-size:11.5px;color:var(--dim);margin-bottom:6px;">需求名称（选填）</div>
+          <input type="text" id="new-req-name" placeholder="如：某型通信干扰装备效能评估需求"
+            style="width:100%;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:inherit;font-size:13px;padding:8px 10px;outline:none;"
+            onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="tb-btn tb-ghost" onclick="closeModal('modal-new')">取消</button>
+        <button class="tb-btn tb-jam" id="btn-create" onclick="doCreate()">下一步 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 导入评估方案 Modal ── -->
+  <div class="modal-overlay" id="modal-import">
+    <div class="modal modal-import">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">导入评估方案</div>
+          <div style="font-size:11px;color:var(--dim);margin-top:2px;">选择方案文件或从已有方案库中选取</div>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-import')">×</button>
+      </div>
+      <div class="modal-body" style="max-height:65vh;overflow-y:auto;">
+        <div class="file-drop" onclick="toast('文件选择器已打开','info')">
+          <div class="file-drop-icon">📤</div>
+          <div class="file-drop-title">点击上传 或 拖拽文件到此处</div>
+          <div class="file-drop-sub">支持 Word (.docx) · PDF · Excel (.xlsx)<br>系统将自动解析并填充评估需求要素</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--dim2);font-size:11px;">
+          <div style="flex:1;height:1px;background:var(--border);"></div>或从方案库选择<div
+            style="flex:1;height:1px;background:var(--border);"></div>
+        </div>
+        <div class="import-plan-list">
+          <div class="import-plan-item" id="ipi-1" onclick="selectPlan('ipi-1')">
+            <div class="ipi-icon">📄</div>
+            <div style="flex:1;">
+              <div class="ipi-name">卫星通信干扰装备外场效能试验方案</div>
+              <div class="ipi-meta">来源：任务书 · 2026-01 · 关联骨架：干扰效能评估骨架 v1.0</div>
+            </div>
+            <div class="ipi-check">✓</div>
+          </div>
+          <div class="import-plan-item" id="ipi-2" onclick="selectPlan('ipi-2')">
+            <div class="ipi-icon">📄</div>
+            <div style="flex:1;">
+              <div class="ipi-name">某型跳频电台抗干扰性能试验方案</div>
+              <div class="ipi-meta">来源：研制总要求 · 2025-12 · 关联骨架：抗干扰骨架 v1.0</div>
+            </div>
+            <div class="ipi-check">✓</div>
+          </div>
+          <div class="import-plan-item" id="ipi-3" onclick="selectPlan('ipi-3')">
+            <div class="ipi-icon">📄</div>
+            <div style="flex:1;">
+              <div class="ipi-name">通信对抗体系联合试验评估方案</div>
+              <div class="ipi-meta">来源：体系规划文件 · 2025-11 · 关联骨架：体系贡献率骨架 v1.3</div>
+            </div>
+            <div class="ipi-check">✓</div>
+          </div>
+          <div class="import-plan-item" id="ipi-4" onclick="selectPlan('ipi-4')">
+            <div class="ipi-icon">📄</div>
+            <div style="flex:1;">
+              <div class="ipi-name">雷达对抗侦察装备定型试验方案</div>
+              <div class="ipi-meta">来源：定型任务书 · 2025-10</div>
+            </div>
+            <div class="ipi-check">✓</div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="tb-btn tb-ghost" onclick="closeModal('modal-import')">取消</button>
+        <button class="tb-btn tb-accent" onclick="doImport()">解析并填充 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 加载模板 Modal ── -->
+  <div class="modal-overlay" id="modal-tmpl">
+    <div class="modal modal-tmpl">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">选择骨架模板</div>
+          <div style="font-size:11px;color:var(--dim);margin-top:2px;">选择一个骨架，系统将自动生成结构化需求框架</div>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-tmpl')">×</button>
+      </div>
+      <div class="modal-body" style="max-height:65vh;overflow-y:auto;">
+        <div class="tmpl-grid">
+          <div class="tmpl-card sel" id="tmpl-1" onclick="selectTmpl('tmpl-1')">
+            <div class="tc-icon">🔫</div>
+            <div class="tc-name">卫星通信干扰装备效能评估骨架</div>
+            <div class="tc-desc">4个能力域 · 26项指标 · 含跳频对抗专项。骨架支持度 73%，历史成功率 81%。</div>
+            <div class="tc-tags">
+              <span class="tc-tag b-jam">通信干扰</span>
+              <span class="tc-tag b-pub">装备级</span>
+            </div>
+          </div>
+          <div class="tmpl-card" id="tmpl-2" onclick="selectTmpl('tmpl-2')">
+            <div class="tc-icon">🔭</div>
+            <div class="tc-name">通信侦察装备效能评估骨架</div>
+            <div class="tc-desc">3个能力域 · 18项指标。骨架支持度 81%，历史成功率 87%。</div>
+            <div class="tc-tags">
+              <span class="tc-tag b-purple">侦察能力</span>
+              <span class="tc-tag b-pub">装备级</span>
+            </div>
+          </div>
+          <div class="tmpl-card" id="tmpl-3" onclick="selectTmpl('tmpl-3')">
+            <div class="tc-icon">🛡️</div>
+            <div class="tc-name">通信装备抗干扰能力评估骨架</div>
+            <div class="tc-desc">3个能力域 · 22项指标 · 含跳频/扩频抗干扰。骨架支持度 65%。</div>
+            <div class="tc-tags">
+              <span class="tc-tag" style="background:rgba(63,185,80,.1);color:var(--accent2);">抗干扰</span>
+              <span class="tc-tag" style="background:rgba(210,153,34,.1);color:var(--accent3);">系统级</span>
+            </div>
+          </div>
+          <div class="tmpl-card" id="tmpl-4" onclick="selectTmpl('tmpl-4')">
+            <div class="tc-icon">📊</div>
+            <div class="tc-name">通信对抗体系贡献率评估骨架</div>
+            <div class="tc-desc">5个贡献域 · 31项指标 · 仿真与外场联合评估。骨架支持度 58%。</div>
+            <div class="tc-tags">
+              <span class="tc-tag b-purple">体系贡献率</span>
+              <span class="tc-tag b-purple">体系级</span>
+            </div>
+          </div>
+          <div class="tmpl-card" id="tmpl-5" onclick="selectTmpl('tmpl-5')">
+            <div class="tc-icon">📡</div>
+            <div class="tc-name">雷达对抗侦察效能评估骨架</div>
+            <div class="tc-desc">3个能力域 · 20项指标。骨架支持度 77%。</div>
+            <div class="tc-tags">
+              <span class="tc-tag b-accent" style="background:rgba(47,129,247,.1);color:var(--accent);">雷达对抗</span>
+              <span class="tc-tag b-pub">装备级</span>
+            </div>
+          </div>
+          <div class="tmpl-card" id="tmpl-6" onclick="selectTmpl('tmpl-6')" style="border-style:dashed;opacity:.6;">
+            <div class="tc-icon">➕</div>
+            <div class="tc-name">自定义空白骨架</div>
+            <div class="tc-desc">从空白骨架开始，手动定义能力域、指标体系和算子需求。</div>
+            <div class="tc-tags">
+              <span class="tc-tag" style="background:var(--hover);color:var(--dim2);">自定义</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="tb-btn tb-ghost" onclick="closeModal('modal-tmpl')">取消</button>
+        <button class="tb-btn tb-jam" onclick="doLoadTmpl()">加载模板并生成需求 →</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast-el"></div>
+
+  <script>
+    let selectedOpt = null;
+    let selectedPlan = null;
+    let selectedTmpl = 'tmpl-1';
+
+    function openNewModal() {
+      selectedOpt = null;
+      document.querySelectorAll('.create-opt').forEach(o => o.classList.remove('selected'));
+      openModal('modal-new');
+    }
+    function openImportModal() { openModal('modal-import'); }
+    function openTmplModal() { openModal('modal-tmpl'); }
+
+    function openModal(id) { document.getElementById(id).classList.add('open'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+    document.querySelectorAll('.modal-overlay').forEach(o => {
+      o.addEventListener('click', function (e) { if (e.target === this) closeModal(this.id); });
+    });
+
+    function selectOpt(opt) {
+      selectedOpt = opt;
+      document.querySelectorAll('.create-opt').forEach(o => o.classList.remove('selected'));
+      const map = { import: 'opt-import', blank: 'opt-blank', tmpl: 'opt-tmpl' };
+      document.getElementById(map[opt])?.classList.add('selected');
+    }
+
+    function doCreate() {
+      if (!selectedOpt) { toast('请选择创建方式', 'warn'); return; }
+      closeModal('modal-new');
+      if (selectedOpt === 'import') { openModal('modal-import'); }
+      else if (selectedOpt === 'tmpl') { openModal('modal-tmpl'); }
+      else { toast('已创建空白需求，正在打开编辑器…', 'info'); setTimeout(() => window.open('通信试验评估需求_v2.html', '_blank'), 600); }
+    }
+
+    function selectPlan(id) {
+      document.querySelectorAll('.import-plan-item').forEach(i => i.classList.remove('sel'));
+      document.getElementById(id)?.classList.add('sel');
+      selectedPlan = id;
+    }
+
+    function doImport() {
+      closeModal('modal-import');
+      toast('方案解析中，正在填充评估需求…', 'info');
+      setTimeout(() => { toast('填充完成，正在打开需求编辑器', 'ok'); setTimeout(() => window.open('通信试验评估需求_v2.html', '_blank'), 800); }, 1400);
+    }
+
+    function selectTmpl(id) {
+      document.querySelectorAll('.tmpl-card').forEach(c => c.classList.remove('sel'));
+      document.getElementById(id)?.classList.add('sel');
+      selectedTmpl = id;
+    }
+
+    function doLoadTmpl() {
+      closeModal('modal-tmpl');
+      const names = {
+        'tmpl-1': '卫星通信干扰装备效能评估骨架',
+        'tmpl-2': '通信侦察装备效能评估骨架',
+        'tmpl-3': '通信装备抗干扰能力评估骨架',
+        'tmpl-4': '通信对抗体系贡献率评估骨架',
+        'tmpl-5': '雷达对抗侦察效能评估骨架',
+        'tmpl-6': '自定义空白骨架',
+      };
+      toast(`已加载「${names[selectedTmpl]}」，正在生成需求框架…`, 'info');
+      setTimeout(() => { toast('需求框架已生成，打开编辑器', 'ok'); setTimeout(() => window.open('通信试验评估需求_v2.html', '_blank'), 800); }, 1400);
+    }
+
+    function openReq(id) {
+      if (id === 1) { window.open('通信试验评估需求_v2.html', '_blank'); }
+      else { toast('打开需求编辑器…', 'info'); }
+    }
+
+    function filterStatus(el, status) {
+      document.querySelectorAll('.left-sidebar .sb-item').forEach(i => i.classList.remove('active'));
+      el.classList.add('active');
+      toast(`筛选：${el.textContent.trim().replace(/\d/, '')}`, 'info');
+    }
+
+    function toggleFilterTag(el) {
+      document.querySelectorAll('.filter-tag').forEach(t => t.classList.remove('on', 'on-b', 'on-g'));
+      el.classList.add('on');
+    }
+
+    function filterSearch(v) {
+      if (v) toast(`搜索：${v}`, 'info');
+    }
+
+    let tt;
+    function toast(msg, type = 'ok') {
+      const t = document.getElementById('toast-el');
+      t.textContent = (type === 'ok' ? '✓ ' : type === 'warn' ? '⚠ ' : 'ℹ ') + msg;
+      t.className = `toast show t-${type === 'info' ? 'info' : type === 'warn' ? 'warn' : 'ok'}`;
+      clearTimeout(tt); tt = setTimeout(() => t.className = 'toast', 2400);
+    }
+  </script>
+</body>
+
+</html>

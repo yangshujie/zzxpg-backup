@@ -1,0 +1,187 @@
+// cover some element-ui styles
+
+.el-breadcrumb__inner,
+.el-breadcrumb__inner a {
+  font-weight: 500 !important;
+  color: var(--el-text-color-regular, #64748b);
+}
+
+.el-breadcrumb__separator {
+  color: var(--el-text-color-placeholder, #94a3b8) !important;
+}
+
+.el-upload {
+  input[type="file"] {
+    display: none !important;
+  }
+}
+
+.el-upload__input {
+  display: none;
+}
+
+.cell {
+  .el-tag {
+    margin-right: 0px;
+  }
+}
+
+.small-padding {
+  .cell {
+    padding-left: 5px;
+    padding-right: 5px;
+  }
+}
+
+.fixed-width {
+  .el-button--mini {
+    padding: 7px 10px;
+    width: 60px;
+  }
+}
+
+.status-col {
+  .cell {
+    padding: 0 10px;
+    text-align: center;
+
+    .el-tag {
+      margin-right: 0px;
+    }
+  }
+}
+
+// to fixed https://github.com/ElemeFE/element/issues/2461
+.el-dialog {
+  transform: none;
+  left: 0;
+  position: relative;
+  margin: 0 auto;
+}
+
+// Button base refinements
+.el-button {
+  border-radius: 10px !important;
+  font-weight: 500;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  letter-spacing: 0.02em;
+
+  &:active {
+    transform: translateY(0) !important;
+  }
+
+  &--success {
+    background: linear-gradient(135deg, #059669, #10b981) !important;
+    border: none !important;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25);
+  }
+
+  &--danger {
+    background: linear-gradient(135deg, #dc2626, #ef4444) !important;
+    border: none !important;
+    box-shadow: 0 4px 14px rgba(239, 68, 68, 0.25);
+  }
+
+  &--warning {
+    background: linear-gradient(135deg, #d97706, #f59e0b) !important;
+    border: none !important;
+    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.25);
+  }
+}
+
+// Tag refinements
+.el-tag {
+  border-radius: 8px !important;
+  font-weight: 500;
+  padding: 0 10px;
+}
+
+// Message box refinements
+.el-message-box {
+  border-radius: 20px !important;
+  box-shadow: 0 24px 80px rgba(50, 80, 130, 0.18) !important;
+  border: 1px solid var(--mc-border, rgba(148, 180, 224, 0.2)) !important;
+  padding: 24px !important;
+  backdrop-filter: blur(12px);
+}
+
+// Notification refinements
+.el-notification {
+  border-radius: 16px !important;
+  box-shadow: 0 12px 40px rgba(50, 80, 130, 0.14) !important;
+  border: 1px solid var(--mc-border, rgba(148, 180, 224, 0.2)) !important;
+  backdrop-filter: blur(12px);
+}
+
+// Dropdown refinements
+.el-dropdown-menu {
+  a {
+    display: block;
+  }
+
+  .el-dropdown-menu__item {
+    border-radius: 8px;
+    padding: 8px 14px !important;
+    font-size: 13px;
+    transition: all 0.15s;
+  }
+}
+
+// Popover refinements
+.el-popover.el-popper {
+  border-radius: 14px !important;
+  box-shadow: 0 12px 40px rgba(50, 80, 130, 0.12) !important;
+  backdrop-filter: blur(10px);
+}
+
+// Pagination refinements
+.el-pagination {
+  .el-pager li {
+    border-radius: 8px !important;
+    font-weight: 500;
+    min-width: 32px;
+    transition: all 0.15s;
+
+    &.is-active {
+      box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3);
+    }
+  }
+
+  .btn-prev, .btn-next {
+    border-radius: 8px !important;
+  }
+}
+
+// refine element ui upload
+.upload-container {
+  .el-upload {
+    width: 100%;
+
+    .el-upload-dragger {
+      width: 100%;
+      height: 200px;
+    }
+  }
+}
+
+// fix date-picker ui bug in filter-item
+.el-range-editor.el-input__inner {
+  display: inline-flex !important;
+}
+
+// to fix el-date-picker css style
+.el-range-separator {
+  box-sizing: content-box;
+}
+
+.el-menu--collapse
+  > div
+  > .el-submenu
+  > .el-submenu__title
+  .el-submenu__icon-arrow {
+  display: none;
+}
+
+.el-dropdown .el-dropdown-link{
+  color: var(--el-color-primary) !important;
+}

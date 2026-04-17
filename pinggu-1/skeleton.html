@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>骨架构建 - 通信对抗装备效能评估</title>
+<style>
+:root{
+  --v:#060911;--b0:#0a0e18;--b1:#0e1322;--b2:#131a2d;--b3:#182038;--b4:#1e2844;--b5:#253050;
+  --bd:rgba(50,85,155,.1);--bd2:rgba(50,85,155,.22);--bd3:rgba(50,85,155,.4);
+  --gl:rgba(50,120,240,.12);
+  --bl:#3478f0;--bl2:#5b9cf5;--gn:#0faa78;--gn2:#30d49a;--am:#e89a08;--am2:#f5b840;
+  --rd:#e04040;--pp:#9855e0;--cy:#08a8c5;--pk:#e06090;
+  --t1:#dde4f2;--t2:#90a0be;--t3:#5a6a85;--t4:#3c4b62;--wh:#eef3fb;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden}
+body{font-family:"Microsoft YaHei","PingFang SC",sans-serif;background:var(--v);color:var(--t1);font-size:13px;line-height:1.5}
+.top{height:44px;background:var(--b0);border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;padding:0 16px;position:relative;z-index:80;flex-shrink:0}
+.top::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(52,120,240,.15) 20%,rgba(52,120,240,.15) 80%,transparent)}
+.tl{display:flex;align-items:center;gap:10px}
+.logo{font-family:"Courier New",monospace;font-size:11px;font-weight:700;color:var(--bl);letter-spacing:2px}
+.tsep{width:1px;height:14px;background:var(--bd2)}
+.tname{font-size:13px;font-weight:600;color:var(--wh)}
+.tid{font-family:"Courier New",monospace;font-size:9px;padding:1px 6px;border:1px solid var(--bd2);border-radius:2px;color:var(--t3)}
+.tbadge{font-size:9px;padding:2px 7px;border-radius:9px;display:flex;align-items:center;gap:3px}
+.tbadge::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor}
+.tbadge.draft{background:rgba(232,154,8,.1);color:var(--am)}
+.tr{display:flex;gap:5px}
+.b{padding:4px 12px;font-size:11px;border-radius:3px;border:1px solid var(--bd);background:transparent;color:var(--t2);cursor:pointer;font-family:inherit;transition:all .15s;display:inline-flex;align-items:center;gap:4px;font-weight:500}
+.b:hover{border-color:var(--bd2);color:var(--t1)}
+.b-p{background:var(--bl);border-color:var(--bl);color:#fff}
+.b-p:hover{background:#2560d0}
+.b-g{background:rgba(15,170,120,.1);border-color:rgba(15,170,120,.3);color:var(--gn2)}
+.b-g:hover{background:rgba(15,170,120,.18)}
+.b-am{background:rgba(232,154,8,.1);border-color:rgba(232,154,8,.3);color:var(--am2)}
+.b-am:hover{background:rgba(232,154,8,.18)}
+.app{display:flex;flex-direction:column;height:100vh}
+.main{flex:1;display:grid;grid-template-columns:272px 1fr 308px;overflow:hidden}
+/* LEFT */
+.lp{background:var(--b0);border-right:1px solid var(--bd);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden}
+.sec{padding:11px 13px;border-bottom:1px solid var(--bd)}
+.sec-t{font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.fld{margin-bottom:9px}
+.fld-l{font-size:10px;color:var(--t3);margin-bottom:3px;font-weight:500;display:flex;align-items:center;gap:3px}
+.rq{color:var(--rd);font-size:9px}
+.inp{width:100%;padding:5px 9px;background:var(--b2);border:1px solid var(--bd);border-radius:4px;color:var(--t1);font-size:12px;font-family:inherit;transition:border-color .15s}
+.inp:focus{outline:none;border-color:var(--bl);box-shadow:0 0 0 2px var(--gl)}
+textarea.inp{resize:none;height:48px;line-height:1.5}
+.sel{appearance:none;background-image:url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%235a6a85' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;cursor:pointer;padding-right:24px}
+.tags{display:flex;flex-wrap:wrap;gap:4px}
+.tag{padding:2px 8px;font-size:10px;border-radius:3px;border:1px solid var(--bd);color:var(--t3);cursor:pointer;transition:all .15s;background:transparent;font-family:inherit}
+.tag:hover{border-color:var(--bd2);color:var(--t2)}
+.tag.on{border-color:var(--bl);color:var(--bl2);background:rgba(52,120,240,.07)}
+.tag.on2{border-color:var(--gn);color:var(--gn2);background:rgba(15,170,120,.07)}
+.st-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px}
+.st{padding:7px 8px;background:var(--b2);border-radius:4px;border:1px solid var(--bd)}
+.st-v{font-family:"Courier New",monospace;font-size:17px;font-weight:700;color:var(--wh)}
+.st-l{font-size:9px;color:var(--t4);margin-top:1px}
+/* 评估准则 */
+.crit-row{display:flex;align-items:center;gap:6px;background:var(--b2);border:1px solid var(--bd);border-radius:4px;padding:5px 8px;margin-bottom:5px;font-size:11px}
+.crit-row .cr-nm{flex:1;color:var(--t2);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.crit-row .cr-thr{width:38px;font-family:"Courier New",monospace;font-size:11px;background:var(--b3);border:1px solid var(--bd);border-radius:2px;color:var(--am2);text-align:center;padding:1px 3px;font-family:inherit}
+.crit-row .cr-del{background:transparent;border:none;color:var(--t4);cursor:pointer;font-size:10px;padding:2px 3px;border-radius:2px;flex-shrink:0}
+.crit-row .cr-del:hover{background:rgba(224,64,64,.08);color:var(--rd)}
+.add-link{font-size:10px;color:var(--bl);background:transparent;border:none;cursor:pointer;font-family:inherit;padding:2px 0;display:flex;align-items:center;gap:3px}
+.add-link:hover{color:var(--bl2)}
+.veto-badge{font-size:8px;padding:1px 5px;border-radius:2px;background:rgba(224,64,64,.08);color:var(--rd);border:1px solid rgba(224,64,64,.2);flex-shrink:0}
+/* CENTER */
+.cp{display:flex;flex-direction:column;overflow:hidden;background:var(--v)}
+.cp-bar{display:flex;align-items:center;justify-content:space-between;padding:5px 13px;background:var(--b0);border-bottom:1px solid var(--bd);flex-shrink:0;gap:8px}
+.cp-bar-l{display:flex;align-items:center;gap:6px;flex:1;min-width:0}
+.cp-bar h3{font-size:11px;font-weight:600;color:var(--t2);white-space:nowrap}
+.cp-btns{display:flex;gap:3px;flex-shrink:0}
+.cp-btn{padding:3px 9px;font-size:10px;border-radius:3px;border:1px solid var(--bd);background:transparent;color:var(--t3);cursor:pointer;font-family:inherit;transition:all .12s}
+.cp-btn:hover{border-color:var(--bd2);color:var(--t2)}
+.cp-btn.on{border-color:var(--bl);color:var(--bl2);background:rgba(52,120,240,.06)}
+.col-hdr{display:flex;align-items:center;height:24px;padding-right:6px;background:var(--b1);border-bottom:1px solid var(--bd);font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:.8px;font-weight:600;flex-shrink:0}
+.ch-name{flex:1;padding-left:10px}
+.ch-type{width:64px;text-align:center}
+.ch-op{width:118px;text-align:center}
+.ch-cond{width:138px;text-align:center}
+.ch-act{width:52px}
+.tree-scroll{flex:1;overflow-y:auto;overflow-x:auto}
+.tree-ct{min-width:660px}
+/* ROWS */
+.r{display:flex;align-items:center;height:28px;padding-right:4px;border-bottom:1px solid rgba(50,85,155,.045);transition:background .1s;cursor:default;position:relative}
+.r:hover{background:rgba(52,120,240,.035)}
+.r.sel{background:rgba(52,120,240,.08)}
+.r.hit{background:rgba(15,170,120,.07)}
+.r.hit .nm{color:var(--gn2)}
+.r.miss{opacity:.4}
+.r .pad{flex-shrink:0;height:100%;position:relative}
+.r[data-d="0"] .pad{width:6px}
+.r[data-d="1"] .pad{width:24px}
+.r[data-d="2"] .pad{width:44px}
+.r[data-d="3"] .pad{width:64px}
+.r[data-d="1"] .pad::before{content:'';position:absolute;left:16px;top:0;bottom:0;width:1px;background:var(--bd2)}
+.r[data-d="2"] .pad::before{content:'';position:absolute;left:16px;top:0;bottom:0;width:1px;background:var(--bd2)}
+.r[data-d="2"] .pad::after{content:'';position:absolute;left:36px;top:0;bottom:0;width:1px;background:rgba(50,85,155,.1)}
+.r[data-d="3"] .pad::before{content:'';position:absolute;left:16px;top:0;bottom:0;width:1px;background:var(--bd2)}
+.r[data-d="3"] .pad::after{content:'';position:absolute;left:36px;top:0;bottom:0;width:1px;background:rgba(50,85,155,.1)}
+.tg{width:14px;height:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;border-radius:2px;color:var(--t3);font-size:7px;margin-right:2px;transition:transform .12s}
+.tg:hover{background:var(--b4);color:var(--t2)}
+.tg.shut{transform:rotate(-90deg)}
+.tg.no{visibility:hidden}
+.ico{width:16px;height:16px;display:flex;align-items:center;justify-content:center;border-radius:3px;flex-shrink:0;margin-right:5px;font-size:10px;font-weight:700}
+.ico-mid{background:rgba(152,85,224,.12);color:var(--pp)}
+.ico-lf{background:rgba(52,120,240,.1);color:var(--bl2)}
+.ico-br{background:rgba(232,154,8,.08);color:var(--am)}
+.nm{flex:1;font-size:12px;color:var(--t1);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:4px;min-width:0}
+.veto-dot{width:5px;height:5px;border-radius:50%;background:var(--rd);flex-shrink:0;title:"一票否决指标"}
+.type-badge{font-size:8px;padding:1px 5px;border-radius:2px;font-weight:600;letter-spacing:.3px;flex-shrink:0;width:64px;text-align:center}
+.tb-mid{background:rgba(152,85,224,.08);color:var(--pp);border:1px solid rgba(152,85,224,.15)}
+.tb-lf{background:rgba(52,120,240,.07);color:var(--bl2);border:1px solid rgba(52,120,240,.18)}
+.tb-br{background:rgba(232,154,8,.07);color:var(--am);border:1px solid rgba(232,154,8,.15)}
+.op-cell{width:118px;flex-shrink:0;display:flex;gap:2px;justify-content:center;overflow:hidden;padding:0 3px}
+.op-tag{font-size:9px;padding:1px 5px;border-radius:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.op-agg{background:rgba(8,168,197,.08);color:var(--cy);border:1px solid rgba(8,168,197,.2)}
+.op-w{background:rgba(152,85,224,.07);color:var(--pp);border:1px solid rgba(152,85,224,.15)}
+.op-pass{background:rgba(90,106,133,.1);color:var(--t3);border:1px solid var(--bd)}
+.cond-cell{width:138px;flex-shrink:0;display:flex;gap:2px;align-items:center;padding:0 4px;overflow:hidden}
+.ct{font-size:9px;padding:1px 5px;border-radius:2px;white-space:nowrap;border:1px solid rgba(232,154,8,.25);color:var(--am);background:rgba(232,154,8,.06);flex-shrink:0}
+.ct-free{font-size:9px;padding:1px 5px;border-radius:2px;color:var(--t4);border:1px solid var(--bd)}
+.ct-more{font-size:9px;color:var(--t4);flex-shrink:0}
+.r-act{width:52px;flex-shrink:0;display:flex;gap:1px;opacity:0;transition:opacity .12s;justify-content:flex-end;padding-right:2px}
+.r:hover .r-act,.r.sel .r-act{opacity:1}
+.ab{width:18px;height:18px;border:none;border-radius:2px;background:transparent;color:var(--t4);cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;font-family:inherit;font-weight:500}
+.ab:hover{background:var(--b4);color:var(--t2)}
+.ab.del:hover{background:rgba(224,64,64,.08);color:var(--rd)}
+/* RIGHT */
+.rp{background:var(--b0);border-left:1px solid var(--bd);display:flex;flex-direction:column;overflow:hidden}
+.rp-hdr{padding:8px 13px;border-bottom:1px solid var(--bd);flex-shrink:0;background:var(--b1);display:flex;align-items:center;justify-content:space-between}
+.rp-title{font-size:11px;font-weight:600;color:var(--wh);display:flex;align-items:center;gap:5px}
+.rp-sub{font-size:10px;color:var(--t4);font-weight:400}
+.rp-body{flex:1;overflow-y:auto}
+.rp-sec{padding:11px 13px;border-bottom:1px solid var(--bd)}
+.rp-sec-t{font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:9px}
+.rp-fld{margin-bottom:10px}
+.rp-fld-l{font-size:10px;color:var(--t3);margin-bottom:4px}
+.rp-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--t4);font-size:12px;gap:8px;padding:24px;text-align:center}
+.info-box{background:var(--b2);border-radius:4px;border:1px solid var(--bd);padding:9px 11px;font-size:11px;color:var(--t3);line-height:1.7}
+.info-box .hl{color:var(--gn2)}
+.info-box .hl-am{color:var(--am2)}
+.bc{background:var(--b2);border:1px solid var(--bd);border-radius:4px;padding:8px 10px;margin-bottom:6px;cursor:pointer;transition:border-color .12s}
+.bc:hover{border-color:var(--bd2)}
+.bc.sel-bc{border-color:var(--bl);background:rgba(52,120,240,.04)}
+.bc-name{font-size:12px;font-weight:500;color:var(--t1);margin-bottom:4px;display:flex;align-items:center;justify-content:space-between;gap:6px}
+.bc-conds{display:flex;flex-wrap:wrap;gap:3px}
+.bc-add-row{display:flex;gap:5px;margin-top:2px}
+.bc-add{flex:1;border:1px dashed var(--bd2);border-radius:4px;padding:6px 10px;text-align:center;font-size:11px;color:var(--t3);cursor:pointer;transition:all .12s}
+.bc-add:hover{border-color:var(--bl);color:var(--bl2)}
+.bc-add-lib{border-color:rgba(15,170,120,.3);color:var(--gn)}
+.bc-add-lib:hover{border-color:var(--gn);background:rgba(15,170,120,.04)}
+.cond-row{display:flex;align-items:center;gap:5px;background:var(--b2);border:1px solid var(--bd);border-radius:3px;padding:5px 8px;margin-bottom:5px}
+.cond-dim{background:rgba(52,120,240,.1);color:var(--bl2);padding:1px 6px;border-radius:2px;font-size:10px;flex-shrink:0}
+.cond-op-badge{background:rgba(232,154,8,.08);color:var(--am);padding:1px 5px;border-radius:2px;font-size:10px;flex-shrink:0}
+.cond-val{background:rgba(15,170,120,.08);color:var(--gn2);padding:1px 6px;border-radius:2px;font-size:10px;flex:1;min-width:0}
+.cond-del-btn{background:transparent;border:none;color:var(--t4);cursor:pointer;font-size:10px;flex-shrink:0;padding:2px 4px;border-radius:2px}
+.cond-del-btn:hover{background:rgba(224,64,64,.08);color:var(--rd)}
+.add-cond-btn{font-size:10px;color:var(--bl);background:transparent;border:none;cursor:pointer;font-family:inherit;padding:2px 0;display:inline-flex;align-items:center;gap:3px}
+.add-cond-btn:hover{color:var(--bl2)}
+.free-tag{display:inline-flex;align-items:center;gap:4px;background:rgba(15,170,120,.07);border:1px solid rgba(15,170,120,.2);color:var(--gn2);padding:3px 10px;border-radius:3px;font-size:11px}
+.data-bind{display:flex;align-items:center;gap:6px;background:var(--b2);border:1px solid var(--bd);border-radius:4px;padding:6px 9px;font-size:11px;color:var(--t2);cursor:pointer;transition:border-color .12s}
+.data-bind:hover{border-color:var(--bd2)}
+.db-dot{width:6px;height:6px;border-radius:50%;background:var(--gn);flex-shrink:0}
+.db-chg{font-size:9px;color:var(--t4);margin-left:auto}
+.op-sel{display:flex;gap:4px;flex-wrap:wrap}
+.op-btn{padding:3px 9px;font-size:10px;border-radius:3px;border:1px solid var(--bd);background:transparent;color:var(--t3);cursor:pointer;font-family:inherit;transition:all .1s}
+.op-btn:hover{border-color:var(--bd2);color:var(--t2)}
+.op-btn.on-cy{border-color:var(--cy);color:var(--cy);background:rgba(8,168,197,.06)}
+.op-btn.on-pp{border-color:var(--pp);color:var(--pp);background:rgba(152,85,224,.06)}
+.op-btn.on-gn{border-color:var(--gn);color:var(--gn2);background:rgba(15,170,120,.06)}
+/* MODAL */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:200;display:none;align-items:center;justify-content:center}
+.ov.sh{display:flex}
+.md{background:var(--b1);border:1px solid var(--bd2);border-radius:6px;box-shadow:0 20px 60px rgba(0,0,0,.5);display:flex;flex-direction:column;max-height:88vh;width:520px}
+.md-xl{width:700px}
+.md-h{padding:13px 16px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.md-h h3{font-size:13px;font-weight:600;color:var(--wh)}
+.md-x{background:transparent;border:none;color:var(--t3);cursor:pointer;font-size:15px;line-height:1;padding:2px 5px;border-radius:2px}
+.md-x:hover{background:var(--b3);color:var(--t1)}
+.md-b{padding:14px 16px;overflow-y:auto;flex:1}
+.md-f{padding:10px 16px;border-top:1px solid var(--bd);display:flex;justify-content:flex-end;gap:6px;flex-shrink:0}
+.md .fld{margin-bottom:10px}
+.md .fld-l{font-size:10px;color:var(--t3);margin-bottom:3px;font-weight:500;display:flex;align-items:center;gap:3px}
+/* tabs in modal */
+.md-tabs{display:flex;gap:0;border-bottom:1px solid var(--bd);margin:-14px -16px 14px;padding:0 16px}
+.md-tab{padding:8px 14px;font-size:11px;color:var(--t3);cursor:pointer;border-bottom:2px solid transparent;transition:all .12s;background:transparent;border-top:none;border-left:none;border-right:none;font-family:inherit}
+.md-tab:hover{color:var(--t2)}
+.md-tab.on{color:var(--bl2);border-bottom-color:var(--bl)}
+.md-panel{display:none}
+.md-panel.vis{display:block}
+/* type selector */
+.type-sel{display:flex;gap:8px;margin-bottom:12px}
+.type-opt{flex:1;border:1px solid var(--bd);border-radius:5px;padding:10px;cursor:pointer;text-align:center;transition:all .12s;background:var(--b2)}
+.type-opt:hover{border-color:var(--bd2)}
+.type-opt.on{border-color:var(--bl);background:rgba(52,120,240,.06)}
+.type-opt .to-ico{font-size:20px;margin-bottom:5px}
+.type-opt .to-lbl{font-size:12px;font-weight:500;color:var(--t1)}
+.type-opt .to-sub{font-size:10px;color:var(--t4);margin-top:2px}
+/* indicator library grid */
+.lib-search{margin-bottom:10px}
+.lib-cats{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px}
+.lib-cat{padding:2px 8px;font-size:10px;border-radius:3px;border:1px solid var(--bd);color:var(--t3);cursor:pointer;background:transparent;font-family:inherit}
+.lib-cat:hover{border-color:var(--bd2);color:var(--t2)}
+.lib-cat.on{border-color:var(--cy);color:var(--cy);background:rgba(8,168,197,.06)}
+.lib-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;max-height:320px;overflow-y:auto}
+.lib-item{border:1px solid var(--bd);border-radius:4px;padding:7px 9px;cursor:pointer;transition:all .1s;background:var(--b2)}
+.lib-item:hover{border-color:var(--bd2)}
+.lib-item.picked{border-color:var(--gn);background:rgba(15,170,120,.05)}
+.li-top{display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:3px}
+.li-nm{font-size:12px;font-weight:500;color:var(--t1);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.li-ck{width:14px;height:14px;border-radius:2px;border:1px solid var(--bd2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--gn2);background:transparent}
+.lib-item.picked .li-ck{background:rgba(15,170,120,.15);border-color:var(--gn)}
+.li-meta{font-size:9px;color:var(--t4);display:flex;gap:4px}
+.li-cat-badge{background:rgba(8,168,197,.07);color:var(--cy);padding:1px 5px;border-radius:2px;border:1px solid rgba(8,168,197,.15)}
+.li-count{margin-top:6px;font-size:10px;color:var(--t3)}
+/* cond builder in modal */
+.cond-builder-row{display:flex;gap:5px;margin-bottom:5px;align-items:center}
+.cond-s{flex:1;padding:4px 8px;background:var(--b3);border:1px solid var(--bd);border-radius:3px;color:var(--t1);font-size:11px;font-family:inherit;appearance:none;cursor:pointer;min-width:0}
+.cond-s:focus{outline:none;border-color:var(--bl)}
+.cond-del-sm{background:transparent;border:none;color:var(--t4);cursor:pointer;font-size:10px;flex-shrink:0;padding:2px 4px;border-radius:2px}
+.cond-del-sm:hover{background:rgba(224,64,64,.08);color:var(--rd)}
+/* simulate */
+.sim-attrs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.sim-result{background:var(--b2);border-radius:4px;border:1px solid var(--bd);padding:10px 12px}
+.sim-sec-t{font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin-bottom:7px}
+.sim-match{display:flex;align-items:center;gap:6px;padding:4px 0;font-size:11px;border-bottom:1px solid rgba(50,85,155,.06)}
+.sim-match:last-child{border:none}
+.sim-dot-hit{width:6px;height:6px;border-radius:50%;background:var(--gn);flex-shrink:0}
+.sim-dot-miss{width:6px;height:6px;border-radius:50%;background:var(--t4);flex-shrink:0}
+.sim-nm-hit{color:var(--gn2);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sim-nm-miss{color:var(--t4);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sim-cond-txt{font-size:9px;color:var(--t3);flex-shrink:0;max-width:150px;text-align:right}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="top">
+  <div class="tl">
+    <span class="logo">EVAL·SYS</span>
+    <div class="tsep"></div>
+    <span class="tname">通信对抗装备效能评估骨架</span>
+    <span class="tid">SKL-COMJAM-EQ-001</span>
+    <span class="tbadge draft">草稿</span>
+  </div>
+  <div class="tr">
+    <button class="b b-am" onclick="showSim()">&#9654; 模拟生成</button>
+    <button class="b" onclick="alert('草稿已保存')">&#10003; 保存</button>
+    <button class="b b-g">&#8593; 发布</button>
+  </div>
+</div>
+<div class="main">
+
+<!-- LEFT -->
+<div class="lp">
+  <div class="sec">
+    <div class="sec-t">基本信息</div>
+    <div class="fld"><div class="fld-l"><span class="rq">*</span>骨架名称</div><input class="inp" value="通信对抗装备效能评估骨架"></div>
+    <div class="fld"><div class="fld-l"><span class="rq">*</span>版本</div><input class="inp" value="v1.0.0" style="width:90px"></div>
+    <div class="fld"><div class="fld-l">评估目标描述</div><textarea class="inp">适用于通信对抗装备的干扰效果、侦察能力、响应时序综合效能评估</textarea></div>
+  </div>
+  <div class="sec">
+    <div class="sec-t">适用范围</div>
+    <div class="fld"><div class="fld-l">领域</div><div class="tags"><button class="tag on">电子对抗</button><button class="tag on">通信对抗</button><button class="tag">雷达对抗</button></div></div>
+    <div class="fld"><div class="fld-l">装备类型</div><div class="tags"><button class="tag on2">有源干扰机</button><button class="tag on2">侦察干扰一体化</button><button class="tag">宽带侦察</button></div></div>
+    <div class="fld"><div class="fld-l">评估层级</div><div class="tags"><button class="tag on">设备级</button><button class="tag on">系统级</button><button class="tag">体系级</button></div></div>
+    <div class="fld"><div class="fld-l">任务类型</div><div class="tags"><button class="tag on2">效能评估</button><button class="tag on2">对比评估</button><button class="tag">性能测试</button></div></div>
+  </div>
+
+  <!-- 评估准则 -->
+  <div class="sec">
+    <div class="sec-t">评估准则</div>
+    <div class="fld">
+      <div class="fld-l">全局评分机制</div>
+      <select class="inp sel">
+        <option>综合单一评分</option>
+        <option>分维度独立评分</option>
+        <option>加权综合 + 维度诊断</option>
+      </select>
+    </div>
+    <div class="fld">
+      <div class="fld-l">全局默认汇聚算子 <span style="color:var(--t4);font-size:9px">（各节点可覆盖）</span></div>
+      <select class="inp sel">
+        <option>加权平均</option><option>均值聚合</option><option>最大值聚合</option>
+      </select>
+    </div>
+    <div class="fld">
+      <div class="fld-l">全局默认权重策略</div>
+      <select class="inp sel">
+        <option>AHP层次分析法</option><option>等权重</option><option>熵权法</option><option>专家打分</option>
+      </select>
+    </div>
+    <div class="fld">
+      <div class="fld-l" style="display:flex;justify-content:space-between">
+        <span>一票否决规则 <span class="veto-badge">VETO</span></span>
+        <button class="add-link" onclick="addVetoRow()">+ 添加</button>
+      </div>
+      <div id="veto-list">
+        <div class="crit-row">
+          <span class="veto-badge">否决</span>
+          <span class="cr-nm">全链路端到端响应时延</span>
+          <span style="font-size:9px;color:var(--t3)">得分&lt;</span>
+          <input class="cr-thr" value="0.3">
+          <button class="cr-del" onclick="this.closest('.crit-row').remove()">&#10005;</button>
+        </div>
+      </div>
+    </div>
+    <div class="fld">
+      <div class="fld-l">最低通过分值</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <input class="inp" value="0.60" style="width:70px;font-family:'Courier New',monospace">
+        <span style="font-size:10px;color:var(--t3)">低于此值输出警告</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-t">骨架统计</div>
+    <div class="st-grid">
+      <div class="st"><div class="st-v" id="stat-mid">3</div><div class="st-l">中间层</div></div>
+      <div class="st"><div class="st-v" id="stat-lf">5</div><div class="st-l">叶子层</div></div>
+      <div class="st"><div class="st-v" id="stat-br">12</div><div class="st-l">具体分支</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- CENTER -->
+<div class="cp">
+  <div class="cp-bar">
+    <div class="cp-bar-l">
+      <h3>指标树</h3>
+      <button class="cp-btn on" id="btn-expand" onclick="toggleAll(true,this)">全部展开</button>
+      <button class="cp-btn" id="btn-collapse" onclick="toggleAll(false,this)">全部折叠</button>
+    </div>
+    <div class="cp-btns">
+      <button class="b" onclick="openAddNode(null)">+ 添加根节点</button>
+    </div>
+  </div>
+  <div class="col-hdr">
+    <div class="ch-name">节点 / 分支名称</div>
+    <div class="ch-type">类型</div>
+    <div class="ch-op">算子 / 分支数</div>
+    <div class="ch-cond">激活条件</div>
+    <div class="ch-act"></div>
+  </div>
+  <div class="tree-scroll"><div class="tree-ct" id="tree-ct"></div></div>
+</div>
+
+<!-- RIGHT -->
+<div class="rp">
+  <div class="rp-hdr"><div class="rp-title" id="rp-title"><span style="color:var(--t4)">属性配置</span></div></div>
+  <div class="rp-body" id="rp-body">
+    <div class="rp-empty"><div style="font-size:26px;opacity:.3;margin-bottom:6px">&#9670;</div><div>点击树中节点<br>查看并编辑属性</div></div>
+  </div>
+</div>
+
+</div>
+</div>
+
+<!-- ===== MODAL: 添加节点 ===== -->
+<div class="ov" id="modal-addnode">
+  <div class="md">
+    <div class="md-h"><h3 id="addnode-title">添加子节点</h3><button class="md-x" onclick="hideModal('addnode')">&#10005;</button></div>
+    <div class="md-b">
+      <div class="fld"><div class="fld-l">选择节点类型</div>
+        <div class="type-sel">
+          <div class="type-opt on" id="topt-mid" onclick="selNodeType('mid')">
+            <div class="to-ico" style="color:var(--pp)">&#9672;</div>
+            <div class="to-lbl">中间层节点</div>
+            <div class="to-sub">结构分组 + 聚合计算</div>
+          </div>
+          <div class="type-opt" id="topt-lf" onclick="selNodeType('lf')">
+            <div class="to-ico" style="color:var(--bl2)">&#9671;</div>
+            <div class="to-lbl">叶子节点</div>
+            <div class="to-sub">持有具体分支的末端</div>
+          </div>
+        </div>
+      </div>
+      <div class="fld"><div class="fld-l"><span class="rq">*</span>泛化名称</div><input class="inp" id="addnode-name" placeholder="如：干扰覆盖性 / 测向精度"></div>
+      <div id="addnode-mid-opts">
+        <div class="fld"><div class="fld-l">汇聚算子</div>
+          <div class="op-sel" id="addnode-agg">
+            <button class="op-btn on-cy" onclick="pickOp(this,'agg')">加权平均</button>
+            <button class="op-btn" onclick="pickOp(this,'agg')">均值聚合</button>
+            <button class="op-btn" onclick="pickOp(this,'agg')">最大值聚合</button>
+            <button class="op-btn" onclick="pickOp(this,'agg')">最小值聚合</button>
+          </div>
+        </div>
+        <div class="fld"><div class="fld-l">权重算子</div>
+          <div class="op-sel" id="addnode-wop">
+            <button class="op-btn on-pp" onclick="pickOp(this,'wop')">AHP权重</button>
+            <button class="op-btn" onclick="pickOp(this,'wop')">等权重</button>
+            <button class="op-btn" onclick="pickOp(this,'wop')">熵权法</button>
+            <button class="op-btn" onclick="pickOp(this,'wop')">透传</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="md-f">
+      <button class="b" onclick="hideModal('addnode')">取消</button>
+      <button class="b b-p" onclick="confirmAddNode()">&#10003; 确认添加</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: 添加分支 ===== -->
+<div class="ov" id="modal-addbranch">
+  <div class="md md-xl">
+    <div class="md-h"><h3>添加具体分支</h3><button class="md-x" onclick="hideModal('addbranch')">&#10005;</button></div>
+    <div class="md-b">
+      <div class="md-tabs">
+        <button class="md-tab on" onclick="switchBranchTab('manual',this)">&#9998; 手动填写</button>
+        <button class="md-tab" onclick="switchBranchTab('lib',this)">&#9776; 从指标库选择</button>
+      </div>
+      <!-- 手动填写 -->
+      <div class="md-panel vis" id="branch-panel-manual">
+        <div class="fld"><div class="fld-l"><span class="rq">*</span>分支名称（具体指标名称）</div><input class="inp" id="br-name" placeholder="如：压制干扰覆盖率"></div>
+        <div class="fld">
+          <div class="fld-l">激活条件 <span style="color:var(--t4);font-size:9px;margin-left:4px">（留空 = 始终激活）</span></div>
+          <div id="cond-list"></div>
+          <button class="add-cond-btn" onclick="addCondRow()">+ 添加条件</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div class="fld"><div class="fld-l"><span class="rq">*</span>数据源</div>
+            <select class="inp sel" id="br-data">
+              <option>宽带信号采集数据</option><option>频谱扫描数据</option><option>雷达回波数据</option>
+              <option>信号强度测量数据</option><option>功率监测数据</option><option>宽带采集数据</option>
+              <option>跳频专项采集数据</option><option>测向原始数据</option><option>多站融合数据</option>
+              <option>目标指示报文数据</option><option>干扰触发时序数据</option><option>全链路时序数据</option>
+            </select>
+          </div>
+          <div class="fld"><div class="fld-l"><span class="rq">*</span>计算算子</div>
+            <select class="inp sel" id="br-calc">
+              <option>覆盖带宽比值算子</option><option>频段完整度算子</option><option>虚假目标计数算子</option>
+              <option>干信比计算算子</option><option>功率比值算子</option><option>截获率统计算子</option>
+              <option>跳频截获算子</option><option>均方根误差算子</option><option>融合精度算子</option>
+              <option>报文时延算子</option><option>响应时延算子</option><option>端到端时延算子</option>
+            </select>
+          </div>
+        </div>
+        <div class="fld"><div class="fld-l"><span class="rq">*</span>归一化算子</div>
+          <div class="op-sel" id="br-norm-sel">
+            <button class="op-btn on-gn" onclick="selNorm(this)">线性归一化</button>
+            <button class="op-btn" onclick="selNorm(this)">逆线性归一化</button>
+            <button class="op-btn" onclick="selNorm(this)">S型归一化</button>
+            <button class="op-btn" onclick="selNorm(this)">比值归一化</button>
+            <button class="op-btn" onclick="selNorm(this)">阶梯归一化</button>
+          </div>
+        </div>
+        <div class="fld"><div class="fld-l">是否设为一票否决指标</div>
+          <label style="display:flex;align-items:center;gap:7px;font-size:11px;color:var(--t2);cursor:pointer">
+            <input type="checkbox" id="br-veto"> <span>启用 <span class="veto-badge">VETO</span></span>
+            <span style="color:var(--t3);font-size:10px;margin-left:4px">否决阈值：</span>
+            <input class="inp" id="br-veto-thr" value="0.3" style="width:60px">
+          </label>
+        </div>
+      </div>
+      <!-- 从指标库 -->
+      <div class="md-panel" id="branch-panel-lib">
+        <div class="lib-cats" id="lib-cats">
+          <button class="lib-cat on" onclick="filterLib('all',this)">全部</button>
+          <button class="lib-cat" onclick="filterLib('干扰效能',this)">干扰效能</button>
+          <button class="lib-cat" onclick="filterLib('侦察能力',this)">侦察能力</button>
+          <button class="lib-cat" onclick="filterLib('响应时序',this)">响应时序</button>
+          <button class="lib-cat" onclick="filterLib('对抗效果',this)">对抗效果</button>
+        </div>
+        <input class="inp lib-search" id="lib-search" placeholder="搜索指标名称..." oninput="filterLib('',null)">
+        <div class="lib-grid" id="lib-grid"></div>
+        <div class="li-count" id="lib-count">已选 <span id="lib-sel-count" style="color:var(--gn2);font-weight:600">0</span> 项</div>
+      </div>
+    </div>
+    <div class="md-f">
+      <button class="b" onclick="hideModal('addbranch')">取消</button>
+      <button class="b b-p" onclick="confirmAddBranch()">&#10003; 保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: 模拟生成 ===== -->
+<div class="ov" id="modal-sim">
+  <div class="md md-xl">
+    <div class="md-h"><h3>模拟生成 — 输入任务属性</h3><button class="md-x" onclick="hideModal('sim');clearSim()">&#10005;</button></div>
+    <div class="md-b">
+      <div style="font-size:11px;color:var(--t3);margin-bottom:11px">输入假设任务的属性，预览哪些具体分支会被选入该任务的指标体系。</div>
+      <div class="sim-attrs">
+        <div class="fld"><div class="fld-l">任务类型</div>
+          <select class="inp sel" id="sim-tasktype"><option value="">（不指定）</option><option>效能评估</option><option>性能测试</option><option>对比评估</option></select></div>
+        <div class="fld"><div class="fld-l">评估层级</div>
+          <select class="inp sel" id="sim-level"><option value="">（不指定）</option><option>设备级</option><option>系统级</option><option>体系级</option></select></div>
+        <div class="fld"><div class="fld-l">场景</div>
+          <select class="inp sel" id="sim-scene"><option value="">（不指定）</option><option>跳频信号</option><option>宽频谱覆盖</option><option>复杂电磁环境</option></select></div>
+        <div class="fld"><div class="fld-l">装备型号</div>
+          <select class="inp sel" id="sim-equip"><option value="">（不指定）</option><option>欺骗干扰型</option><option>压制干扰型</option><option>侦察干扰一体化</option></select></div>
+      </div>
+      <button class="b b-p" onclick="runSim()" style="width:100%;justify-content:center;margin-bottom:13px">&#9654; 生成并预览</button>
+      <div id="sim-result" style="display:none">
+        <div class="sim-result">
+          <div class="sim-sec-t">命中分支 <span id="sim-hit-count" style="color:var(--gn2);font-family:'Courier New',monospace;font-weight:400"></span></div>
+          <div id="sim-result-list"></div>
+        </div>
+        <div class="sim-result" style="margin-top:8px" id="sim-veto-box"></div>
+        <div class="sim-result" style="margin-top:8px" id="sim-tree-box">
+          <div class="sim-sec-t">生成的指标树结构</div>
+          <div id="sim-tree-html" style="font-family:'Courier New',monospace;font-size:11px;color:var(--t2);line-height:1.8"></div>
+        </div>
+      </div>
+    </div>
+    <div class="md-f"><button class="b" onclick="hideModal('sim');clearSim()">关闭</button></div>
+  </div>
+</div>
+
+<script>
+// ===== DATA =====
+let NODES = [
+  {id:'root',pid:null,type:'mid',name:'通信对抗综合效能',d:0,aggOp:'加权平均',wOp:'AHP权重'},
+  {id:'n1',pid:'root',type:'mid',name:'干扰效能',d:1,aggOp:'加权平均',wOp:'等权重'},
+  {id:'n1a',pid:'n1',type:'leaf',name:'干扰覆盖性',d:2},
+  {id:'b1',pid:'n1a',type:'br',name:'压制干扰覆盖率',d:3,conds:[{dim:'任务类型',op:'=',val:'效能评估'}],data:'宽带信号采集数据',calc:'覆盖带宽比值算子',norm:'线性归一化',veto:false},
+  {id:'b2',pid:'n1a',type:'br',name:'频段覆盖完整度',d:3,conds:[{dim:'任务类型',op:'=',val:'效能评估'},{dim:'场景',op:'包含',val:'宽频谱覆盖'}],data:'频谱扫描数据',calc:'频段完整度算子',norm:'线性归一化',veto:false},
+  {id:'b3',pid:'n1a',type:'br',name:'欺骗目标数量',d:3,conds:[{dim:'装备型号',op:'包含',val:'欺骗干扰型'}],data:'雷达回波数据',calc:'虚假目标计数算子',norm:'比值归一化',veto:false},
+  {id:'n1b',pid:'n1',type:'leaf',name:'干扰功率效能',d:2},
+  {id:'b4',pid:'n1b',type:'br',name:'干信比 J/S',d:3,conds:[],data:'信号强度测量数据',calc:'干信比计算算子',norm:'S型归一化',veto:false},
+  {id:'b5',pid:'n1b',type:'br',name:'有效干扰功率占比',d:3,conds:[{dim:'评估层级',op:'=',val:'系统级'}],data:'功率监测数据',calc:'功率比值算子',norm:'线性归一化',veto:false},
+  {id:'n2',pid:'root',type:'mid',name:'侦察能力',d:1,aggOp:'均值聚合',wOp:'等权重'},
+  {id:'n2a',pid:'n2',type:'leaf',name:'截获能力',d:2},
+  {id:'b6',pid:'n2a',type:'br',name:'信号截获率',d:3,conds:[{dim:'任务类型',op:'=',val:'效能评估'}],data:'宽带采集数据',calc:'截获率统计算子',norm:'线性归一化',veto:false},
+  {id:'b7',pid:'n2a',type:'br',name:'跳频截获成功率',d:3,conds:[{dim:'场景',op:'包含',val:'跳频信号'}],data:'跳频专项采集数据',calc:'跳频截获算子',norm:'线性归一化',veto:false},
+  {id:'n2b',pid:'n2',type:'leaf',name:'测向精度',d:2},
+  {id:'b8',pid:'n2b',type:'br',name:'测向均方根误差',d:3,conds:[{dim:'评估层级',op:'=',val:'设备级'}],data:'测向原始数据',calc:'均方根误差算子',norm:'逆线性归一化',veto:false},
+  {id:'b9',pid:'n2b',type:'br',name:'多站融合测向精度',d:3,conds:[{dim:'评估层级',op:'=',val:'系统级'}],data:'多站融合数据',calc:'融合精度算子',norm:'逆线性归一化',veto:false},
+  {id:'n3',pid:'root',type:'mid',name:'响应时序',d:1,aggOp:'最小值聚合',wOp:'透传'},
+  {id:'n3a',pid:'n3',type:'leaf',name:'时延指标',d:2},
+  {id:'b10',pid:'n3a',type:'br',name:'目指接收时延',d:3,conds:[],data:'目标指示报文数据',calc:'报文时延算子',norm:'逆线性归一化',veto:false},
+  {id:'b11',pid:'n3a',type:'br',name:'干扰响应时延',d:3,conds:[],data:'干扰触发时序数据',calc:'响应时延算子',norm:'逆线性归一化',veto:false},
+  {id:'b12',pid:'n3a',type:'br',name:'全链路端到端响应时延',d:3,conds:[{dim:'评估层级',op:'=',val:'系统级'}],data:'全链路时序数据',calc:'端到端时延算子',norm:'逆线性归一化',veto:true},
+];
+
+const LIB_ITEMS = [
+  {name:'压制干扰覆盖率',cat:'干扰效能',calc:'覆盖带宽比值算子',data:'宽带信号采集数据',norm:'线性归一化'},
+  {name:'频段覆盖完整度',cat:'干扰效能',calc:'频段完整度算子',data:'频谱扫描数据',norm:'线性归一化'},
+  {name:'欺骗目标数量',cat:'干扰效能',calc:'虚假目标计数算子',data:'雷达回波数据',norm:'比值归一化'},
+  {name:'干信比 J/S',cat:'干扰效能',calc:'干信比计算算子',data:'信号强度测量数据',norm:'S型归一化'},
+  {name:'有效干扰功率占比',cat:'干扰效能',calc:'功率比值算子',data:'功率监测数据',norm:'线性归一化'},
+  {name:'干扰建立有效时延',cat:'干扰效能',calc:'时延统计算子',data:'干扰触发时序数据',norm:'逆线性归一化'},
+  {name:'信号截获率',cat:'侦察能力',calc:'截获率统计算子',data:'宽带采集数据',norm:'线性归一化'},
+  {name:'跳频截获成功率',cat:'侦察能力',calc:'跳频截获算子',data:'跳频专项采集数据',norm:'线性归一化'},
+  {name:'信号识别率',cat:'侦察能力',calc:'识别率统计算子',data:'信号特征数据',norm:'线性归一化'},
+  {name:'测向均方根误差',cat:'侦察能力',calc:'均方根误差算子',data:'测向原始数据',norm:'逆线性归一化'},
+  {name:'多站融合测向精度',cat:'侦察能力',calc:'融合精度算子',data:'多站融合数据',norm:'逆线性归一化'},
+  {name:'目指接收时延',cat:'响应时序',calc:'报文时延算子',data:'目标指示报文数据',norm:'逆线性归一化'},
+  {name:'干扰响应时延',cat:'响应时序',calc:'响应时延算子',data:'干扰触发时序数据',norm:'逆线性归一化'},
+  {name:'全链路端到端响应时延',cat:'响应时序',calc:'端到端时延算子',data:'全链路时序数据',norm:'逆线性归一化'},
+  {name:'跳频响应时延',cat:'响应时序',calc:'跳频时延算子',data:'跳频时序数据',norm:'逆线性归一化'},
+  {name:'干扰空窗期占比',cat:'对抗效果',calc:'空窗期统计算子',data:'干扰时序数据',norm:'逆线性归一化'},
+  {name:'干扰成功率',cat:'对抗效果',calc:'干扰成功率算子',data:'对抗结果数据',norm:'线性归一化'},
+  {name:'频率占空比',cat:'对抗效果',calc:'占空比计算算子',data:'频率使用数据',norm:'线性归一化'},
+];
+
+const collapsed = new Set();
+let selId = null;
+let addNodeTargetPid = null;
+let addBranchTargetLeaf = null;
+let libSelCat = 'all';
+let idCounter = 100;
+
+function uid(){ return 'n'+(++idCounter); }
+function getChildren(pid){ return NODES.filter(n=>n.pid===pid && n.type!=='br'); }
+function getBranches(leafId){ return NODES.filter(n=>n.pid===leafId && n.type==='br'); }
+function isVisible(n){
+  if(!n.pid) return true;
+  let cur=n;
+  while(cur.pid){
+    if(collapsed.has(cur.pid)) return false;
+    cur=NODES.find(x=>x.id===cur.pid)||{pid:null};
+  }
+  return true;
+}
+function updateStats(){
+  document.getElementById('stat-mid').textContent=NODES.filter(n=>n.type==='mid').length;
+  document.getElementById('stat-lf').textContent=NODES.filter(n=>n.type==='leaf').length;
+  document.getElementById('stat-br').textContent=NODES.filter(n=>n.type==='br').length;
+}
+function renderCond(conds,maxShow){
+  if(!conds||conds.length===0) return '<span class="ct-free">无条件</span>';
+  let html='';
+  const show=conds.slice(0,maxShow||1);
+  show.forEach(c=>{ html+=`<span class="ct">${c.dim}${c.op}${c.val}</span>`; });
+  if(conds.length>(maxShow||1)) html+=`<span class="ct-more">+${conds.length-(maxShow||1)}</span>`;
+  return html;
+}
+
+function renderTree(){
+  let html='';
+  NODES.forEach(n=>{
+    if(!isVisible(n)) return;
+    const isSel=n.id===selId;
+    const hasKids=(n.type==='mid'&&getChildren(n.id).length>0)||(n.type==='leaf'&&getBranches(n.id).length>0);
+    const shut=collapsed.has(n.id);
+    const tg=hasKids
+      ?`<div class="tg${shut?' shut':''}" onclick="event.stopPropagation();tog('${n.id}')">&#9660;</div>`
+      :`<div class="tg no">&#9660;</div>`;
+
+    let ico='',typeBadge='',opCell='',condCell='';
+    if(n.type==='mid'){
+      ico=`<div class="ico ico-mid">&#9672;</div>`;
+      typeBadge=`<div class="type-badge tb-mid">中间层</div>`;
+      const wLbl=n.wOp==='透传'?`<span class="op-tag op-pass">${n.wOp}</span>`:`<span class="op-tag op-w">${n.wOp}</span>`;
+      opCell=`<div class="op-cell"><span class="op-tag op-agg">${n.aggOp}</span>${wLbl}</div>`;
+      condCell=`<div class="cond-cell"><span style="font-size:9px;color:var(--t4)">自动推导</span></div>`;
+    } else if(n.type==='leaf'){
+      ico=`<div class="ico ico-lf">&#9671;</div>`;
+      typeBadge=`<div class="type-badge tb-lf">叶子层</div>`;
+      const bc=getBranches(n.id).length;
+      opCell=`<div class="op-cell"><span style="font-size:9px;color:var(--t3)">${bc}个分支</span></div>`;
+      condCell=`<div class="cond-cell"><span style="font-size:9px;color:var(--t4)">—</span></div>`;
+    } else {
+      ico=`<div class="ico ico-br">&#8226;</div>`;
+      typeBadge=`<div class="type-badge tb-br">分支</div>`;
+      const vetoMark=n.veto?`<span class="veto-badge" style="font-size:7px">V</span>`:'';
+      opCell=`<div class="op-cell" style="justify-content:flex-start;padding-left:4px"><span style="font-size:9px;color:var(--t4);overflow:hidden;text-overflow:ellipsis;max-width:110px">${n.calc}</span>${vetoMark}</div>`;
+      condCell=`<div class="cond-cell">${renderCond(n.conds,1)}</div>`;
+    }
+
+    const addBtn=n.type!=='br'
+      ?`<button class="ab" title="${n.type==='leaf'?'添加分支':'添加子节点'}" onclick="event.stopPropagation();${n.type==='leaf'?`openAddBranch('${n.id}')`:`openAddNode('${n.id}')`}">+</button>`
+      :'';
+    html+=`<div class="r${isSel?' sel':''}" data-id="${n.id}" data-d="${n.d}" data-type="${n.type}" onclick="selRow('${n.id}')">
+      <div class="pad"></div>${tg}${ico}
+      <div class="nm"><span>${n.name}</span></div>
+      ${typeBadge}${opCell}${condCell}
+      <div class="r-act">${addBtn}<button class="ab del" title="删除" onclick="event.stopPropagation();delNode('${n.id}')">&#10005;</button></div>
+    </div>`;
+  });
+  document.getElementById('tree-ct').innerHTML=html;
+  updateStats();
+}
+
+function tog(id){ if(collapsed.has(id))collapsed.delete(id);else collapsed.add(id); renderTree(); }
+function toggleAll(exp,btn){
+  if(exp) collapsed.clear(); else NODES.forEach(n=>{if(n.type!=='br')collapsed.add(n.id);});
+  renderTree();
+  document.querySelectorAll('.cp-btn').forEach(b=>b.classList.remove('on'));
+  if(btn) btn.classList.add('on');
+}
+function delNode(id){
+  if(!confirm('删除该节点及其所有子内容？')) return;
+  const toRemove=[id];
+  function collectDesc(pid){ NODES.filter(n=>n.pid===pid).forEach(c=>{toRemove.push(c.id);collectDesc(c.id);}); }
+  collectDesc(id);
+  NODES=NODES.filter(n=>!toRemove.includes(n.id));
+  if(selId===id||toRemove.includes(selId)){selId=null;document.getElementById('rp-body').innerHTML='<div class="rp-empty"><div style="font-size:26px;opacity:.3;margin-bottom:6px">&#9670;</div><div>点击节点查看属性</div></div>';}
+  renderTree();
+}
+
+// ===== ADD NODE =====
+function openAddNode(pid){
+  addNodeTargetPid=pid;
+  const t=pid?`在「${NODES.find(n=>n.id===pid)?.name||''}」下添加子节点`:'添加根节点';
+  document.getElementById('addnode-title').textContent=t;
+  document.getElementById('addnode-name').value='';
+  selNodeType('mid');
+  showModal('addnode');
+}
+function selNodeType(t){
+  document.getElementById('topt-mid').classList.toggle('on',t==='mid');
+  document.getElementById('topt-lf').classList.toggle('on',t==='lf');
+  document.getElementById('addnode-mid-opts').style.display=t==='mid'?'block':'none';
+}
+function pickOp(btn,grp){
+  btn.closest('.op-sel').querySelectorAll('.op-btn').forEach(b=>{b.classList.remove('on-cy','on-pp');});
+  btn.classList.add(grp==='agg'?'on-cy':'on-pp');
+}
+function confirmAddNode(){
+  const name=document.getElementById('addnode-name').value.trim();
+  if(!name){alert('请填写节点名称');return;}
+  const isMid=document.getElementById('topt-mid').classList.contains('on');
+  const aggEl=document.querySelector('#addnode-agg .on-cy');
+  const wopEl=document.querySelector('#addnode-wop .on-pp');
+  const pid=addNodeTargetPid;
+  const parent=pid?NODES.find(n=>n.id===pid):null;
+  const d=parent?parent.d+1:0;
+  const newNode={id:uid(),pid,type:isMid?'mid':'leaf',name,d};
+  if(isMid){newNode.aggOp=aggEl?aggEl.textContent:'加权平均';newNode.wOp=wopEl?wopEl.textContent:'等权重';}
+  // insert after last child of parent
+  const siblings=NODES.filter(n=>n.pid===pid);
+  if(siblings.length>0){
+    const lastIdx=NODES.findIndex(n=>n.id===siblings[siblings.length-1].id);
+    NODES.splice(lastIdx+1,0,newNode);
+  } else {
+    const parentIdx=pid?NODES.findIndex(n=>n.id===pid):-1;
+    NODES.splice(parentIdx+1,0,newNode);
+  }
+  hideModal('addnode');
+  if(pid&&collapsed.has(pid)) collapsed.delete(pid);
+  renderTree();
+  selRow(newNode.id);
+}
+
+// ===== ADD BRANCH =====
+function openAddBranch(leafId){
+  addBranchTargetLeaf=leafId;
+  document.getElementById('br-name').value='';
+  document.getElementById('cond-list').innerHTML='';
+  document.getElementById('br-veto').checked=false;
+  document.getElementById('br-norm-sel').querySelectorAll('.op-btn').forEach((b,i)=>{b.classList.toggle('on-gn',i===0);});
+  renderLibGrid();
+  showModal('addbranch');
+}
+function switchBranchTab(tab,btn){
+  document.querySelectorAll('.md-tab').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('.md-panel').forEach(p=>p.classList.remove('vis'));
+  btn.classList.add('on');
+  document.getElementById('branch-panel-'+tab).classList.add('vis');
+}
+function addCondRow(){
+  const list=document.getElementById('cond-list');
+  const div=document.createElement('div');
+  div.className='cond-builder-row';
+  div.innerHTML=`<select class="cond-s"><option>任务类型</option><option>评估层级</option><option>场景</option><option>装备型号</option><option>电磁环境</option><option>数据可用性</option></select>
+  <select class="cond-s" style="max-width:60px"><option>=</option><option>包含</option><option>!=</option></select>
+  <input class="inp" style="flex:1" placeholder="值">
+  <button class="cond-del-sm" onclick="this.parentNode.remove()">&#10005;</button>`;
+  list.appendChild(div);
+}
+function selNorm(btn){
+  document.getElementById('br-norm-sel').querySelectorAll('.op-btn').forEach(b=>b.classList.remove('on-gn'));
+  btn.classList.add('on-gn');
+}
+
+// Library
+function renderLibGrid(){
+  const q=(document.getElementById('lib-search')?.value||'').toLowerCase();
+  const items=LIB_ITEMS.filter(i=>(libSelCat==='all'||i.cat===libSelCat)&&(!q||i.name.toLowerCase().includes(q)));
+  document.getElementById('lib-grid').innerHTML=items.map(i=>`
+    <div class="lib-item${i._picked?' picked':''}" onclick="toggleLibItem(this,'${i.name}')">
+      <div class="li-top"><span class="li-nm">${i.name}</span><span class="li-ck">${i._picked?'&#10003;':''}</span></div>
+      <div class="li-meta"><span class="li-cat-badge">${i.cat}</span><span style="color:var(--t4)">${i.calc}</span></div>
+    </div>`).join('');
+  const selCt=LIB_ITEMS.filter(i=>i._picked).length;
+  document.getElementById('lib-sel-count').textContent=selCt;
+}
+function filterLib(cat,btn){
+  if(btn){document.querySelectorAll('.lib-cat').forEach(b=>b.classList.remove('on'));btn.classList.add('on');libSelCat=cat||'all';}
+  renderLibGrid();
+}
+function toggleLibItem(el,name){
+  const item=LIB_ITEMS.find(i=>i.name===name);
+  if(item) item._picked=!item._picked;
+  renderLibGrid();
+}
+
+function confirmAddBranch(){
+  const isLib=document.getElementById('branch-panel-lib').classList.contains('vis');
+  if(isLib){
+    const picked=LIB_ITEMS.filter(i=>i._picked);
+    if(!picked.length){alert('请在指标库中勾选至少一个指标');return;}
+    const leaf=NODES.find(n=>n.id===addBranchTargetLeaf);
+    picked.forEach(item=>{
+      NODES.push({id:uid(),pid:addBranchTargetLeaf,type:'br',name:item.name,d:(leaf?leaf.d:2)+1,
+        conds:[],data:item.data,calc:item.calc,norm:item.norm,veto:false});
+    });
+    picked.forEach(i=>i._picked=false);
+  } else {
+    const name=document.getElementById('br-name').value.trim();
+    if(!name){alert('请填写分支名称');return;}
+    const leaf=NODES.find(n=>n.id===addBranchTargetLeaf);
+    const conds=[];
+    document.querySelectorAll('#cond-list .cond-builder-row').forEach(row=>{
+      const sels=row.querySelectorAll('select');
+      const inp=row.querySelector('input');
+      if(inp&&inp.value.trim()) conds.push({dim:sels[0].value,op:sels[1].value,val:inp.value.trim()});
+    });
+    const normBtn=document.querySelector('#br-norm-sel .on-gn');
+    const veto=document.getElementById('br-veto').checked;
+    NODES.push({id:uid(),pid:addBranchTargetLeaf,type:'br',name,d:(leaf?leaf.d:2)+1,
+      conds,data:document.getElementById('br-data').value,
+      calc:document.getElementById('br-calc').value,
+      norm:normBtn?normBtn.textContent:'线性归一化',veto});
+  }
+  hideModal('addbranch');
+  if(addBranchTargetLeaf&&collapsed.has(addBranchTargetLeaf)) collapsed.delete(addBranchTargetLeaf);
+  renderTree();
+  if(addBranchTargetLeaf) selRow(addBranchTargetLeaf);
+}
+
+// ===== RIGHT PANEL =====
+function selRow(id){
+  selId=id; renderTree();
+  const n=NODES.find(x=>x.id===id); if(!n) return;
+  const rp=document.getElementById('rp-body'), rt=document.getElementById('rp-title');
+  if(n.type==='mid'){
+    rt.innerHTML=`<span class="ico ico-mid" style="width:15px;height:15px;font-size:9px;display:inline-flex;align-items:center;justify-content:center;border-radius:3px;background:rgba(152,85,224,.12);color:var(--pp);margin-right:4px">&#9672;</span><span>${n.name}</span><span class="rp-sub">中间层</span>`;
+    rp.innerHTML=`
+      <div class="rp-sec">
+        <div class="rp-sec-t">节点名称</div>
+        <input class="inp" value="${n.name}" onchange="NODES.find(x=>x.id==='${n.id}').name=this.value;renderTree()">
+      </div>
+      <div class="rp-sec">
+        <div class="rp-sec-t">算子配置</div>
+        <div class="rp-fld"><div class="rp-fld-l">汇聚算子</div>
+          <div class="op-sel">${['加权平均','均值聚合','最大值聚合','最小值聚合','几何平均'].map(op=>
+            `<button class="op-btn${n.aggOp===op?' on-cy':''}" onclick="setOp('${n.id}','aggOp',this,'${op}','on-cy')">${op}</button>`).join('')}</div>
+        </div>
+        <div class="rp-fld"><div class="rp-fld-l">权重算子</div>
+          <div class="op-sel">${['AHP权重','等权重','熵权法','专家打分','透传'].map(op=>
+            `<button class="op-btn${n.wOp===op?' on-pp':''}" onclick="setOp('${n.id}','wOp',this,'${op}','on-pp')">${op}</button>`).join('')}</div>
+        </div>
+      </div>
+      <div class="rp-sec">
+        <div class="rp-sec-t">激活规则</div>
+        <div class="info-box">本节点<span class="hl">无需配置条件</span>，激活状态由子节点自动推导。<br>子节点有任意分支命中 → 本节点自动激活；所有子节点均无命中 → 本节点从生成结果中移除。</div>
+      </div>
+      <div class="rp-sec">
+        <div class="rp-sec-t">子节点 <span style="font-family:'Courier New',monospace;color:var(--t3);font-weight:400">${getChildren(id).length}</span></div>
+        ${getChildren(id).map(c=>`<div class="bc" onclick="selRow('${c.id}')"><div class="bc-name"><span>${c.name}</span><span style="font-size:9px;color:var(--t4)">${c.type==='leaf'?getBranches(c.id).length+'个分支':'中间层'}</span></div></div>`).join('')}
+        <div class="bc-add" onclick="openAddNode('${id}')">+ 添加子节点</div>
+      </div>`;
+  } else if(n.type==='leaf'){
+    rt.innerHTML=`<span class="ico ico-lf" style="width:15px;height:15px;font-size:9px;display:inline-flex;align-items:center;justify-content:center;border-radius:3px;background:rgba(52,120,240,.1);color:var(--bl2);margin-right:4px">&#9671;</span><span>${n.name}</span><span class="rp-sub">叶子层</span>`;
+    const branches=getBranches(id);
+    rp.innerHTML=`
+      <div class="rp-sec">
+        <div class="rp-sec-t">泛化节点名称</div>
+        <input class="inp" value="${n.name}" onchange="NODES.find(x=>x.id==='${n.id}').name=this.value;renderTree()">
+        <div style="font-size:10px;color:var(--t4);margin-top:5px">此名称是类别容器，不直接出现在生成的指标体系中；出现的是命中的具体分支名称。</div>
+      </div>
+      <div class="rp-sec">
+        <div class="rp-sec-t">具体分支 <span style="font-family:'Courier New',monospace;color:var(--t3);font-weight:400">${branches.length}</span></div>
+        ${branches.map(b=>`
+          <div class="bc" onclick="selRow('${b.id}')">
+            <div class="bc-name"><span>${b.name}</span>${b.veto?`<span class="veto-badge">VETO</span>`:''}<span style="font-size:9px;color:var(--t4)">${b.norm}</span></div>
+            <div class="bc-conds">${b.conds.length===0?'<span class="free-tag" style="font-size:10px;padding:1px 7px">无条件</span>':b.conds.map(c=>`<span class="ct">${c.dim}${c.op}${c.val}</span>`).join('')}</div>
+          </div>`).join('')}
+        <div class="bc-add-row">
+          <div class="bc-add" onclick="openAddBranch('${id}')">+ 手动添加分支</div>
+          <div class="bc-add bc-add-lib" onclick="openAddBranch('${id}');setTimeout(()=>document.querySelector('.md-tab:nth-child(2)').click(),50)">&#9776; 从指标库</div>
+        </div>
+      </div>`;
+  } else {
+    const parent=NODES.find(x=>x.id===n.pid);
+    rt.innerHTML=`<span class="ico ico-br" style="width:15px;height:15px;font-size:12px;display:inline-flex;align-items:center;justify-content:center;border-radius:3px;background:rgba(232,154,8,.08);color:var(--am);margin-right:4px">&#8226;</span><span>${n.name}</span><span class="rp-sub">具体分支</span>`;
+    rp.innerHTML=`
+      <div class="rp-sec">
+        <div class="rp-sec-t">所属叶子节点</div>
+        <div style="font-size:11px;color:var(--t3)">${parent?parent.name:''}</div>
+      </div>
+      <div class="rp-sec">
+        <div class="rp-sec-t">分支名称（具体指标）</div>
+        <input class="inp" value="${n.name}" onchange="NODES.find(x=>x.id==='${n.id}').name=this.value;renderTree()">
+      </div>
+      <div class="rp-sec">
+        <div class="rp-sec-t">激活条件</div>
+        ${n.conds.length===0?'<div class="free-tag">&#10003; 无条件 — 始终激活</div>'
+          :n.conds.map((c,i)=>`<div class="cond-row">${i>0?'<span style="font-size:9px;color:var(--t4)">AND</span>':''}<span class="cond-dim">${c.dim}</span><span class="cond-op-badge">${c.op}</span><span class="cond-val">${c.val}</span><button class="cond-del-btn">&#10005;</button></div>`).join('')}
+        <button class="add-cond-btn" style="margin-top:6px" onclick="alert('条件编辑器（演示）')">+ 添加条件</button>
+      </div>
+      <div class="rp-sec">
+        <div class="rp-sec-t">数据绑定</div>
+        <div class="data-bind"><div class="db-dot"></div><span>${n.data}</span><span class="db-chg">切换 &#9660;</span></div>
+      </div>
+      <div class="rp-sec">
+        <div class="rp-sec-t">算子绑定</div>
+        <div class="rp-fld"><div class="rp-fld-l">指标值计算算子</div>
+          <div class="data-bind" style="cursor:pointer"><span style="color:var(--cy);font-size:10px">&#9670;</span><span>${n.calc}</span><span class="db-chg">切换 &#9660;</span></div>
+        </div>
+        <div class="rp-fld"><div class="rp-fld-l">归一化算子</div>
+          <div class="op-sel">${['线性归一化','逆线性归一化','S型归一化','比值归一化','阶梯归一化'].map(op=>
+            `<button class="op-btn${n.norm===op?' on-gn':''}" onclick="setOp('${n.id}','norm',this,'${op}','on-gn')">${op}</button>`).join('')}</div>
+        </div>
+      </div>
+      <div class="rp-sec">
+        <div class="rp-sec-t">特殊规则</div>
+        <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--t2);cursor:pointer">
+          <input type="checkbox" ${n.veto?'checked':''} onchange="NODES.find(x=>x.id==='${n.id}').veto=this.checked;renderTree()">
+          <span>一票否决 <span class="veto-badge">VETO</span></span>
+          <span style="font-size:10px;color:var(--t3);margin-left:4px">否决阈值：</span>
+          <input class="inp" value="0.3" style="width:56px">
+        </label>
+        <div class="info-box" style="margin-top:8px;font-size:10px">若此分支得分低于阈值，<span class="hl-am">整体评估总分强制归零</span>，输出否决警告。</div>
+      </div>`;
+  }
+}
+
+function setOp(id,field,btn,val,cls){
+  const n=NODES.find(x=>x.id===id); if(n) n[field]=val;
+  btn.closest('.op-sel').querySelectorAll('.op-btn').forEach(b=>b.classList.remove('on-cy','on-pp','on-gn'));
+  btn.classList.add(cls);
+  renderTree();
+}
+
+// ===== MODAL =====
+function showModal(n){document.getElementById('modal-'+n).classList.add('sh')}
+function hideModal(n){document.getElementById('modal-'+n).classList.remove('sh')}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.ov').forEach(m=>m.classList.remove('sh'))});
+
+// veto row
+function addVetoRow(){
+  const div=document.createElement('div'); div.className='crit-row';
+  div.innerHTML=`<span class="veto-badge">否决</span>
+  <select class="inp sel cr-nm" style="flex:1;padding:2px 20px 2px 5px;font-size:10px">${NODES.filter(n=>n.type==='br').map(n=>`<option>${n.name}</option>`).join('')}</select>
+  <span style="font-size:9px;color:var(--t3)">得分&lt;</span>
+  <input class="cr-thr" value="0.3">
+  <button class="cr-del" onclick="this.closest('.crit-row').remove()">&#10005;</button>`;
+  document.getElementById('veto-list').appendChild(div);
+}
+
+// ===== SIMULATE =====
+function showSim(){ clearSim(); showModal('sim'); }
+function clearSim(){
+  document.querySelectorAll('.r').forEach(r=>r.classList.remove('hit','miss'));
+  document.getElementById('sim-result').style.display='none';
+}
+function evalCond(conds,attrs){
+  if(!conds||!conds.length) return true;
+  return conds.every(c=>{
+    const av=attrs[c.dim]||'';
+    if(c.op==='=') return av===c.val;
+    if(c.op==='包含') return av.includes(c.val)||c.val.includes(av);
+    if(c.op==='!=') return av!==c.val;
+    return false;
+  });
+}
+function buildSimTree(nodeId,attrs){
+  const n=NODES.find(x=>x.id===nodeId); if(!n) return null;
+  if(n.type==='leaf'){
+    const matched=getBranches(nodeId).filter(b=>evalCond(b.conds,attrs));
+    return matched.length?{name:n.name,type:'leaf',branches:matched}:null;
+  }
+  const children=getChildren(nodeId).map(c=>buildSimTree(c.id,attrs)).filter(Boolean);
+  return children.length?{name:n.name,type:'mid',aggOp:n.aggOp,wOp:n.wOp,children}:null;
+}
+function treeToText(t,depth){
+  if(!t) return '';
+  const pfx='  '.repeat(depth);
+  if(t.type==='leaf') return t.branches.map(b=>`${pfx}&#9679; ${b.name}  <span style="color:var(--t4)"> ${b.data}</span>`).join('\n');
+  const head=`${pfx}${depth===0?'&#9670;':'&#9672;'} <span style="color:${depth===0?'var(--wh)':'var(--t1)'}">${t.name}</span>  <span style="color:var(--t3);font-size:10px">[${t.aggOp||''}]</span>`;
+  return head+'\n'+t.children.map(c=>treeToText(c,depth+1)).join('\n');
+}
+function runSim(){
+  const attrs={'任务类型':document.getElementById('sim-tasktype').value,'评估层级':document.getElementById('sim-level').value,'场景':document.getElementById('sim-scene').value,'装备型号':document.getElementById('sim-equip').value};
+  clearSim();
+  const branches=NODES.filter(n=>n.type==='br');
+  let hit=0;
+  const listHtml=[];
+  const hitIds=[];
+  branches.forEach(b=>{
+    const ok=evalCond(b.conds,attrs);
+    if(ok){hit++;hitIds.push(b.id);}
+    const ct=b.conds.length===0?'无条件':b.conds.map(c=>`${c.dim}${c.op}${c.val}`).join(' & ');
+    listHtml.push(`<div class="sim-match"><div class="${ok?'sim-dot-hit':'sim-dot-miss'}"></div><span class="${ok?'sim-nm-hit':'sim-nm-miss'}">${b.name}</span><span class="sim-cond-txt">${ct}</span></div>`);
+  });
+  document.getElementById('sim-hit-count').textContent=`${hit} / ${branches.length}`;
+  document.getElementById('sim-result-list').innerHTML=listHtml.join('');
+  // veto check
+  const vetoHit=NODES.filter(n=>n.type==='br'&&n.veto&&hitIds.includes(n.id));
+  const vBox=document.getElementById('sim-veto-box');
+  if(vetoHit.length){
+    vBox.innerHTML=`<div class="sim-sec-t" style="color:var(--rd)">一票否决指标 <span class="veto-badge">VETO</span></div>`
+      +vetoHit.map(v=>`<div class="sim-match"><div class="sim-dot-hit" style="background:var(--rd)"></div><span style="color:var(--rd)">${v.name} — 若得分低于阈值，总分归零</span></div>`).join('');
+    vBox.style.display='block';
+  } else { vBox.style.display='none'; }
+  // generated tree
+  const rootNode=NODES.find(n=>!n.pid);
+  if(rootNode){
+    const simTree=buildSimTree(rootNode.id,attrs);
+    document.getElementById('sim-tree-html').innerHTML=simTree?treeToText(simTree,0):'<span style="color:var(--t4)">无任何分支命中，指标树为空</span>';
+  }
+  document.getElementById('sim-result').style.display='block';
+  // highlight in tree
+  hitIds.forEach(id=>{const r=document.querySelector(`.r[data-id="${id}"]`);if(r)r.classList.add('hit');});
+  NODES.filter(n=>n.type==='br'&&!hitIds.includes(n.id)).forEach(n=>{const r=document.querySelector(`.r[data-id="${n.id}"]`);if(r)r.classList.add('miss');});
+}
+
+document.querySelectorAll('.tag').forEach(t=>t.addEventListener('click',function(){
+  if(this.classList.contains('on'))this.classList.remove('on');
+  else if(this.classList.contains('on2'))this.classList.remove('on2');
+  else this.classList.add('on');
+}));
+renderTree();
+</script>
+</body>
+</html>

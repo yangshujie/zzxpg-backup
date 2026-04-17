@@ -1,0 +1,190 @@
+@use 'variables' as *;
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+    background-color: $bg-color;
+    color: $text-color-primary;
+    overflow: hidden;
+}
+
+#app {
+    height: 100%;
+}
+
+// Element Plus Overrides for Tech Theme
+:root {
+    --el-color-primary: #{$primary-color};
+    --el-color-success: #{$success-color};
+    --el-color-warning: #{$warning-color};
+    --el-color-danger: #{$danger-color};
+    --el-color-info: #{$info-color};
+    --el-bg-color: #{$bg-color};
+    --el-text-color-primary: #{$text-color-primary};
+    --el-text-color-regular: #{$text-color-secondary};
+    --el-border-color: #{$border-color};
+    --el-border-color-light: #{$border-color};
+    --el-fill-color-blank: transparent;
+}
+
+.el-button {
+    background: rgba(0, 242, 255, 0.1);
+    border: 1px solid $primary-color;
+    color: $primary-color;
+    box-shadow: 0 0 5px rgba(0, 242, 255, 0.2);
+    transition: all 0.3s;
+
+    &:hover,
+    &:focus {
+        background: rgba(0, 242, 255, 0.2);
+        box-shadow: 0 0 15px rgba(0, 242, 255, 0.4);
+        color: #fff;
+        border-color: #fff;
+    }
+
+    &.el-button--primary {
+        background: $primary-color;
+        color: #000;
+        font-weight: bold;
+
+        &:hover {
+            background: lighten($primary-color, 10%);
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.6);
+        }
+    }
+}
+
+.el-card {
+    background: $card-bg-color !important;
+    border: 1px solid $border-color !important;
+    color: $text-color-primary !important;
+    backdrop-filter: $backdrop-filter;
+    box-shadow: $box-shadow-base !important;
+
+    .el-card__header {
+        border-bottom: 1px solid $border-color;
+        font-weight: bold;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+}
+
+.el-table {
+    background-color: transparent !important;
+    --el-table-bg-color: transparent;
+    --el-table-tr-bg-color: transparent;
+    --el-table-header-bg-color: rgba(0, 242, 255, 0.1);
+    --el-table-row-hover-bg-color: rgba(0, 242, 255, 0.05);
+    --el-table-border-color: #{$border-color};
+    color: $text-color-primary;
+
+    th.el-table__cell {
+        background-color: rgba(0, 242, 255, 0.1) !important;
+        color: $primary-color;
+        font-weight: bold;
+        border-bottom: 1px solid $primary-color;
+    }
+
+    td.el-table__cell {
+        border-bottom: 1px solid $border-color;
+    }
+}
+
+.el-input__wrapper,
+.el-textarea__inner {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    box-shadow: 0 0 0 1px $border-color inset !important;
+    color: $text-color-primary !important;
+
+    &:hover,
+    &.is-focus {
+        box-shadow: 0 0 0 1px $primary-color inset !important;
+    }
+}
+
+// Scrollbar
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: $border-color;
+    border-radius: 4px;
+
+    &:hover {
+        background: $primary-color;
+    }
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+// Pagination Tech Style
+.el-pagination {
+    --el-pagination-bg-color: transparent !important;
+    --el-pagination-hover-color: #{$primary-color} !important;
+    --el-pagination-button-bg-color: rgba(255, 255, 255, 0.05) !important;
+    --el-pagination-button-color: #{$text-color-secondary} !important;
+    --el-pagination-item-gap: 8px !important;
+
+    button {
+        background-color: rgba(0, 242, 255, 0.05) !important;
+        border: 1px solid rgba(0, 242, 255, 0.2) !important;
+        color: $text-color-secondary !important;
+        border-radius: 4px !important;
+
+        &:hover:not(:disabled) {
+            color: $primary-color !important;
+            border-color: $primary-color !important;
+            box-shadow: 0 0 10px rgba(0, 242, 255, 0.3) !important;
+        }
+
+        &:disabled {
+            background-color: rgba(255, 255, 255, 0.02) !important;
+            border-color: rgba(255, 255, 255, 0.05) !important;
+        }
+    }
+
+    .el-pager li {
+        background-color: rgba(0, 242, 255, 0.05) !important;
+        border: 1px solid rgba(0, 242, 255, 0.1) !important;
+        color: $text-color-secondary !important;
+        border-radius: 4px !important;
+        transition: all 0.3s !important;
+
+        &:hover {
+            color: $primary-color !important;
+            border-color: $primary-color !important;
+            box-shadow: 0 0 10px rgba(0, 242, 255, 0.2) !important;
+        }
+
+        &.is-active {
+            background-color: rgba(0, 242, 255, 0.2) !important;
+            color: $primary-color !important;
+            border-color: $primary-color !important;
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.4) !important;
+            font-weight: bold !important;
+        }
+    }
+
+    .el-pagination__total,
+    .el-pagination__jump {
+        color: $text-color-secondary !important;
+    }
+
+    .el-input__inner {
+        color: $primary-color !important;
+        background: rgba(0, 242, 255, 0.05) !important;
+        border: 1px solid rgba(0, 242, 255, 0.2) !important;
+    }
+    
+    .el-select .el-input__wrapper {
+        background-color: rgba(0, 242, 255, 0.05) !important;
+        box-shadow: 0 0 0 1px rgba(0, 242, 255, 0.2) inset !important;
+    }
+}
