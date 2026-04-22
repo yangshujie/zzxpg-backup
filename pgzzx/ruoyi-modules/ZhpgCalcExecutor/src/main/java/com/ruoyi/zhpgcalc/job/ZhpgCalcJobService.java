@@ -6,7 +6,7 @@ import com.ruoyi.zhpgcalc.dto.CalcExecuteRequest;
 import com.ruoyi.zhpgcalc.dto.CalcExecuteResponse;
 import com.ruoyi.zhpgcalc.service.CalcExecutorService;
 import com.ruoyi.zhpgcalc.service.ReportGenerationService;
-import com.ruoyi.zhpgcalc.support.ZhpgCallbackClient;
+import com.ruoyi.zhpgcalc.ZhpgCallbackClient;
 import com.xxl.job.core.context.XxlJobHelper;
 import com.xxl.job.core.handler.annotation.XxlJob;
 import lombok.extern.slf4j.Slf4j;

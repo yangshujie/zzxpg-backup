@@ -9,28 +9,28 @@ import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
 
-/**
- * 评估指标体系Mapper接口
- */
 @Mapper
 public interface EvalIndicatorSystemMapper extends BaseMapper<EvalIndicatorSystem> {
 
-    /**
-     * 外部系统选择 - 查询所有指标体系（支持下拉框，支持关键字搜索）
-     * @param keyword 关键字（模糊匹配：体系名称、装备类别、描述）
-     * @return 指标体系列表
-     */
     @Select("<script>" +
-            "SELECT id AS indicatorSystemId, system_name AS indicatorSystemName, " +
+            "SELECT id AS indicatorSystemId, " +
+            "       system_name AS indicatorSystemName, " +
+            "       requirement_id AS requirementId, " +
             "       CASE WHEN refined_indicator_tree IS NOT NULL AND TRIM(refined_indicator_tree) != '' " +
-            "            THEN refined_indicator_tree ELSE indicator_tree END AS treeData, description " +
+            "            THEN refined_indicator_tree ELSE indicator_tree END AS treeData, " +
+            "       description " +
             "FROM pgzc_indicator_system " +
             "WHERE del_flag = '0' " +
-            "<if test='keyword != null and keyword != \"\"'>" +
-            " AND (system_name LIKE CONCAT('%', #{keyword}, '%')" +
-            " OR description LIKE CONCAT('%', #{keyword}, '%'))" +
+            "  AND requirement_id IS NOT NULL " +
+            "<if test='requirementId != null'>" +
+            "  AND requirement_id = #{requirementId} " +
             "</if>" +
-            " ORDER BY id DESC" +
+            "<if test='keyword != null and keyword != \"\"'>" +
+            "  AND (system_name LIKE CONCAT('%', #{keyword}, '%') " +
+            "   OR description LIKE CONCAT('%', #{keyword}, '%')) " +
+            "</if>" +
+            "ORDER BY id DESC" +
             "</script>")
-    List<EvalIndicatorSystemSelectVO> selectIndicatorSystemListForSelect(@Param("keyword") String keyword);
+    List<EvalIndicatorSystemSelectVO> selectIndicatorSystemListForSelect(@Param("keyword") String keyword,
+                                                                         @Param("requirementId") Long requirementId);
 }

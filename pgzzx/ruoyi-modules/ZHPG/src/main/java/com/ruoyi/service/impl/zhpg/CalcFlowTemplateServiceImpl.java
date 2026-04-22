@@ -368,27 +368,10 @@ public class CalcFlowTemplateServiceImpl extends ServiceImpl<CalcFlowTemplateMap
                 + "        \"retryTimes\": 0\n"
                 + "      }\n"
                 + "    },\n"
-                + "    \"weightCalc\": {\n"
-                + "      \"stageCode\": \"WEIGHT_CALC\",\n"
-                + "      \"stageName\": \"weightCalc\",\n"
-                + "      \"stageOrder\": 2,\n"
-                + "      \"enabled\": true,\n"
-                + "      \"config\": {\n"
-                + "        \"weightSource\": \"INDICATOR_SYSTEM\",\n"
-                + "        \"overrideAlgorithmId\": null,\n"
-                + "        \"weightSnapshotMode\": \"SNAPSHOT_ON_START\",\n"
-                + "        \"conductionDirection\": \"TOP_DOWN\",\n"
-                + "        \"normalizeMethod\": \"NONE\",\n"
-                + "        \"weightCheckRule\": \"SUM_TO_ONE\",\n"
-                + "        \"missingWeightPolicy\": \"EQUAL_DISTRIBUTE\",\n"
-                + "        \"weightPrecision\": 8,\n"
-                + "        \"failStrategy\": \"TERMINATE\"\n"
-                + "      }\n"
-                + "    },\n"
                 + "    \"comprehensiveCalc\": {\n"
                 + "      \"stageCode\": \"COMPREHENSIVE_CALC\",\n"
                 + "      \"stageName\": \"comprehensiveCalc\",\n"
-                + "      \"stageOrder\": 3,\n"
+                + "      \"stageOrder\": 2,\n"
                 + "      \"enabled\": true,\n"
                 + "      \"config\": {\n"
                 + "        \"conductionMethodOverride\": \"\",\n"
@@ -407,7 +390,7 @@ public class CalcFlowTemplateServiceImpl extends ServiceImpl<CalcFlowTemplateMap
                 + "    \"reportOutput\": {\n"
                 + "      \"stageCode\": \"REPORT_OUTPUT\",\n"
                 + "      \"stageName\": \"reportOutput\",\n"
-                + "      \"stageOrder\": 4,\n"
+                + "      \"stageOrder\": 3,\n"
                 + "      \"enabled\": true,\n"
                 + "      \"config\": {\n"
                 + "        \"reportTemplateId\": null,\n"
@@ -434,6 +417,7 @@ public class CalcFlowTemplateServiceImpl extends ServiceImpl<CalcFlowTemplateMap
         try {
             JSONObject root = JSON.parseObject(configJson);
             mergeObject(defaultRoot, root);
+            removeWeightCalcStage(defaultRoot);
 
             JSONObject scheduleConfig = defaultRoot.getJSONObject("stages")
                     .getJSONObject("scheduleConfig")
@@ -445,6 +429,16 @@ public class CalcFlowTemplateServiceImpl extends ServiceImpl<CalcFlowTemplateMap
             return defaultRoot.toJSONString();
         } catch (Exception ex) {
             throw new ServiceException("configJson is invalid");
+        }
+    }
+
+    private void removeWeightCalcStage(JSONObject root) {
+        if (root == null) {
+            return;
+        }
+        JSONObject stages = root.getJSONObject("stages");
+        if (stages != null) {
+            stages.remove("weightCalc");
         }
     }
 

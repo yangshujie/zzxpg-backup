@@ -25,6 +25,14 @@ export function getEvalResult(id) {
   })
 }
 
+// 根据计算任务获取评估结果详情
+export function getEvalResultByTask(taskId) {
+  return request({
+    url: '/zhpg/evalResult/byTask/' + taskId,
+    method: 'get'
+  })
+}
+
 /** 报告文件在 MinIO，经文件服务换取可预览/下载的 URL */
 export function getEvalResultReportPreviewUrl(id) {
   return request({

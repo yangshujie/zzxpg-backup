@@ -6,8 +6,7 @@ import com.alibaba.fastjson2.JSONObject;
 import com.ruoyi.common.core.utils.StringUtils;
 
 /**
- * 指标体系 indicator_tree：与原先评估项目一致，推荐形态为 {@code {"treeData": { ... 根节点 ... }}}。
- * 仍兼容顶层为 JSON 数组的历史数据。
+ * Indicator tree JSON helper.
  */
 public final class ZhpgIndicatorTreeJsonHelper {
 
@@ -36,37 +35,47 @@ public final class ZhpgIndicatorTreeJsonHelper {
         }
         String v = raw.trim();
         switch (v) {
+            case "space_recon":
             case "SPACE_RECON":
             case "航天侦察":
-                return "航天侦察";
+                return "space_recon";
+            case "space_domain_awareness":
             case "SPACE_SITUATIONAL_AWARENESS":
             case "SPACE_AWARENESS":
             case "SPACE_SA":
             case "太空态势感知":
-                return "太空态势感知";
+                return "space_domain_awareness";
+            case "space_defense":
             case "SPACE_OFFENSE_DEFENSE":
             case "SPACE_AD":
             case "SPACE_COMBAT":
             case "太空攻防":
-                return "太空攻防";
+                return "space_defense";
+            case "space_track_control":
             case "SPACE_TTC":
             case "COMM_COUNTER":
             case "航天测运控":
-                return "航天测运控";
+                return "space_track_control";
+            case "space_launch":
             case "SPACE_LAUNCH":
             case "航天发射":
-                return "航天发射";
+                return "space_launch";
+            case "sea_based_space":
             case "SEA_BASED_SPACE":
             case "SEA_BASED":
             case "NAV_POSITION":
             case "海基航天":
-                return "海基航天";
+                return "sea_based_space";
             case "SYSTEM_AGGREGATION":
             case "无":
                 return "无";
             default:
                 return v;
         }
+    }
+
+    private static String normalizeSourceCenterCode(String raw) {
+        return normalizeIndicatorTypeCode(raw);
     }
 
     private static String normalizeValueCategoryCode(String raw) {
@@ -122,9 +131,14 @@ public final class ZhpgIndicatorTreeJsonHelper {
                     flowNode.put("fields", one);
                 }
             }
-            if (flowNode.containsKey("fields") && flowNode.getJSONArray("fields") != null
+            if (flowNode.containsKey("fields")
+                    && flowNode.getJSONArray("fields") != null
                     && !flowNode.getJSONArray("fields").isEmpty()) {
                 flowNode.remove("field");
+            }
+            String source = flowNode.getString("source");
+            if (StringUtils.isNotEmpty(source)) {
+                flowNode.put("source", normalizeSourceCenterCode(source));
             }
         }
     }
@@ -164,8 +178,7 @@ public final class ZhpgIndicatorTreeJsonHelper {
     }
 
     /**
-     * 规范化指标树中的 workMode / indicatorType / valueCategory(type) 字段编码。
-     * 若输入无法解析为 JSON，则原样返回。
+     * Normalize workMode / indicatorType / valueCategory(type) / start.source in indicator tree JSON.
      */
     public static String normalizeIndicatorTreeTypes(String indicatorTreeJson) {
         if (StringUtils.isEmpty(indicatorTreeJson)) {
@@ -205,7 +218,7 @@ public final class ZhpgIndicatorTreeJsonHelper {
     }
 
     /**
-     * 供权重遍历使用的根列表，以及写回时是否包一层 treeData。
+     * Parsed tree metadata for weight calculation.
      */
     public static final class ParsedTree {
         private final JSONArray rootsForWeight;
@@ -226,7 +239,7 @@ public final class ZhpgIndicatorTreeJsonHelper {
     }
 
     /**
-     * 解析为权重算法使用的根数组（单根 treeData 时为含一个元素的数组）。
+     * Parse indicator tree JSON to root array used by weight calculation.
      */
     public static ParsedTree parseForWeight(String indicatorTreeJson) {
         if (StringUtils.isEmpty(indicatorTreeJson)) {
@@ -259,7 +272,7 @@ public final class ZhpgIndicatorTreeJsonHelper {
     }
 
     /**
-     * 权重计算后写回字符串，保持与入参相同的外层形态。
+     * Serialize weighted roots back to the original outer shape.
      */
     public static String serializeAfterWeight(ParsedTree meta, JSONArray mutatedRoots) {
         if (mutatedRoots == null) {
@@ -283,7 +296,7 @@ public final class ZhpgIndicatorTreeJsonHelper {
     }
 
     /**
-     * 从指标树 JSON 读取 workMode（根节点或合成多根壳上的字段）。
+     * Extract workMode from indicator tree JSON.
      */
     public static String extractWorkMode(String indicatorTreeJson, String defaultMode) {
         if (StringUtils.isEmpty(indicatorTreeJson)) {
@@ -334,7 +347,7 @@ public final class ZhpgIndicatorTreeJsonHelper {
     }
 
     /**
-     * 读取节点在 JSON 中的业务 id：优先 id，其次 uid（与前端工作台一致）。
+     * Prefer business id in `id`, fallback to `uid`.
      */
     public static String nodeBusinessId(JSONObject node) {
         if (node == null) {
@@ -349,7 +362,7 @@ public final class ZhpgIndicatorTreeJsonHelper {
     }
 
     /**
-     * 从指标树 JSON 解析「根节点」的全局 id 编码：单根取该根；多根壳（合成根）取第一个真实子节点。
+     * Extract root id code from indicator tree JSON.
      */
     public static String extractRootIdCode(String indicatorTreeJson) {
         if (StringUtils.isEmpty(indicatorTreeJson)) {

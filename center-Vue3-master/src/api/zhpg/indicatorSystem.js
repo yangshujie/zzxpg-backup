@@ -5,11 +5,20 @@ export function listIndicatorSystem(query) {
 }
 
 /** 下拉：外部系统/评估任务等选择指标体系 */
-export function selectIndicatorSystem(keyword) {
+export function selectIndicatorSystem(query) {
+  const params = {}
+  if (typeof query === 'string') {
+    if (query) params.keyword = query
+  } else if (query && typeof query === 'object') {
+    if (query.keyword) params.keyword = query.keyword
+    if (query.requirementId !== undefined && query.requirementId !== null && query.requirementId !== '') {
+      params.requirementId = query.requirementId
+    }
+  }
   return request({
     url: '/zhpg/indicatorSystem/select',
     method: 'get',
-    params: keyword ? { keyword } : {}
+    params
   })
 }
 

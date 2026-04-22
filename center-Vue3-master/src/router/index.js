@@ -83,6 +83,26 @@ export const constantRoutes = [
         meta: { title: '个人中心', icon: 'user' }
       }
     ]
+  },
+  {
+    path: '/zhpg/zhfx',
+    component: Layout,
+    hidden: true,
+    redirect: 'noredirect',
+    children: [
+      {
+        path: 'flowRunnerTest',
+        component: () => import('@/views/zhpg/zhfx/flowRunnerTest/index.vue'),
+        name: 'FlowRunnerTest',
+        meta: { title: '评估计算 · 测试入口', activeMenu: '/zhpg/zhfx' }
+      },
+      {
+        path: 'flowRunner',
+        component: () => import('@/views/zhpg/zhfx/flowRunner/index.vue'),
+        name: 'FlowRunner',
+        meta: { title: '评估计算 · 流程执行', activeMenu: '/zhpg/zhfx' }
+      }
+    ]
   }
 ]
 

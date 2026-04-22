@@ -222,8 +222,9 @@ public class EvalIndicatorSystemController extends BaseController {
 
     @ApiOperation("外部系统选择 - 查询所有指标体系（支持下拉框，支持关键字搜索）")
     @GetMapping("/select")
-    public AjaxResult selectForSelect(@RequestParam(required = false) String keyword) {
-        return AjaxResult.success(systemService.selectIndicatorSystemListForSelect(keyword));
+    public AjaxResult selectForSelect(@RequestParam(required = false) String keyword,
+                                      @RequestParam(required = false) Long requirementId) {
+        return AjaxResult.success(systemService.selectIndicatorSystemListForSelect(keyword, requirementId));
     }
 
     @ApiOperation("客观赋权：模拟样本矩阵调用 zgpg_algs（熵权 cal_weight / AHP ahp），写回 indicator_tree_weight；"

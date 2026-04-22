@@ -71,10 +71,12 @@
         </template>
       </el-table-column>
       <el-table-column label="创建时间" prop="createTime" min-width="168" align="center" />
-      <el-table-column label="操作" width="140" align="center" fixed="right">
+      <el-table-column label="操作" width="220" align="center" fixed="right">
         <template #default="{ row }">
           <div class="action-cell">
             <el-button link type="primary" size="small" @click="handleView(row)">详情</el-button>
+            <el-divider direction="vertical" />
+            <el-button link type="primary" size="small" @click="openFlowRunner(row)">进入流程</el-button>
             <el-divider direction="vertical" />
             <el-button link type="danger" size="small" @click="handleDelete(row)">删除</el-button>
           </div>
@@ -531,6 +533,7 @@
 
 <script setup>
 import { ref, reactive, computed, getCurrentInstance, nextTick, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { View, Download, ArrowDown, InfoFilled, WarningFilled, TrendCharts, Collection, DocumentChecked, DataAnalysis, Document, Medal, Setting, DataLine } from '@element-plus/icons-vue'
 import {
@@ -546,6 +549,7 @@ import { selectIndicatorSystem, getIndicatorSystem } from '@/api/zhpg/indicatorS
 import { parseIndicatorTreeToForest } from '@/utils/zhpgIndicatorTreeJson'
 
 const { proxy } = getCurrentInstance()
+const router = useRouter()
 
 // ==================== 列表状态 ====================
 const loading = ref(false)
@@ -717,6 +721,23 @@ async function handleView(row) {
   } catch { /* 保留列表行数据 */ }
   await nextTick()
   await loadIndicatorSystemData()
+}
+
+function openFlowRunner(row) {
+  if (!row?.templateId || !row?.indicatorSystemId) {
+    ElMessage.warning('历史结果缺少流程模板或指标体系信息，无法进入流程')
+    return
+  }
+  router.push({
+    path: '/zhpg/zhfx/flowRunner',
+    query: {
+      templateId: row.templateId,
+      indicatorSystemId: row.indicatorSystemId,
+      taskId: row.taskId || '',
+      evalResultId: row.id,
+      taskName: row.taskName || ''
+    }
+  })
 }
 
 async function loadIndicatorSystemData() {

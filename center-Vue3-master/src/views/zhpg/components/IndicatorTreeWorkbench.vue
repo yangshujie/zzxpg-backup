@@ -218,7 +218,14 @@
       </template>
     </el-dialog>
 
-    <ZhpgWeightTuningDialog v-model="weightTuningVisible" :tree-data="treeData" />
+    <ZhpgWeightTuningDialog
+      v-model="weightTuningVisible"
+      :tree-data="treeData"
+      :show-objective-weight="showObjectiveWeight"
+      :objective-weight-loading="objectiveWeightLoading"
+      :objective-weight-disabled="objectiveWeightDisabled"
+      @run-objective-weight="$emit('run-objective-weight')"
+    />
   </div>
 </template>
 
@@ -247,7 +254,7 @@ import { ZHPG_WORK_MODE } from '@/constants/zhpgWorkMode'
 import { getCalcMethodWorkMode, setCalcMethodWorkMode } from '@/utils/zhpg/calcMethodAlgorithm'
 import { buildNodeAlgoDialogState, applyNodeAlgoDialogState } from '@/utils/zhpgNodeAlgoOverride'
 
-const emit = defineEmits(['import-indicators', 'import-template', 'edit-node'])
+const emit = defineEmits(['import-indicators', 'import-template', 'edit-node', 'run-objective-weight'])
 
 const props = defineProps({
   variant: {
@@ -276,7 +283,13 @@ const props = defineProps({
   conductionAlgorithm: { type: [String, Object], default: undefined },
   globalWorkMode: { type: String, default: '' },
   /** 主分协同初始粗建阶段：隐藏叶节点的计算方法配置区域 */
-  hideLeafCalcMethod: { type: Boolean, default: false }
+  hideLeafCalcMethod: { type: Boolean, default: false },
+  /** 透传：是否显示权重赋权计算按钮 */
+  showObjectiveWeight: { type: Boolean, default: false },
+  /** 透传：权重赋权计算加载状态 */
+  objectiveWeightLoading: { type: Boolean, default: false },
+  /** 透传：权重赋权计算禁用状态 */
+  objectiveWeightDisabled: { type: Boolean, default: false }
 })
 
 const treeData = defineModel('treeData', { type: Array, default: () => [] })

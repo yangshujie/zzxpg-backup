@@ -22,6 +22,8 @@ import org.springframework.stereotype.Service;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * 评估指标体系Service实现
@@ -221,8 +223,8 @@ public class EvalIndicatorSystemServiceImpl
     }
 
     @Override
-    public List<EvalIndicatorSystemSelectVO> selectIndicatorSystemListForSelect(String keyword) {
-        List<EvalIndicatorSystemSelectVO> list = baseMapper.selectIndicatorSystemListForSelect(keyword);
+    public List<EvalIndicatorSystemSelectVO> selectIndicatorSystemListForSelect(String keyword, Long requirementId) {
+        List<EvalIndicatorSystemSelectVO> list = baseMapper.selectIndicatorSystemListForSelect(keyword, requirementId);
         for (EvalIndicatorSystemSelectVO vo : list) {
             Object raw = vo.getTreeData();
             if (raw instanceof String && StringUtils.isNotEmpty((String) raw)) {
@@ -235,7 +237,22 @@ public class EvalIndicatorSystemServiceImpl
                 vo.setTreeData(unwrapTreeDataPayload(raw));
             }
         }
-        return list;
+        return list.stream()
+                .filter(vo -> vo.getRequirementId() != null)
+                .filter(vo -> requirementId == null || Objects.equals(requirementId, vo.getRequirementId()))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public EvalIndicatorSystem getByRequirementId(Long requirementId) {
+        if (requirementId == null) {
+            return null;
+        }
+        QueryWrapper<EvalIndicatorSystem> wrapper = new QueryWrapper<>();
+        wrapper.eq("requirement_id", requirementId)
+                .orderByDesc("update_time", "create_time", "id")
+                .last("limit 1");
+        return baseMapper.selectOne(wrapper);
     }
 
     /**

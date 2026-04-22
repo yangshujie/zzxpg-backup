@@ -42,4 +42,12 @@ public interface ICalcTaskService extends IService<CalcTask> {
      * 获取任务执行状态（供前端轮询）
      */
     CalcTaskAsyncResult getTaskStatus(Long taskId);
+
+    /**
+     * 更新任务执行进度和详细阶段日志
+     * @param taskId 任务ID
+     * @param progress 进度百分比 (0-100)
+     * @param message 阶段描述信息
+     */
+    void updateTaskProgress(Long taskId, int progress, String message);
 }

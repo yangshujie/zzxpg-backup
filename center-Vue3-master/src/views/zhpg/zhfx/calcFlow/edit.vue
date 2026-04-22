@@ -35,23 +35,10 @@
 
       <!-- ==================== 流程阶段可视化 ==================== -->
       <el-divider content-position="left">流程阶段编排</el-divider>
-      <div class="flow-pipeline">
-        <div
-          v-for="(stage, idx) in stageList"
-          :key="stage.key"
-          class="flow-stage-wrapper"
-        >
-          <div
-            class="flow-stage"
-            :class="{ active: activeStage === stage.key, disabled: !stageConfig[stage.key].enabled }"
-            @click="activeStage = stage.key"
-          >
-            <div class="flow-stage-name">{{ stage.label }}</div>
-          </div>
-          <div v-if="idx < stageList.length - 1" class="flow-arrow">
-            <el-icon><Right /></el-icon>
-          </div>
-        </div>
+      <div class="flow-wizard">
+        <el-steps :active="activeStageIdx" finish-status="success" align-center>
+          <el-step v-for="stage in stageList" :key="stage.key" :title="stage.label" />
+        </el-steps>
       </div>
       <!-- ==================== 阶段配置表单 ==================== -->
       <div class="stage-config-panel">
@@ -318,7 +305,9 @@
     <template #footer>
       <div class="dialog-footer">
         <el-button @click="$emit('update:visible', false)">取消</el-button>
-        <el-button type="primary" @click="handleSave">保存</el-button>
+        <el-button :disabled="activeStageIdx === 0" @click="prevStage">上一步</el-button>
+        <el-button v-if="activeStageIdx < stageList.length - 1" type="primary" @click="nextStage">下一步</el-button>
+        <el-button v-else type="primary" @click="handleSave">保存</el-button>
       </div>
     </template>
   </el-dialog>
@@ -326,10 +315,10 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted, getCurrentInstance, watch, nextTick } from 'vue'
-import { Right } from '@element-plus/icons-vue'
 import { getCalcFlow, addCalcFlow, updateCalcFlow } from '@/api/zhpg/calcFlow'
 import { listAllAlgorithm } from '@/api/zhpg/algorithm'
 import { listTemplates, getTemplate } from '@/api/zhpg/report'
+import { buildDesignModeCalcFlowConfig } from '@/utils/zhpg/calcFlowConfig'
 
 const props = defineProps({
   visible: Boolean,
@@ -413,11 +402,25 @@ const routeStrategyOptions = [
 // ==================== 流程阶段定义 ====================
 const stageList = [
   { key: 'scheduleConfig', label: '调度策略选配' },
-  { key: 'weightCalc', label: '权重计算' },
   { key: 'comprehensiveCalc', label: '综合分析计算' },
   { key: 'reportOutput', label: '评估报告模板选配' }
 ]
 const activeStage = ref('scheduleConfig')
+const activeStageIdx = computed(() => Math.max(stageList.findIndex(stage => stage.key === activeStage.value), 0))
+
+function nextStage() {
+  const idx = activeStageIdx.value
+  if (idx < stageList.length - 1) {
+    activeStage.value = stageList[idx + 1].key
+  }
+}
+
+function prevStage() {
+  const idx = activeStageIdx.value
+  if (idx > 0) {
+    activeStage.value = stageList[idx - 1].key
+  }
+}
 
 // ==================== 表单数据 ====================
 const form = reactive({
@@ -777,6 +780,7 @@ async function loadTemplate(id) {
       const cfg = typeof data.configJson === 'string' ? JSON.parse(data.configJson) : data.configJson
       if (cfg.stages) {
         Object.keys(cfg.stages).forEach(key => {
+          if (key === 'weightCalc') return
           if (stageConfig[key]) {
             deepAssign(stageConfig[key], cfg.stages[key])
           }
@@ -826,11 +830,8 @@ async function handleSave() {
     return
   }
 
-  // 组装 configJson
-  const configJson = JSON.stringify({
-    stages: JSON.parse(JSON.stringify(stageConfig)),
-    runtimePolicy: JSON.parse(JSON.stringify(runtimePolicy))
-  })
+  // 设计模式模板不携带指标体系，保存时不写 weightCalc。
+  const configJson = JSON.stringify(buildDesignModeCalcFlowConfig({ stages: stageConfig, runtimePolicy }))
 
   const submitData = { ...form, configJson }
   // 与指标体系解耦：保存时不再提交关联（避免无效 ID 触发后端校验）
@@ -883,7 +884,10 @@ function normalizeEquipmentTypeValue(value) {
 </script>
 
 <style scoped>
-/* ==================== 流程管线样式 ==================== */
+/* ==================== 流程向导样式 ==================== */
+.flow-wizard {
+  padding: 18px 24px 22px;
+}
 .flow-pipeline {
   display: flex;
   align-items: center;

@@ -85,4 +85,15 @@ public class CalcTaskCallbackController extends BaseController {
         }
         return AjaxResult.success();
     }
+
+    /**
+     * 更新计算进度和日志
+     */
+    @PostMapping("/progress/{taskId}")
+    public AjaxResult onProgress(@PathVariable Long taskId, @RequestBody JSONObject progressData) {
+        int progress = progressData.getIntValue("progress");
+        String message = progressData.getString("message");
+        calcTaskService.updateTaskProgress(taskId, progress, message);
+        return AjaxResult.success();
+    }
 }

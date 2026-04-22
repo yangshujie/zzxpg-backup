@@ -142,6 +142,22 @@ public class EvalResultServiceImpl extends ServiceImpl<EvalResultMapper, EvalRes
         return result;
     }
 
+    @Override
+    public EvalResult getDetailByTaskId(Long taskId) {
+        if (taskId == null) {
+            return null;
+        }
+        QueryWrapper<EvalResult> wrapper = new QueryWrapper<>();
+        wrapper.eq("task_id", taskId).eq("del_flag", 0).orderByDesc("create_time").last("LIMIT 1");
+        EvalResult result = baseMapper.selectOne(wrapper);
+        if (result == null) {
+            return null;
+        }
+        parseDimensions(result);
+        fillTaskInfo(result);
+        return result;
+    }
+
     /**
      * 填充关联计算任务信息
      */
@@ -211,6 +227,15 @@ public class EvalResultServiceImpl extends ServiceImpl<EvalResultMapper, EvalRes
         }
         if (StringUtils.isNotEmpty(query.getWorkflowStatus())) {
             wrapper.eq("workflow_status", query.getWorkflowStatus());
+        }
+        if (query.getTaskId() != null) {
+            wrapper.eq("task_id", query.getTaskId());
+        }
+        if (query.getTemplateId() != null) {
+            wrapper.eq("template_id", query.getTemplateId());
+        }
+        if (query.getIndicatorSystemId() != null) {
+            wrapper.eq("indicator_system_id", query.getIndicatorSystemId());
         }
         if (query.getTemplateName() != null) {
             wrapper.like("template_name", query.getTemplateName());

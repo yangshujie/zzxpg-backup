@@ -42,9 +42,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.text.SimpleDateFormat;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -150,17 +152,19 @@ public class CalcTaskServiceImpl extends ServiceImpl<CalcTaskMapper, CalcTask> i
         }
 
         // 2. 校验指标体系
-        Long indicatorSystemId = request.getIndicatorSystemId();
+        EvalIndicatorSystem indicatorSystem = resolveIndicatorSystem(request);
+        Long indicatorSystemId = indicatorSystem.getId();
         if (indicatorSystemId == null) {
             throw new ServiceException("未指定指标体系：计算流程模板不绑定指标体系，请在发起计算请求中传入 indicatorSystemId");
         }
-        EvalIndicatorSystem indicatorSystem = indicatorSystemService.getById(indicatorSystemId);
         if (indicatorSystem == null) {
             throw new ServiceException("indicator system not found");
         }
 
         // 3. 解析配置
-        JSONObject configRoot = parseConfig(template.getConfigJson());
+        String effectiveConfigJson = StringUtils.isNotBlank(request.getRuntimeConfigJson())
+                ? request.getRuntimeConfigJson() : template.getConfigJson();
+        JSONObject configRoot = parseConfig(effectiveConfigJson);
         JSONObject stages = configRoot.getJSONObject("stages");
         if (stages == null) {
             throw new ServiceException("template configJson missing stages");
@@ -186,7 +190,7 @@ public class CalcTaskServiceImpl extends ServiceImpl<CalcTaskMapper, CalcTask> i
         }
         task.setAssessTaskId(assessTaskId);
         task.setCalcFlowTemplateId(template.getId());
-        task.setTemplateSnapshotJson(template.getConfigJson());
+        task.setTemplateSnapshotJson(effectiveConfigJson);
         task.setRunStatus("PENDING");  // 初始状态：待执行
         task.setCurrentStage("SCHEDULE_CONFIG");
         task.setProgressPercent(0);
@@ -241,6 +245,7 @@ public class CalcTaskServiceImpl extends ServiceImpl<CalcTaskMapper, CalcTask> i
         // 6. 构建 XXL-JOB 执行参数
         JSONObject executorParam = new JSONObject();
         executorParam.put("taskId", task.getId());
+        executorParam.put("executionId", request.getExecutionId());
         executorParam.put("taskName", task.getTaskName());
         executorParam.put("templateId", template.getId());
         executorParam.put("templateName", template.getTemplateName());
@@ -313,7 +318,9 @@ public class CalcTaskServiceImpl extends ServiceImpl<CalcTaskMapper, CalcTask> i
             baseMapper.updateById(task);
 
             // 创建权重计算阶段日志
-            createWeightCalcStageLog(task, indicatorSystem, weightedTreeJson);
+            if (request.getSkipWeightLog() == null || !request.getSkipWeightLog()) {
+                createWeightCalcStageLog(task, indicatorSystem, weightedTreeJson);
+            }
 
             // 创建综合计算阶段日志（初始状态为PENDING，等待XXL-JOB执行完成后再更新）
             createComprehensiveCalcPendingStageLog(task);
@@ -458,7 +465,37 @@ public class CalcTaskServiceImpl extends ServiceImpl<CalcTaskMapper, CalcTask> i
         return result;
     }
 
-    // ==================== 私有方法 ====================
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateTaskProgress(Long taskId, int progress, String message) {
+        CalcTask task = baseMapper.selectById(taskId);
+        if (task == null) return;
+
+        // 更新进度
+        if (progress > task.getProgressPercent()) {
+            task.setProgressPercent(progress);
+            task.setUpdateTime(new Date());
+            baseMapper.updateById(task);
+        }
+
+        // 记录阶段明细日志
+        if (StringUtils.isNotBlank(message)) {
+            try {
+                CalcTaskStageLog stageLog = new CalcTaskStageLog();
+                stageLog.setCalcTaskId(taskId);
+                stageLog.setStageCode("CALC_PROGRESS");
+                stageLog.setStageName("综合计算进度");  // 固定阶段名
+                stageLog.setInputSummary(message);   // 将细节存入输入摘要字段
+                stageLog.setStageOrder(10 + (int) (System.currentTimeMillis() % 100000));
+                stageLog.setExecuteStatus("SUCCESS");
+                stageLog.setBeginTime(new Date());
+                stageLog.setFinishTime(new Date());
+                stageLogMapper.insert(stageLog);
+            } catch (Exception e) {
+                log.error("更新任务进度日志失败: taskId={}", taskId, e);
+            }
+        }
+    }
 
     private boolean shouldSkipWeightRecalculationStage(JSONObject weightStage, JSONObject weightConfig) {
         if (weightStage != null && weightStage.containsKey("enabled")
@@ -576,6 +613,10 @@ public class CalcTaskServiceImpl extends ServiceImpl<CalcTaskMapper, CalcTask> i
 
             // 从回调结果中提取字段，添加详细日志
             BigDecimal score = result.getBigDecimal("score");
+            // 兜底处理：确保得分是百分制
+            if (score != null && score.compareTo(BigDecimal.ONE) <= 0 && score.compareTo(BigDecimal.ZERO) >= 0) {
+                score = score.multiply(new BigDecimal("100")).setScale(2, RoundingMode.HALF_UP);
+            }
             String grade = result.getString("grade");
             String conclusion = result.getString("conclusion");
             String suggestion = result.getString("suggestion");
@@ -607,7 +648,12 @@ public class CalcTaskServiceImpl extends ServiceImpl<CalcTaskMapper, CalcTask> i
                     JSONObject one = dimensions.getJSONObject(i);
                     EvalResult.DimensionScore dimensionScore = new EvalResult.DimensionScore();
                     dimensionScore.setLabel(one.getString("label"));
-                    dimensionScore.setValue(one.getBigDecimal("value"));
+                    BigDecimal val = one.getBigDecimal("value");
+                    // 确保维度得分也是百分制
+                    if (val != null && val.compareTo(BigDecimal.ONE) <= 0 && val.compareTo(BigDecimal.ZERO) >= 0) {
+                        val = val.multiply(new BigDecimal("100")).setScale(2, RoundingMode.HALF_UP);
+                    }
+                    dimensionScore.setValue(val);
                     dimensionScore.setTone(one.getString("tone"));
                     dimensionScores.add(dimensionScore);
                 }
@@ -647,6 +693,31 @@ public class CalcTaskServiceImpl extends ServiceImpl<CalcTaskMapper, CalcTask> i
                 log.error("根本原因: {}", e.getCause().getMessage());
             }
         }
+    }
+
+    private EvalIndicatorSystem resolveIndicatorSystem(CalcExecutionRequest request) {
+        Long indicatorSystemId = request.getIndicatorSystemId();
+        Long requirementId = request.getRequirementId();
+        EvalIndicatorSystem indicatorSystem;
+        if (indicatorSystemId != null) {
+            indicatorSystem = indicatorSystemService.getById(indicatorSystemId);
+            if (indicatorSystem == null) {
+                throw new ServiceException("indicator system not found");
+            }
+            if (requirementId != null && !Objects.equals(requirementId, indicatorSystem.getRequirementId())) {
+                throw new ServiceException("所选指标体系与需求ID不匹配");
+            }
+            return indicatorSystem;
+        }
+        if (requirementId == null) {
+            throw new ServiceException("未指定指标体系：请传入 indicatorSystemId 或 requirementId");
+        }
+        indicatorSystem = indicatorSystemService.getByRequirementId(requirementId);
+        if (indicatorSystem == null) {
+            throw new ServiceException("未找到与需求ID关联的指标体系");
+        }
+        request.setIndicatorSystemId(indicatorSystem.getId());
+        return indicatorSystem;
     }
 
     private JSONObject parseConfig(String configJson) {

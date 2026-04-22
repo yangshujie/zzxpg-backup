@@ -59,6 +59,15 @@
         <div class="wtl-footer-left">
           <el-button :disabled="!childrenList.length" @click="averageAmongSiblings">一键平均</el-button>
           <el-button @click="validateCurrent">校验（当前父节点）</el-button>
+          <el-button
+            v-if="showObjectiveWeight"
+            type="warning"
+            plain
+            icon="DataAnalysis"
+            :loading="objectiveWeightLoading"
+            :disabled="objectiveWeightDisabled"
+            @click="$emit('run-objective-weight')"
+          >权重赋权计算</el-button>
         </div>
         <div class="wtl-footer-right">
           <el-button @click="onCancel">取 消</el-button>
@@ -82,8 +91,25 @@ const props = defineProps({
   treeData: {
     type: Array,
     required: true
+  },
+  /** 是否显示权重赋权计算按钮 */
+  showObjectiveWeight: {
+    type: Boolean,
+    default: false
+  },
+  /** 权重赋权计算加载状态 */
+  objectiveWeightLoading: {
+    type: Boolean,
+    default: false
+  },
+  /** 权重赋权计算禁用状态 */
+  objectiveWeightDisabled: {
+    type: Boolean,
+    default: false
   }
 })
+
+const emit = defineEmits(['run-objective-weight'])
 
 const treeRef = ref(null)
 const snapshotJson = ref('')

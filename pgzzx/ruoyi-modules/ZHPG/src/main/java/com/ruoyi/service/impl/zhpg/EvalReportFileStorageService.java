@@ -48,6 +48,7 @@ public class EvalReportFileStorageService {
         String safeCode = sanitizeFileToken(resultCode);
         String targetName = "calc" + calcTaskId + "_" + safeCode + "." + ext;
         String contentType = "html".equals(ext) ? "text/html;charset=UTF-8"
+                : "pdf".equals(ext) ? "application/pdf"
                 : "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
         MultipartFile multipart = new ByteArrayMultipartFile(
                 "file", targetName, contentType, bytes);
@@ -71,7 +72,7 @@ public class EvalReportFileStorageService {
         if (e.startsWith(".")) {
             e = e.substring(1);
         }
-        if ("docx".equals(e) || "html".equals(e) || "htm".equals(e)) {
+        if ("docx".equals(e) || "pdf".equals(e) || "html".equals(e) || "htm".equals(e)) {
             return "htm".equals(e) ? "html" : e;
         }
         return "html";

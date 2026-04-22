@@ -1,3 +1,4 @@
+import { normalizeZhpgEquipmentType } from '@/constants/zhpgIndicatorSystem'
 import { ZHPG_WORK_MODE, normalizeZhpgWorkMode } from '@/constants/zhpgWorkMode'
 
 /**
@@ -54,8 +55,7 @@ function normalizeWorkMode(workMode) {
 function normalizeDataSource(d) {
   const row = {
     name: d && d.name != null ? String(d.name) : '',
-    // source: 数据来源字段（如"太空攻防"），存入name作为数据目录的标签前缀
-    source: d && d.source != null ? String(d.source) : '',
+    source: normalizeZhpgEquipmentType(d && d.source != null ? String(d.source) : '', '') || '',
     directory: d && d.directory != null ? String(d.directory) : '',
     fields: normalizeFields(d && d.fields),
     taskStage: d && d.taskStage != null ? String(d.taskStage) : '',

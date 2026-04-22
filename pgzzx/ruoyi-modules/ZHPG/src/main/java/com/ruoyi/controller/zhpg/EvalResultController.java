@@ -71,6 +71,13 @@ public class EvalResultController extends BaseController {
         return AjaxResult.success(evalResultService.getDetail(id));
     }
 
+    @ApiOperation("根据计算任务获取评估结果详情")
+    @GetMapping("/byTask/{taskId}")
+    public AjaxResult getInfoByTask(@PathVariable Long taskId) {
+        EvalResult result = evalResultService.getDetailByTaskId(taskId);
+        return result == null ? AjaxResult.error("暂无评估结果") : AjaxResult.success(result);
+    }
+
     @ApiOperation("获取评估报告预览地址")
     @GetMapping("/{id}/reportPreviewUrl")
     public AjaxResult reportPreviewUrl(@PathVariable Long id) {

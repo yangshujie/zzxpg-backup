@@ -51,4 +51,9 @@ public interface IEvalResultService extends IService<EvalResult> {
      * 详情（含维度列表解析）
      */
     EvalResult getDetail(Long id);
+
+    /**
+     * 根据计算任务获取评估结果详情
+     */
+    EvalResult getDetailByTaskId(Long taskId);
 }

@@ -14,13 +14,24 @@ public class CalcExecutionRequest {
     @ApiModelProperty(value = "流程模板ID", required = true)
     private Long calcFlowTemplateId;
 
+    @ApiModelProperty("流程执行实例ID")
+    private Long executionId;
+
     @ApiModelProperty("执行任务名称")
     private String taskName;
 
     @ApiModelProperty("关联评估任务ID")
     private Long assessTaskId;
 
-    @NotNull(message = "indicatorSystemId is required")
-    @ApiModelProperty(value = "运行时指标体系ID", required = true)
+    @ApiModelProperty(value = "运行时指标体系ID")
     private Long indicatorSystemId;
+
+    @ApiModelProperty("关联需求ID")
+    private Long requirementId;
+
+    @ApiModelProperty("本次执行运行时配置JSON，优先于模板configJson")
+    private String runtimeConfigJson;
+
+    @ApiModelProperty("是否跳过权重计算阶段展示（主流程第三步点击计算时使用）")
+    private Boolean skipWeightLog;
 }

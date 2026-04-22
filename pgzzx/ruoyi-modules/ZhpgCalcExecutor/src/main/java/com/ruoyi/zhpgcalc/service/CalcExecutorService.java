@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import com.ruoyi.zhpgcalc.ZhpgCallbackClient;
 
 import javax.annotation.Resource;
 import java.math.BigDecimal;
@@ -28,6 +29,9 @@ public class CalcExecutorService {
     @Resource
     private ExternalEvaluationDataClient externalEvaluationDataClient;
 
+    @Resource
+    private ZhpgCallbackClient zhpgCallbackClient;
+
     @Value("${zhpg.calc.data-input-mode:MOCK}")
     private String defaultDataInputMode;
 
@@ -38,11 +42,17 @@ public class CalcExecutorService {
 
         int rows = Math.max(1, cc.getIntValue("mockSampleRows", 8));
         ParsedTree t = parseTree(request.getWeightedTreeJson());
+        
+        zhpgCallbackClient.notifyProgress(request.getTaskId(), 10, "解析指标体系完成");
+        
         ExternalDataContext externalDataContext = loadExternalDataContext(request, cc, t.roots);
+        zhpgCallbackClient.notifyProgress(request.getTaskId(), 20, "外部数据对接完成");
+        
         processLeafNodes(t.roots, rows, externalDataContext);
+        zhpgCallbackClient.notifyProgress(request.getTaskId(), 50, "底层指标计算完成");
 
         JSONArray dimensions = new JSONArray();
-        BigDecimal score = calcOverall(t.roots, dimensions, cc);
+        BigDecimal score = calcOverall(t.roots, dimensions, cc, request.getTaskId());
         if (score == null) score = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
 
         CalcExecuteResponse r = new CalcExecuteResponse();
@@ -613,45 +623,88 @@ public class CalcExecutorService {
         }
         return null;
     }
-    private BigDecimal calcOverall(JSONArray roots, JSONArray dims, JSONObject cc) {
+    private BigDecimal calcOverall(JSONArray roots, JSONArray dims, JSONObject cc, Long taskId) {
         if (roots == null || roots.isEmpty()) return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
         BigDecimal sum = BigDecimal.ZERO;
         int cnt = 0;
+        
+        int total = roots.size();
         if (useParallel(cc, roots.size())) {
             List<BigDecimal> scores = Collections.synchronizedList(new ArrayList<>());
-            List<JSONObject> rows = Collections.synchronizedList(new ArrayList<>());
             chunks(roots.size(), batchSize(cc)).parallelStream().forEach(batch -> {
                 for (Integer i : batch) {
                     JSONObject root = roots.getJSONObject(i);
+                    String label = StringUtils.hasText(root.getString("label")) ? root.getString("label") : ("Dimension" + (i + 1));
+                    zhpgCallbackClient.notifyProgress(taskId, 50 + (int)(40.0 * (scores.size() + 1) / total), "正在计算维度: " + label);
+                    
                     BigDecimal s = calcNode(root, cc);
-                    if (s == null) continue;
-                    scores.add(s);
-                    JSONObject row = new JSONObject();
-                    row.put("label", StringUtils.hasText(root.getString("label")) ? root.getString("label") : ("Dimension" + (i + 1)));
-                    row.put("value", s);
-                    row.put("tone", tone(s));
-                    rows.add(row);
+                    if (s != null) {
+                        scores.add(s);
+                    }
                 }
             });
             for (BigDecimal s : scores) sum = sum.add(s);
             cnt = scores.size();
-            for (JSONObject r : rows) dims.add(r);
+            // 收集所有得分
+            for (int i = 0; i < roots.size(); i++) {
+                collectAllScores(roots.getJSONObject(i), dims, cc);
+            }
         } else {
             for (int i = 0; i < roots.size(); i++) {
                 JSONObject root = roots.getJSONObject(i);
+                String label = StringUtils.hasText(root.getString("label")) ? root.getString("label") : ("Dimension" + (i + 1));
+                zhpgCallbackClient.notifyProgress(taskId, 50 + (int)(40.0 * (i + 1) / total), "正在计算维度: " + label);
+                
                 BigDecimal s = calcNode(root, cc);
-                if (s == null) continue;
-                sum = sum.add(s);
-                cnt++;
-                JSONObject row = new JSONObject();
-                row.put("label", StringUtils.hasText(root.getString("label")) ? root.getString("label") : ("Dimension" + (i + 1)));
-                row.put("value", s);
-                row.put("tone", tone(s));
-                dims.add(row);
+                if (s != null) {
+                    sum = sum.add(s);
+                    cnt++;
+                }
+                // 递归收集所有节点到 dimensions，以便前端展示所有层级的得分
+                collectAllScores(root, dims, cc);
             }
         }
         if (cnt == 0) return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
-        return sum.divide(BigDecimal.valueOf(cnt), 2, RoundingMode.HALF_UP);
+        BigDecimal overall = sum.divide(BigDecimal.valueOf(cnt), 2, RoundingMode.HALF_UP);
+        
+        // 最终修正：确保总体得分也是百分制
+        overall = normalizeToHundred(overall);
+        
+        return overall;
+    }
+
+    /**
+     * 归一化分值到百分制
+     */
+    private BigDecimal normalizeToHundred(BigDecimal s) {
+        if (s == null) return null;
+        // 如果结果在 [0, 1] 之间，且不是因为本来就是极低分，则转成百分制
+        // 这里增加一个判断：如果 scale 较大或者明确是比例，则乘以 100
+        if (s.compareTo(BigDecimal.ONE) <= 0 && s.compareTo(BigDecimal.ZERO) >= 0) {
+            return s.multiply(BigDecimal.valueOf(100)).setScale(2, RoundingMode.HALF_UP);
+        }
+        return s.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    /**
+     * 递归收集所有层级指标的得分
+     */
+    private void collectAllScores(JSONObject node, JSONArray dims, JSONObject cc) {
+        if (node == null) return;
+        BigDecimal s = node.getBigDecimal("score");
+        if (s != null) {
+            JSONObject row = new JSONObject();
+            row.put("label", node.getString("label"));
+            row.put("value", s);
+            row.put("tone", tone(s));
+            dims.add(row);
+        }
+        JSONArray children = node.getJSONArray("children");
+        if (children != null) {
+            for (int i = 0; i < children.size(); i++) {
+                collectAllScores(children.getJSONObject(i), dims, cc);
+            }
+        }
     }
 
     private BigDecimal calcNode(JSONObject n, JSONObject cc) {
@@ -688,6 +741,8 @@ public class CalcExecutorService {
         }
 
         if (agg != null) {
+            // 确保聚合后的父节点得分也是百分制
+            agg = normalizeToHundred(agg);
             n.put("score", agg);
             n.put("calculatedValue", agg);
         }
@@ -711,7 +766,14 @@ public class CalcExecutorService {
 
     private BigDecimal scoreLeaf(JSONObject n, JSONObject cc) {
         BigDecimal s = readLeafScore(n);
-        if (s != null) return s.setScale(2, RoundingMode.HALF_UP);
+        if (s != null) {
+            // 如果读取到的得分是 [0, 1] 之间的比例，自动转成 [0, 100] 的分值
+            if (s.compareTo(BigDecimal.ONE) <= 0 && s.compareTo(BigDecimal.ZERO) >= 0) {
+                // 排除刚好是 0 或 1 的情况（也统一处理没太大副作用，因为 1.0 变 100 也是对的）
+                s = s.multiply(BigDecimal.valueOf(100));
+            }
+            return s.setScale(2, RoundingMode.HALF_UP);
+        }
         String p = nullPolicy(cc);
         if ("TERMINATE".equalsIgnoreCase(p)) throw new IllegalStateException("Leaf score missing");
         if ("SKIP".equalsIgnoreCase(p)) return null;
