@@ -32,8 +32,6 @@ public class ReportTemplate extends BaseEntity {
     /** HTML模板内容 */
     private String htmlContent;
 
-    /** 逻辑删除 */
-    private Integer deleted;
 
     /** 数据库中无 remark 字段，标记为排除 */
     @TableField(exist = false)

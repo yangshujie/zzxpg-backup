@@ -6,18 +6,20 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.common.core.exception.ServiceException;
 import com.ruoyi.common.core.utils.StringUtils;
 import com.ruoyi.domain.zhpg.EvalIndicatorSystem;
-import com.ruoyi.domain.zhpg.EvalIndicatorSystemTemplate;
 import com.ruoyi.domain.zhpg.dto.EvalIndicatorSystemSelectVO;
 import com.ruoyi.mapper.zhpg.EvalIndicatorSystemMapper;
 import com.ruoyi.service.zhpg.IEvalIndicatorSystemService;
-import com.ruoyi.service.zhpg.IEvalIndicatorSystemTemplateService;
+import com.ruoyi.zhpg.util.ZhpgIndicatorLibrarySyncHelper;
 import com.ruoyi.zhpg.util.ZhpgIndicatorSystemTreeHelper;
 import com.ruoyi.zhpg.util.ZhpgIndicatorTreeJsonHelper;
 import com.ruoyi.zhpg.util.ZhpgRequirementRefinedPayloadHelper;
+import com.ruoyi.service.zhpg.IEvalIndicatorService;
+import org.springframework.beans.factory.annotation.Autowired;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 import java.util.Date;
@@ -28,6 +30,7 @@ import java.util.stream.Collectors;
 /**
  * 评估指标体系Service实现
  */
+@Slf4j
 @Service
 public class EvalIndicatorSystemServiceImpl
         extends ServiceImpl<EvalIndicatorSystemMapper, EvalIndicatorSystem>
@@ -36,7 +39,13 @@ public class EvalIndicatorSystemServiceImpl
     private static final String DEFAULT_WORK_MODE = "内部流转";
 
     @Autowired
-    private IEvalIndicatorSystemTemplateService systemTemplateService;
+    private IEvalIndicatorService indicatorService;
+
+    @Autowired
+    private ZhpgIndicatorLibrarySyncHelper librarySyncHelper;
+
+    @Autowired
+    private EvaluationResultLineageClient evaluationResultLineageClient;
 
     @Override
     public Page<EvalIndicatorSystem> selectSystemPage(Page page, EvalIndicatorSystem query) {
@@ -53,7 +62,11 @@ public class EvalIndicatorSystemServiceImpl
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public int insertSystem(EvalIndicatorSystem system) {
+        if (system.getIsTemplate() == null) {
+            system.setIsTemplate(0);
+        }
         validateSystemNameUnique(system, null);
         if (StringUtils.isEmpty(system.getStatus())) {
             system.setStatus("DRAFT");
@@ -62,21 +75,36 @@ public class EvalIndicatorSystemServiceImpl
             system.setIsApplied(0);
         }
         normalizeWorkMode(system);
+        
+        // 1. 先插入以获取体系 ID
+        int rows = baseMapper.insert(system);
+        
+        // 2. 同步指标树到库 (此时 system.getId() 已经有值，用于隔离重名冲突)
+        syncTreeToIndicatorLibrary(system);
+        
+        // 3. 将同步后回填了 ID 的 JSON 树和 idCode 更新回体系记录
         syncIndicatorSystemIdCodeFromTree(system);
-        validateSystemIdCodeUnique(system, null);
-        return baseMapper.insert(system);
+        validateSystemIdCodeUnique(system, system.getId());
+        baseMapper.updateById(system);
+        submitIndicatorSystemLineage(system);
+        
+        return rows;
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public int updateSystem(EvalIndicatorSystem system) {
         if (system.getId() == null) {
             throw new ServiceException("指标体系ID不能为空");
         }
         validateSystemNameUnique(system, system.getId());
         normalizeWorkMode(system);
+        syncTreeToIndicatorLibrary(system);
         syncIndicatorSystemIdCodeFromTree(system);
         validateSystemIdCodeUnique(system, system.getId());
-        return baseMapper.updateById(system);
+        int rows = baseMapper.updateById(system);
+        submitIndicatorSystemLineage(system);
+        return rows;
     }
 
     @Override
@@ -86,50 +114,28 @@ public class EvalIndicatorSystemServiceImpl
 
     @Override
     public EvalIndicatorSystem createFromTemplate(Long templateId, String systemName, String operator) {
-        EvalIndicatorSystemTemplate template = systemTemplateService.getById(templateId);
-        if (template == null) {
+        if (templateId == null) {
+            throw new ServiceException("模板ID不能为空");
+        }
+        EvalIndicatorSystem template = baseMapper.selectById(templateId);
+        if (template == null || template.getIsTemplate() == null || template.getIsTemplate() != 1) {
             throw new ServiceException("指标体系模板不存在或已删除");
         }
         EvalIndicatorSystem system = new EvalIndicatorSystem();
-        system.setSystemName(StringUtils.isNotEmpty(systemName) ? systemName : template.getTemplateName());
-        // 指标体系行级不再维护指标集类型 / 装备类型（由指标树 JSON 等承载；与前端「暂不设置」一致）
+        system.setSystemName(StringUtils.isNotEmpty(systemName) ? systemName : template.getSystemName());
         system.setIndicatorTree(template.getIndicatorTree());
-            system.setWorkMode(ZhpgIndicatorTreeJsonHelper.extractWorkMode(template.getIndicatorTree(), DEFAULT_WORK_MODE));
+        system.setWorkMode(ZhpgIndicatorTreeJsonHelper.normalizeWorkModeCode(
+                template.getWorkMode(),
+                ZhpgIndicatorTreeJsonHelper.extractWorkMode(template.getIndicatorTree(), DEFAULT_WORK_MODE)));
+        system.setConductionConfig(template.getConductionConfig());
+        system.setWeightAssignConfig(template.getWeightAssignConfig());
         system.setDescription(template.getDescription());
         system.setTemplateId(templateId);
+        system.setIsTemplate(0);
         system.setStatus("DRAFT");
         system.setIsApplied(0);
         system.setCreateBy(operator);
         system.setCreateTime(new Date());
-
-        // 从模板配置JSON中提取权重分配算法等配置
-        if (StringUtils.isNotEmpty(template.getConfigJson())) {
-            try {
-                com.alibaba.fastjson2.JSONObject config = com.alibaba.fastjson2.JSON.parseObject(template.getConfigJson());
-                if (config != null) {
-                    String weightAlg = config.getString("weightAssignAlgorithm");
-                    if (StringUtils.isNotEmpty(weightAlg)) {
-                        system.setWeightAssignAlgorithm(weightAlg);
-                    }
-                    String weightParams = config.getString("weightAssignParams");
-                    if (StringUtils.isNotEmpty(weightParams)) {
-                        system.setWeightAssignParams(weightParams);
-                    }
-                    String conductionAlg = config.getString("conductionAlgorithm");
-                    if (StringUtils.isNotEmpty(conductionAlg)) {
-                        JSONObject one = new JSONObject();
-                        one.put("name", conductionAlg);
-                        system.setConductionConfig(one.toJSONString());
-                    } else {
-                        JSONObject globalConduction = config.getJSONObject("globalConduction");
-                        if (globalConduction != null && !globalConduction.isEmpty()) {
-                            system.setConductionConfig(globalConduction.toJSONString());
-                        }
-                    }
-                }
-            } catch (Exception ignored) {
-            }
-        }
 
         insertSystem(system);
         return baseMapper.selectById(system.getId());
@@ -147,17 +153,7 @@ public class EvalIndicatorSystemServiceImpl
     }
 
     private void validateSystemIdCodeUnique(EvalIndicatorSystem system, Long excludeId) {
-        if (system == null || StringUtils.isEmpty(system.getIdCode())) {
-            return;
-        }
-        QueryWrapper<EvalIndicatorSystem> wrapper = new QueryWrapper<>();
-        wrapper.eq("id_code", system.getIdCode().trim());
-        if (excludeId != null) {
-            wrapper.ne("id", excludeId);
-        }
-        if (baseMapper.selectCount(wrapper) > 0) {
-            throw new ServiceException("指标体系ID编码已被占用，请调整指标树根节点 id 或删除冲突记录");
-        }
+        // 需求变更：允许重复的 ID 编码以支持多次回传细化生成多条记录
     }
 
     private void validateSystemNameUnique(EvalIndicatorSystem system, Long excludeId) {
@@ -169,13 +165,25 @@ public class EvalIndicatorSystemServiceImpl
             throw new ServiceException("指标体系名称不能为空");
         }
         system.setSystemName(name);
+        Integer scopeIsTemplate = system.getIsTemplate();
+        if (scopeIsTemplate == null && excludeId != null) {
+            EvalIndicatorSystem persisted = baseMapper.selectById(excludeId);
+            if (persisted != null) {
+                scopeIsTemplate = persisted.getIsTemplate();
+            }
+        }
+        if (scopeIsTemplate == null) {
+            scopeIsTemplate = 0;
+        }
         QueryWrapper<EvalIndicatorSystem> wrapper = new QueryWrapper<>();
         wrapper.eq("system_name", name);
+        wrapper.eq("is_template", scopeIsTemplate);
         if (excludeId != null) {
             wrapper.ne("id", excludeId);
         }
         if (baseMapper.selectCount(wrapper) > 0) {
-            throw new ServiceException("指标体系名称已存在，请使用其他名称");
+            String label = scopeIsTemplate != null && scopeIsTemplate == 1 ? "指标体系模板" : "指标体系";
+            throw new ServiceException(label + "名称「" + name + "」已存在，请修改名称。");
         }
     }
 
@@ -187,6 +195,7 @@ public class EvalIndicatorSystemServiceImpl
             wrapper.eq(StringUtils.isNotEmpty(workMode), "work_mode", workMode);
             wrapper.eq(StringUtils.isNotEmpty(query.getStatus()), "status", query.getStatus());
             wrapper.eq(query.getIsApplied() != null, "is_applied", query.getIsApplied());
+            wrapper.eq(query.getIsTemplate() != null, "is_template", query.getIsTemplate());
             wrapper.eq(query.getRequirementId() != null, "requirement_id", query.getRequirementId());
             if (StringUtils.isNotEmpty(query.getBuildPhase())) {
                 String bp = query.getBuildPhase().trim();
@@ -209,9 +218,9 @@ public class EvalIndicatorSystemServiceImpl
         if (StringUtils.isNotEmpty(system.getIndicatorTree())) {
             system.setIndicatorTree(ZhpgIndicatorTreeJsonHelper.normalizeIndicatorTreeTypes(system.getIndicatorTree()));
         }
-        if (StringUtils.isNotEmpty(system.getRefinedIndicatorTree())) {
-            system.setRefinedIndicatorTree(
-                    ZhpgIndicatorTreeJsonHelper.normalizeIndicatorTreeTypes(system.getRefinedIndicatorTree()));
+        if (StringUtils.isNotEmpty(system.getIndicatorTreeWeight())) {
+            system.setIndicatorTreeWeight(
+                    ZhpgIndicatorTreeJsonHelper.normalizeIndicatorTreeTypes(system.getIndicatorTreeWeight()));
         }
         String fallback = ZhpgIndicatorTreeJsonHelper.extractWorkMode(
                 ZhpgIndicatorSystemTreeHelper.jsonForWorkModeExtraction(system), DEFAULT_WORK_MODE);
@@ -269,6 +278,7 @@ public class EvalIndicatorSystemServiceImpl
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public EvalIndicatorSystem receiveRefinedFromRequirementPayload(JSONObject payload, String operator) {
         if (payload == null || payload.isEmpty()) {
             throw new ServiceException("请求体不能为空");
@@ -281,51 +291,61 @@ public class EvalIndicatorSystemServiceImpl
         wrapped.put("treeData", treeRoot);
         String indicatorTreeJson = ZhpgIndicatorTreeJsonHelper.normalizeIndicatorTreeTypes(wrapped.toJSONString());
 
-        Long targetId = payload.getLong("targetIndicatorSystemId");
-        if (targetId == null || targetId <= 0) {
-            targetId = payload.getLong("indicatorSystemId");
+        // 需求变更：同一个需求 ID 只保留一条记录。尝试按 requirementId 匹配并更新（Upsert）。
+        Long rid = payload.getLong("requirementId");
+        if (rid == null || rid <= 0) {
+            JSONObject nested = payload.getJSONObject("indicatorSystem");
+            if (nested != null) {
+                rid = nested.getLong("requirementId");
+            }
         }
-        if (targetId != null && targetId > 0) {
-            return mergeRequirementRefinedIntoExisting(targetId, payload, indicatorTreeJson, operator);
+
+        if (rid != null && rid > 0) {
+            EvalIndicatorSystem existing = getByRequirementId(rid);
+            if (existing != null) {
+                return mergeRequirementRefinedIntoExisting(existing.getId(), payload, indicatorTreeJson, operator);
+            }
         }
-        EvalIndicatorSystem byRoot = findIndicatorSystemByTreeRootId(
-                ZhpgRequirementRefinedPayloadHelper.extractRootNodeIdForMatch(treeRoot));
-        if (byRoot != null) {
-            return mergeRequirementRefinedIntoExisting(byRoot.getId(), payload, indicatorTreeJson, operator);
-        }
+
         return createIndicatorSystemFromRequirementPayload(payload, treeRoot, indicatorTreeJson, operator);
     }
 
-    /**
-     * 按指标树根节点 id（与库 id_code 一致）定位体系；若无匹配且根 id 为纯数字则再按主键 id 尝试。
-     */
-    private EvalIndicatorSystem findIndicatorSystemByTreeRootId(String rootNodeId) {
-        if (StringUtils.isEmpty(rootNodeId)) {
-            return null;
+    private EvalIndicatorSystem mergeRequirementRefinedIntoExisting(
+            Long targetId, JSONObject payload, String indicatorTreeJson, String operator) {
+        EvalIndicatorSystem system = getById(targetId);
+        if (system == null) {
+            throw new ServiceException("指标体系不存在");
         }
-        String trimmed = rootNodeId.trim();
-        QueryWrapper<EvalIndicatorSystem> byCode = new QueryWrapper<>();
-        byCode.eq("id_code", trimmed);
-        List<EvalIndicatorSystem> byCodeList = baseMapper.selectList(byCode);
-        if (byCodeList != null && !byCodeList.isEmpty()) {
-            if (byCodeList.size() > 1) {
-                throw new ServiceException(
-                        "treeData 根节点 id 与多条指标体系的 id_code 相同，请指定 targetIndicatorSystemId 或 indicatorSystemId");
+        applyRequirementIdFromPayload(payload, system);
+        system.setIndicatorTreeWeight(indicatorTreeJson);
+        // 同步主树（如果主树为空或根据业务需要覆盖）
+        if (StringUtils.isEmpty(system.getIndicatorTree())) {
+            system.setIndicatorTree(indicatorTreeJson);
+        }
+
+        String block = ZhpgRequirementRefinedPayloadHelper.buildDescription(payload);
+        if (StringUtils.isNotEmpty(block)) {
+            if (StringUtils.isNotEmpty(system.getDescription())) {
+                system.setDescription(system.getDescription() + "\n\n--- 需求侧回传更新 ---\n" + block);
+            } else {
+                system.setDescription(block);
             }
-            return byCodeList.get(0);
         }
-        try {
-            long pk = Long.parseLong(trimmed);
-            if (pk > 0) {
-                EvalIndicatorSystem s = getById(pk);
-                if (s != null) {
-                    return s;
-                }
-            }
-        } catch (NumberFormatException ignored) {
-            // 非数字则仅依赖 id_code
+
+        String src = payload.getString("sourceSubsystem");
+        system.setSourceSubsystem(StringUtils.isNotEmpty(src) ? src.trim() : "需求分析分系统");
+
+        String extractedMode = ZhpgIndicatorTreeJsonHelper.extractWorkMode(indicatorTreeJson, system.getWorkMode());
+        system.setWorkMode(ZhpgIndicatorTreeJsonHelper.normalizeWorkModeCode(extractedMode, system.getWorkMode()));
+
+        if ("主分协同".equals(system.getWorkMode())) {
+            system.setBuildPhase("REFINED");
+            system.setRefinedTime(new Date());
         }
-        return null;
+        system.setUpdateBy(operator);
+        system.setUpdateTime(new Date());
+        updateSystem(system);
+        return getById(targetId);
     }
 
     /**
@@ -347,36 +367,6 @@ public class EvalIndicatorSystemServiceImpl
         }
     }
 
-    private EvalIndicatorSystem mergeRequirementRefinedIntoExisting(
-            Long targetId, JSONObject payload, String indicatorTreeJson, String operator) {
-        EvalIndicatorSystem system = getById(targetId);
-        if (system == null) {
-            throw new ServiceException("指标体系不存在");
-        }
-        applyRequirementIdFromPayload(payload, system);
-        system.setRefinedIndicatorTree(indicatorTreeJson);
-
-        String block = ZhpgRequirementRefinedPayloadHelper.buildDescription(payload);
-        if (StringUtils.isNotEmpty(block)) {
-            if (StringUtils.isNotEmpty(system.getDescription())) {
-                system.setDescription(system.getDescription() + "\n\n--- 需求侧回传 ---\n" + block);
-            } else {
-                system.setDescription(block);
-            }
-        }
-
-        String src = payload.getString("sourceSubsystem");
-        system.setSourceSubsystem(StringUtils.isNotEmpty(src) ? src.trim() : "需求分析分系统");
-        if ("主分协同".equals(system.getWorkMode())) {
-            system.setBuildPhase("REFINED");
-            system.setRefinedTime(new Date());
-        }
-        system.setUpdateBy(operator);
-        system.setUpdateTime(new Date());
-        updateSystem(system);
-        return getById(targetId);
-    }
-
     private EvalIndicatorSystem createIndicatorSystemFromRequirementPayload(
             JSONObject payload, Object treeRoot, String indicatorTreeJson, String operator) {
         String rootLabel = ZhpgRequirementRefinedPayloadHelper.extractRootLabel(treeRoot);
@@ -388,7 +378,7 @@ public class EvalIndicatorSystemServiceImpl
         String extractedMode = ZhpgIndicatorTreeJsonHelper.extractWorkMode(indicatorTreeJson, DEFAULT_WORK_MODE);
         String normalizedMode = ZhpgIndicatorTreeJsonHelper.normalizeWorkModeCode(extractedMode, DEFAULT_WORK_MODE);
         if ("主分协同".equals(normalizedMode)) {
-            system.setRefinedIndicatorTree(indicatorTreeJson);
+            system.setIndicatorTreeWeight(indicatorTreeJson);
         }
         String src = payload.getString("sourceSubsystem");
         system.setSourceSubsystem(StringUtils.isNotEmpty(src) ? src.trim() : "需求分析分系统");
@@ -402,6 +392,52 @@ public class EvalIndicatorSystemServiceImpl
         }
         insertSystem(system);
         return getById(system.getId());
+    }
+
+    private void syncTreeToIndicatorLibrary(EvalIndicatorSystem system) {
+        if (system == null) return;
+        String operator = StringUtils.isNotEmpty(system.getUpdateBy()) ? system.getUpdateBy() : system.getCreateBy();
+        if (StringUtils.isEmpty(operator)) operator = "admin";
+
+        Long systemId = system.getId();
+        // 如果 systemName 为空（可能由 updateSystem 触发且未传全量字段），尝试补齐
+        if (systemId != null && StringUtils.isEmpty(system.getSystemName())) {
+            EvalIndicatorSystem existing = baseMapper.selectById(systemId);
+            if (existing != null) {
+                system.setSystemName(existing.getSystemName());
+            }
+        }
+        String systemName = system.getSystemName();
+
+        // 同步主指标树
+        if (StringUtils.isNotEmpty(system.getIndicatorTree())) {
+            system.setIndicatorTree(librarySyncHelper.syncTreeToLibrary(
+                    system.getIndicatorTree(), system.getIsTemplate(), systemId, systemName, indicatorService, operator));
+        }
+
+        // 同步结果/权重树（包含回传细化或权重结果）
+        if (StringUtils.isNotEmpty(system.getIndicatorTreeWeight())) {
+            system.setIndicatorTreeWeight(librarySyncHelper.syncTreeToLibrary(
+                    system.getIndicatorTreeWeight(), system.getIsTemplate(), systemId, systemName, indicatorService, operator));
+        }
+    }
+
+    private void submitIndicatorSystemLineage(EvalIndicatorSystem system) {
+        try {
+            Object tree = null;
+            // 回传细化场景主要写入 indicatorTreeWeight，需优先使用该树写血缘。
+            if (StringUtils.isNotEmpty(system.getIndicatorTreeWeight())) {
+                tree = JSON.parse(system.getIndicatorTreeWeight());
+            } else if (StringUtils.isNotEmpty(system.getIndicatorTree())) {
+                tree = JSON.parse(system.getIndicatorTree());
+            }
+            evaluationResultLineageClient.submitIndicatorSystemLineage(tree, system.getRequirementId());
+        } catch (Exception e) {
+            log.warn("指标体系血缘写入入队失败: systemId={}, requirementId={}, error={}",
+                    system != null ? system.getId() : null,
+                    system != null ? system.getRequirementId() : null,
+                    e.getMessage(), e);
+        }
     }
 
 }

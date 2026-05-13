@@ -104,13 +104,7 @@ public class AlgorithmRequirementServiceImpl extends ServiceImpl<AlgorithmRequir
             paramMapper.deleteParamsByRequirementIds(Arrays.asList(id));
         }
         // 逻辑删除
-        for (Long id : ids) {
-            AlgorithmRequirement requirement = new AlgorithmRequirement();
-            requirement.setId(id);
-            requirement.setDelFlag("2");
-            baseMapper.updateById(requirement);
-        }
-        return ids.length;
+        return baseMapper.deleteBatchIds(Arrays.asList(ids));
     }
 
     @Override
@@ -205,7 +199,6 @@ public class AlgorithmRequirementServiceImpl extends ServiceImpl<AlgorithmRequir
 
     private QueryWrapper<AlgorithmRequirement> buildQueryWrapper(AlgorithmRequirement query) {
         QueryWrapper<AlgorithmRequirement> wrapper = new QueryWrapper<>();
-        wrapper.eq("del_flag", "0");
         if (query != null) {
             if (StringUtils.isNotBlank(query.getCode())) {
                 wrapper.like("code", query.getCode());

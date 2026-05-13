@@ -42,9 +42,6 @@ public class AlgorithmInfo extends BaseEntity {
     @ApiModelProperty(value = "算法类型")
     private String algorithmType;
 
-    @Excel(name = "装备类型")
-    @ApiModelProperty(value = "装备类型")
-    private String equipmentType;
 
     @ApiModelProperty(value = "算法描述")
     @TableField("algorithm_desc")
@@ -66,9 +63,6 @@ public class AlgorithmInfo extends BaseEntity {
     @Excel(name = "状态")
     @ApiModelProperty(value = "状态(ENABLED启用 DISABLED停用)")
     private String status;
-
-    @TableLogic
-    private String delFlag;
 
     /** 算法参数列表（非数据库字段；字段名避免与 BaseEntity#params 冲突，JSON 仍用 params） */
     @JsonProperty("params")

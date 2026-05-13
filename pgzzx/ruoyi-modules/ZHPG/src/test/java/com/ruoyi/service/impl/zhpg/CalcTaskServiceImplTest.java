@@ -41,7 +41,8 @@ public class CalcTaskServiceImplTest {
                 mock(IAlgorithmInfoService.class),
                 mock(IEvalResultService.class),
                 mock(IReportTemplateService.class),
-                mock(XxlJobAdminClient.class)
+                mock(XxlJobAdminClient.class),
+                mock(EvaluationResultLineageClient.class)
         );
 
         CalcExecutionRequest request = new CalcExecutionRequest();
@@ -72,7 +73,8 @@ public class CalcTaskServiceImplTest {
                 mock(IAlgorithmInfoService.class),
                 mock(IEvalResultService.class),
                 mock(IReportTemplateService.class),
-                mock(XxlJobAdminClient.class)
+                mock(XxlJobAdminClient.class),
+                mock(EvaluationResultLineageClient.class)
         );
 
         CalcExecutionRequest request = new CalcExecutionRequest();

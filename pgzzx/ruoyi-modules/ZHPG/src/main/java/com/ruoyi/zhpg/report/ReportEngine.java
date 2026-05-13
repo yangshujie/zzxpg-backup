@@ -1,5 +1,9 @@
 package com.ruoyi.zhpg.report;
 
+import com.ruoyi.common.report.DocxGenerator;
+import com.ruoyi.common.report.HtmlNormalizer;
+import com.ruoyi.common.report.HtmlTemplateRenderer;
+
 import java.util.Map;
 
 /**

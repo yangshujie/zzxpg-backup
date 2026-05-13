@@ -1,7 +1,6 @@
 package com.ruoyi.zhpgcalc.algs;
 
 import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,11 +12,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
- * 调用 zgpg_algs（Flask + Celery）算法管理接口
+ * Client for algorithm services.
  */
 @Slf4j
 @Component
@@ -38,34 +39,74 @@ public class ZgpgAlgsClient {
     @Value("${zhpg.algs.poll-max-wait-ms:300000}")
     private long pollMaxWaitMs;
 
-    /**
-     * 调用算法服务
-     *
-     * @param algsName 算法包名，如 calMean、sigmoid
-     * @param dataLiteral 数据字面量，如 [[1.0,2.0],[3.0,4.0]]
-     * @param configJson  算法配置JSON
-     * @param algsType    算法类型：character(特征提取)、norm(指标量化)等
-     * @return 算法结果
-     */
     public Object runAlgorithm(String algsName, String dataLiteral, String configJson, String algsType) {
         if (algsName == null || algsName.isEmpty()) {
-            throw new IllegalArgumentException("算法名不能为空");
+            throw new IllegalArgumentException("Algorithm name must not be empty");
         }
         String cfg = configJson == null || configJson.isEmpty() ? "{}" : configJson;
         String type = algsType == null || algsType.isEmpty() ? "character" : algsType;
 
+        List<Map<String, Object>> bodies = buildCompatibleRequestBodies(algsName, dataLiteral, cfg, type);
+        return executeWithCompatibility(bodies.get(0), bodies.get(1));
+    }
+
+    List<Map<String, Object>> buildCompatibleRequestBodies(String algsName, String dataLiteral, String configJson, String algsType) {
+        Map<String, Object> legacyBody = buildLegacyZgpgAlgsRequestBody(algsName, dataLiteral, configJson, algsType);
+        Map<String, Object> hubBody = buildHubRequestBody(algsName, dataLiteral, configJson, algsType);
+        return java.util.Arrays.asList(legacyBody, hubBody);
+    }
+
+    Map<String, Object> buildHubRequestBody(String algsName, String dataLiteral, String configJson, String algsType) {
         Map<String, Object> body = new HashMap<>();
+        String cfg = configJson == null || configJson.isEmpty() ? "{}" : configJson;
+        String type = algsType == null || algsType.isEmpty() ? "character" : algsType;
+
+        // New Hub format: alg_name + args + structured config object.
+        String fullAlgName = algsName;
+        if (algsType != null && !algsType.isEmpty() && !algsName.contains("/")) {
+            fullAlgName = type + "/" + algsName;
+        }
+        body.put("alg_name", fullAlgName);
+        try {
+            body.put("args", Collections.singletonList(JSON.parse(dataLiteral)));
+        } catch (Exception e) {
+            body.put("args", Collections.singletonList(dataLiteral));
+        }
+        try {
+            body.put("config", JSON.parseObject(cfg));
+        } catch (Exception e) {
+            Map<String, Object> fallbackCfg = new HashMap<>();
+            fallbackCfg.put("rawConfig", cfg);
+            body.put("config", fallbackCfg);
+        }
+        return body;
+    }
+
+    Map<String, Object> buildLegacyZgpgAlgsRequestBody(String algsName, String dataLiteral, String configJson, String algsType) {
+        Map<String, Object> body = new HashMap<>();
+        String cfg = configJson == null || configJson.isEmpty() ? "{}" : configJson;
+        String type = algsType == null || algsType.isEmpty() ? "character" : algsType;
+
+        // Legacy zgpg_algs format: s_algs_load reads these exact fields.
+        // Important: config must stay a JSON string because Python does eval(task["config"]).
         body.put("data", dataLiteral);
-        body.put("dataType", "0");  // 0=内存数据
+        body.put("dataType", "0");
         body.put("algs_name", algsName);
         body.put("algs_type", type);
         body.put("config", cfg);
-
-        String loadPath = postAlgsLoad(body);
-        return pollUntilDone(resolveStatusUrl(loadPath), body);
+        return body;
     }
 
-    private String postAlgsLoad(Map<String, Object> body) {
+    private Object executeWithCompatibility(Map<String, Object> preferredBody, Map<String, Object> fallbackBody) {
+        try {
+            return executeOnce(preferredBody);
+        } catch (RuntimeException ex) {
+            log.warn("Preferred algorithm request format failed, retrying compatible request format: {}", ex.getMessage());
+            return executeOnce(fallbackBody);
+        }
+    }
+
+    private Object executeOnce(Map<String, Object> body) {
         String url = joinUrl(baseUrl, "/algsmanagement/algs_load");
         try {
             RestTemplate rt = buildRestTemplate();
@@ -74,16 +115,26 @@ public class ZgpgAlgsClient {
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
             String raw = rt.postForObject(url, entity, String.class);
             if (raw == null || raw.isEmpty()) {
-                throw new RuntimeException("算法服务 algs_load 返回空响应");
+                throw new RuntimeException("Algorithm service returned an empty response");
             }
             JSONObject o = JSON.parseObject(raw);
+
             String loc = o.getString("location");
-            if (loc == null || loc.isEmpty()) {
-                throw new RuntimeException("算法服务未返回任务 location: " + raw);
+            String taskId = o.getString("task_id");
+            if (loc != null && !loc.isEmpty()) {
+                return pollUntilDone(resolveStatusUrl(loc), body);
+            } else if (taskId != null && !taskId.isEmpty()) {
+                String statusUrl = "/algsmanagement/status/" + taskId;
+                return pollUntilDone(resolveStatusUrl(statusUrl), body);
             }
-            return loc;
+
+            if (o.containsKey("error") || (o.containsKey("success") && !o.getBooleanValue("success"))) {
+                throw new RuntimeException("Algorithm start failed: " + o.getString("error"));
+            }
+
+            throw new RuntimeException("Unsupported algorithm service response, no task id found: " + raw);
         } catch (RestClientException ex) {
-            throw new RuntimeException("无法连接算法服务: " + ex.getMessage(), ex);
+            throw new RuntimeException("Unable to connect algorithm service: " + ex.getMessage(), ex);
         }
     }
 
@@ -103,25 +154,24 @@ public class ZgpgAlgsClient {
                 }
                 JSONObject o = JSON.parseObject(raw);
                 Integer code = o.getInteger("code");
-                if (code == null) {
-                    sleepPoll();
-                    continue;
-                }
-                if (code == 200) {
+                String status = o.getString("status");
+
+                if (Integer.valueOf(200).equals(code) || "completed".equalsIgnoreCase(status) || "success".equalsIgnoreCase(status)) {
                     return o.get("result");
                 }
-                if (code == 500) {
-                    throw new RuntimeException("算法执行失败: " + o.getString("result"));
+                if (Integer.valueOf(500).equals(code) || "failed".equalsIgnoreCase(status) || "error".equalsIgnoreCase(status)) {
+                    String errorMsg = o.containsKey("error") ? o.getString("error") : String.valueOf(o.get("result"));
+                    throw new RuntimeException("Algorithm execution failed: " + errorMsg);
                 }
             } catch (RuntimeException ex) {
-                if (ex.getMessage() != null && ex.getMessage().contains("算法执行失败")) {
+                if (ex.getMessage() != null && ex.getMessage().contains("Algorithm execution failed")) {
                     throw ex;
                 }
-                log.warn("轮询算法状态异常: {}", ex.getMessage());
+                log.warn("Algorithm status polling error: {}", ex.getMessage());
             }
             sleepPoll();
         }
-        throw new RuntimeException("等待算法结果超时（" + (pollMaxWaitMs / 1000) + "s）");
+        throw new RuntimeException("Timed out waiting for algorithm result: " + (pollMaxWaitMs / 1000) + "s");
     }
 
     private void sleepPoll() {
@@ -129,13 +179,13 @@ public class ZgpgAlgsClient {
             Thread.sleep(pollIntervalMs);
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
-            throw new RuntimeException("等待算法结果被中断");
+            throw new RuntimeException("Interrupted while waiting for algorithm result");
         }
     }
 
     private String resolveStatusUrl(String location) {
         if (location == null || location.isEmpty()) {
-            throw new RuntimeException("任务 location 为空");
+            throw new RuntimeException("Task location is empty");
         }
         String t = location.trim();
         if (t.startsWith("http://") || t.startsWith("https://")) {

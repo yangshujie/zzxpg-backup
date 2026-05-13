@@ -93,9 +93,6 @@ public class AlgorithmRequirement extends BaseEntity {
     @ApiModelProperty(value = "数据状态：ENABLED、DISABLED")
     private String dataStatus;
 
-    @TableLogic
-    private String delFlag;
-
     /** 需求参数要求列表（非数据库字段，避免与BaseEntity.params冲突） */
     @JsonProperty("params")
     @TableField(exist = false)

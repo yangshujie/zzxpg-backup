@@ -1,7 +1,13 @@
 # /usr/bin/env python
 # -*- coding:utf-8 -*-
 from config.config import celery
-from algsmanagement.service import s_algs_load,s_loss,s_predict,s_network, s_getOrbitPic
+from algsmanagement.service import s_algs_load,s_loss,s_predict,s_network, s_getOrbitPic, s_preprocess
+
+
+@celery.task(name="t_preprocess",bind=True)
+def t_preprocess(data):
+    ret_status, ret_obj = s_preprocess(data)
+    return ret_status,ret_obj
 
 
 @celery.task(name="t_algs_load",bind=True)

@@ -81,8 +81,6 @@ public class EvalResult extends BaseEntity {
     @ApiModelProperty(value = "报告与流水线载荷 JSON（含 reportDataContext、outputTargets、executionChain 等）")
     private String reportPayloadJson;
 
-    @ApiModelProperty(value = "逻辑删除")
-    private Integer delFlag;
 
     /** 维度得分列表（非数据库字段） */
     @TableField(exist = false)

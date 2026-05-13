@@ -27,7 +27,7 @@ custom-config:
 # 算法服务配置（zgpg_algs）
 zhpg:
   algs:
-    base-url: http://127.0.0.1:6090
+    base-url: http://127.0.0.1:6000
     connect-timeout-ms: 10000
     read-timeout-ms: 120000
     poll-interval-ms: 800

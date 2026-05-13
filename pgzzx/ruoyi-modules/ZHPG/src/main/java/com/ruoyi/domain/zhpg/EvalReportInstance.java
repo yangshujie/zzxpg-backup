@@ -1,6 +1,7 @@
 package com.ruoyi.domain.zhpg;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.ruoyi.common.core.web.domain.BaseEntity;
@@ -10,6 +11,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import lombok.experimental.Accessors;
+
+import java.math.BigDecimal;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -63,6 +66,24 @@ public class EvalReportInstance extends BaseEntity {
     @ApiModelProperty(value = "错误信息")
     private String errorMessage;
 
-    @ApiModelProperty(value = "逻辑删除")
-    private Integer delFlag;
+    @TableField(exist = false)
+    @ApiModelProperty(value = "评估结果编号")
+    private String evalResultCode;
+
+    @TableField(exist = false)
+    @ApiModelProperty(value = "评估任务名称")
+    private String taskName;
+
+    @TableField(exist = false)
+    @ApiModelProperty(value = "指标体系名称")
+    private String indicatorSystemName;
+
+    @TableField(exist = false)
+    @ApiModelProperty(value = "综合得分")
+    private BigDecimal score;
+
+    @TableField(exist = false)
+    @ApiModelProperty(value = "评估等级")
+    private String grade;
+
 }

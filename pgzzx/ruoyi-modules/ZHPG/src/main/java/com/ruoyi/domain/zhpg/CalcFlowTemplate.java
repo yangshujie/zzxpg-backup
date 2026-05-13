@@ -86,6 +86,4 @@ public class CalcFlowTemplate extends BaseEntity {
     @ApiModelProperty(value = "XXL-JOB admin 中对应的 jobInfo 主键；发布时自动注册写入")
     private Integer xxlJobId;
 
-    @TableLogic
-    private String delFlag;
 }

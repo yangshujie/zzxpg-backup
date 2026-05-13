@@ -105,8 +105,6 @@ public class EvalDataSource extends BaseEntity {
     @ApiModelProperty(value = "最近测试时间")
     private Date lastTestTime;
 
-    @TableLogic
-    private String delFlag;
 
     /** 数据库中无 remark 字段，排除 BaseEntity 继承字段 */
     @TableField(exist = false)

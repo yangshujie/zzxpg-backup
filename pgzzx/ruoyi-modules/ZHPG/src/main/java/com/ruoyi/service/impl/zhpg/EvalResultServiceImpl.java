@@ -59,22 +59,21 @@ public class EvalResultServiceImpl extends ServiceImpl<EvalResultMapper, EvalRes
         Map<String, Object> stats = new HashMap<>();
 
         QueryWrapper<EvalResult> allWrapper = new QueryWrapper<>();
-        allWrapper.eq("del_flag", 0);
         long total = baseMapper.selectCount(allWrapper);
         stats.put("total", total);
 
         QueryWrapper<EvalResult> publishedWrapper = new QueryWrapper<>();
-        publishedWrapper.eq("del_flag", 0).eq("workflow_status", "PUBLISHED");
+        publishedWrapper.eq("workflow_status", "PUBLISHED");
         long published = baseMapper.selectCount(publishedWrapper);
         stats.put("published", published);
 
         QueryWrapper<EvalResult> gradeAWrapper = new QueryWrapper<>();
-        gradeAWrapper.eq("del_flag", 0).eq("grade", "A");
+        gradeAWrapper.eq("grade", "A");
         long gradeA = baseMapper.selectCount(gradeAWrapper);
         stats.put("gradeA", gradeA);
 
         QueryWrapper<EvalResult> pendingWrapper = new QueryWrapper<>();
-        pendingWrapper.eq("del_flag", 0).ne("workflow_status", "ARCHIVED");
+        pendingWrapper.ne("workflow_status", "ARCHIVED");
         long pendingRectify = baseMapper.selectCount(pendingWrapper);
         stats.put("pendingRectify", pendingRectify);
 
@@ -92,9 +91,7 @@ public class EvalResultServiceImpl extends ServiceImpl<EvalResultMapper, EvalRes
         if (StringUtils.isEmpty(evalResult.getResultCode())) {
             evalResult.setResultCode(generateResultCode());
         }
-        if (evalResult.getDelFlag() == null) {
-            evalResult.setDelFlag(0);
-        }
+
         parseDimensionsToJson(evalResult);
         return baseMapper.insert(evalResult);
     }
@@ -105,7 +102,7 @@ public class EvalResultServiceImpl extends ServiceImpl<EvalResultMapper, EvalRes
             throw new ServiceException("结果ID不能为空");
         }
         EvalResult existing = baseMapper.selectById(evalResult.getId());
-        if (existing == null || existing.getDelFlag() == 1) {
+        if (existing == null) {
             throw new ServiceException("结果不存在或已删除");
         }
         parseDimensionsToJson(evalResult);
@@ -121,7 +118,7 @@ public class EvalResultServiceImpl extends ServiceImpl<EvalResultMapper, EvalRes
     @Override
     public int publishEvalResult(Long id) {
         EvalResult result = baseMapper.selectById(id);
-        if (result == null || result.getDelFlag() == 1) {
+        if (result == null) {
             throw new ServiceException("结果不存在或已删除");
         }
         EvalResult update = new EvalResult();
@@ -148,7 +145,7 @@ public class EvalResultServiceImpl extends ServiceImpl<EvalResultMapper, EvalRes
             return null;
         }
         QueryWrapper<EvalResult> wrapper = new QueryWrapper<>();
-        wrapper.eq("task_id", taskId).eq("del_flag", 0).orderByDesc("create_time").last("LIMIT 1");
+        wrapper.eq("task_id", taskId).orderByDesc("create_time").last("LIMIT 1");
         EvalResult result = baseMapper.selectOne(wrapper);
         if (result == null) {
             return null;
@@ -214,7 +211,6 @@ public class EvalResultServiceImpl extends ServiceImpl<EvalResultMapper, EvalRes
 
     private QueryWrapper<EvalResult> buildQueryWrapper(EvalResult query) {
         QueryWrapper<EvalResult> wrapper = new QueryWrapper<>();
-        wrapper.eq("del_flag", 0);
 
         if (StringUtils.isNotEmpty(query.getTaskName())) {
             wrapper.like("task_name", query.getTaskName());

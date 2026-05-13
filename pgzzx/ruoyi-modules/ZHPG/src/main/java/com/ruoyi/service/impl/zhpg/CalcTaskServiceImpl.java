@@ -82,6 +82,7 @@ public class CalcTaskServiceImpl extends ServiceImpl<CalcTaskMapper, CalcTask> i
     private final IEvalResultService evalResultService;
     private final IReportTemplateService reportTemplateService;
     private final XxlJobAdminClient xxlJobAdminClient;
+    private final EvaluationResultLineageClient evaluationResultLineageClient;
 
     @Value("${zhpg.calc.xxl-job.admin-base-url:}")
     private String xxlJobAdminBaseUrl;
@@ -94,7 +95,8 @@ public class CalcTaskServiceImpl extends ServiceImpl<CalcTaskMapper, CalcTask> i
                                IAlgorithmInfoService algorithmInfoService,
                                IEvalResultService evalResultService,
                                IReportTemplateService reportTemplateService,
-                               XxlJobAdminClient xxlJobAdminClient) {
+                               XxlJobAdminClient xxlJobAdminClient,
+                               EvaluationResultLineageClient evaluationResultLineageClient) {
         this.stageLogMapper = stageLogMapper;
         this.calcFlowTemplateService = calcFlowTemplateService;
         this.indicatorSystemService = indicatorSystemService;
@@ -104,6 +106,7 @@ public class CalcTaskServiceImpl extends ServiceImpl<CalcTaskMapper, CalcTask> i
         this.evalResultService = evalResultService;
         this.reportTemplateService = reportTemplateService;
         this.xxlJobAdminClient = xxlJobAdminClient;
+        this.evaluationResultLineageClient = evaluationResultLineageClient;
     }
 
     @Override
@@ -271,7 +274,7 @@ public class CalcTaskServiceImpl extends ServiceImpl<CalcTaskMapper, CalcTask> i
         if (reportTemplateId != null && reportTemplateId > 0) {
             try {
                 ReportTemplate reportTemplate = reportTemplateService.getById(reportTemplateId);
-                if (reportTemplate != null && reportTemplate.getDeleted() != 1) {
+                if (reportTemplate != null) {
                     JSONObject templateData = new JSONObject();
                     templateData.put("templateId", reportTemplate.getId());
                     templateData.put("templateName", reportTemplate.getTemplateName());
@@ -584,16 +587,16 @@ public class CalcTaskServiceImpl extends ServiceImpl<CalcTaskMapper, CalcTask> i
             JSONObject reportConfig = stageConfig(stages.getJSONObject("reportOutput"));
 
             // 只有配置了 RESULT_DB 才写入评估结果表
-            JSONArray outputTargets = reportConfig.getJSONArray("outputTargets");
+            JSONArray outputTargets = reportOutputTargets(reportConfig);
             log.info("任务 {} 输出目标配置: outputTargets={}", task.getId(), outputTargets);
-            if (outputTargets == null || !outputTargets.contains("RESULT_DB")) {
+            if (!outputTargets.contains("RESULT_DB")) {
                 log.info("任务 {} 未配置 RESULT_DB 输出目标，跳过评估结果记录生成", task.getId());
                 return;
             }
 
             // 查找是否已有该任务的预创建评估结果记录（任务发起时创建的 PENDING 记录）
             EvalResult evalResult = evalResultService.getOne(
-                    new QueryWrapper<EvalResult>().eq("task_id", task.getId()).eq("del_flag", 0));
+                    new QueryWrapper<EvalResult>().eq("task_id", task.getId()));
             boolean isExisting = (evalResult != null);
             if (!isExisting) {
                 evalResult = new EvalResult();
@@ -649,6 +652,9 @@ public class CalcTaskServiceImpl extends ServiceImpl<CalcTaskMapper, CalcTask> i
                     EvalResult.DimensionScore dimensionScore = new EvalResult.DimensionScore();
                     dimensionScore.setLabel(one.getString("label"));
                     BigDecimal val = one.getBigDecimal("value");
+                    if (val == null) {
+                        val = one.getBigDecimal("score");
+                    }
                     // 确保维度得分也是百分制
                     if (val != null && val.compareTo(BigDecimal.ONE) <= 0 && val.compareTo(BigDecimal.ZERO) >= 0) {
                         val = val.multiply(new BigDecimal("100")).setScale(2, RoundingMode.HALF_UP);
@@ -674,6 +680,10 @@ public class CalcTaskServiceImpl extends ServiceImpl<CalcTaskMapper, CalcTask> i
             if (StringUtils.isNotBlank(wpsUrl)) {
                 reportPayload.put("wpsUrl", wpsUrl);
             }
+            Object scoredIndicatorTree = result.get("scoredIndicatorTree");
+            if (scoredIndicatorTree != null) {
+                reportPayload.put("scoredIndicatorTree", scoredIndicatorTree);
+            }
             evalResult.setReportPayloadJson(reportPayload.toJSONString());
 
             if (isExisting) {
@@ -686,6 +696,7 @@ public class CalcTaskServiceImpl extends ServiceImpl<CalcTaskMapper, CalcTask> i
             log.info("任务 {} {}评估结果记录成功: resultId={}, score={}, grade={}, workflowStatus={}, reportUrl={}",
                     task.getId(), isExisting ? "更新" : "生成", evalResult.getId(),
                     evalResult.getScore(), evalResult.getGrade(), evalResult.getWorkflowStatus(), effectiveReportUrl);
+            evaluationResultLineageClient.submitEvalResultLineage(evalResult, scoredIndicatorTree, task.getAssessTaskId());
         } catch (Exception e) {
             log.error("生成评估结果记录失败: taskId={}, error={}", task.getId(), e.getMessage(), e);
             // 打印更详细的错误信息
@@ -734,6 +745,16 @@ public class CalcTaskServiceImpl extends ServiceImpl<CalcTaskMapper, CalcTask> i
         }
         JSONObject config = stage.getJSONObject("config");
         return config == null ? new JSONObject() : config;
+    }
+
+    private JSONArray reportOutputTargets(JSONObject reportConfig) {
+        JSONArray outputTargets = reportConfig == null ? null : reportConfig.getJSONArray("outputTargets");
+        if (outputTargets != null) {
+            return outputTargets;
+        }
+        JSONArray defaults = new JSONArray();
+        defaults.add("RESULT_DB");
+        return defaults;
     }
 
     private String buildTaskName(CalcFlowTemplate template) {
@@ -954,13 +975,13 @@ public class CalcTaskServiceImpl extends ServiceImpl<CalcTaskMapper, CalcTask> i
     private void createPendingEvalResult(CalcTask task, JSONObject stages, EvalIndicatorSystem indicatorSystem) {
         try {
             JSONObject reportConfig = stageConfig(stages.getJSONObject("reportOutput"));
-            JSONArray outputTargets = reportConfig.getJSONArray("outputTargets");
-            if (outputTargets == null || !outputTargets.contains("RESULT_DB")) {
+            JSONArray outputTargets = reportOutputTargets(reportConfig);
+            if (!outputTargets.contains("RESULT_DB")) {
                 return;
             }
             // 避免重复创建
             EvalResult existing = evalResultService.getOne(
-                    new QueryWrapper<EvalResult>().eq("task_id", task.getId()).eq("del_flag", 0));
+                    new QueryWrapper<EvalResult>().eq("task_id", task.getId()));
             if (existing != null) {
                 return;
             }

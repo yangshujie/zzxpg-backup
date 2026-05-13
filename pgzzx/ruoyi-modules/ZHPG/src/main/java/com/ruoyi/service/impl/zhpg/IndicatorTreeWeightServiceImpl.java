@@ -17,14 +17,11 @@ import org.springframework.stereotype.Service;
 public class IndicatorTreeWeightServiceImpl implements IIndicatorTreeWeightService {
 
     @Override
-    public WeightApplyResult applyWeights(String indicatorTreeJson, String strategy, String weightAssignAlgorithm) {
+    public WeightApplyResult applyWeights(String indicatorTreeJson, String strategy) {
         String eff = StringUtils.isEmpty(strategy) ? "AUTO" : strategy.trim().toUpperCase();
         String hint = "";
 
         if ("AUTO".equals(eff)) {
-            if (StringUtils.isNotEmpty(weightAssignAlgorithm)) {
-                hint = "所选赋权算法暂未接入矩阵或样本数据，已按层归一（无有效权重时均分）。";
-            }
             eff = "RENORMALIZE";
         } else if (!"EQUAL".equals(eff) && !"RENORMALIZE".equals(eff)) {
             throw new ServiceException("不支持的 strategy，应为 AUTO、EQUAL 或 RENORMALIZE");

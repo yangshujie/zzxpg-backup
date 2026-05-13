@@ -1,6 +1,7 @@
 package com.ruoyi.zhpgcalc.service;
 
 import com.alibaba.fastjson2.JSONObject;
+import com.ruoyi.zhpgcalc.ZhpgCallbackClient;
 import com.ruoyi.zhpgcalc.algs.ZgpgAlgsClient;
 import com.ruoyi.zhpgcalc.dto.CalcExecuteRequest;
 import com.ruoyi.zhpgcalc.dto.CalcExecuteResponse;
@@ -27,6 +28,7 @@ public class CalcExecutorServiceTest {
 
         setField(service, "zgpgAlgsClient", new FakeAlgsClient());
         setField(service, "externalEvaluationDataClient", externalClient);
+        setField(service, "zhpgCallbackClient", new FakeCallbackClient());
         setField(service, "defaultDataInputMode", "MOCK");
 
         CalcExecuteRequest request = baseRequest();
@@ -47,6 +49,7 @@ public class CalcExecutorServiceTest {
 
         setField(service, "zgpgAlgsClient", new FakeAlgsClient());
         setField(service, "externalEvaluationDataClient", externalClient);
+        setField(service, "zhpgCallbackClient", new FakeCallbackClient());
         setField(service, "defaultDataInputMode", "MOCK");
 
         CalcExecuteRequest request = baseRequest();
@@ -56,6 +59,28 @@ public class CalcExecutorServiceTest {
 
         Assert.assertNotNull(response.getScore());
         Assert.assertFalse(externalClient.called);
+    }
+
+    @Test
+    public void shouldPopulateLeafReportFields() throws Exception {
+        CalcExecutorService service = new CalcExecutorService();
+
+        setField(service, "zgpgAlgsClient", new FakeAlgsClient());
+        setField(service, "externalEvaluationDataClient", new FakeExternalClient());
+        setField(service, "zhpgCallbackClient", new FakeCallbackClient());
+        setField(service, "defaultDataInputMode", "MOCK");
+
+        CalcExecuteRequest request = baseRequest();
+        request.setWeightedTreeJson("{\"treeData\":{\"label\":\"root\",\"children\":[{\"id\":\"leaf1\",\"label\":\"压制成功率\",\"weight\":1,\"unit\":\"%\",\"referenceValue\":80,\"children\":[],\"score\":92}]}}");
+
+        CalcExecuteResponse response = service.execute(request);
+        JSONObject scoredTree = (JSONObject) response.getScoredIndicatorTree();
+        JSONObject leaf = scoredTree.getJSONObject("treeData").getJSONArray("children").getJSONObject(0);
+
+        Assert.assertEquals(new BigDecimal("92.00"), leaf.getBigDecimal("evalValue"));
+        Assert.assertEquals("excellent", leaf.getString("tone"));
+        Assert.assertEquals(new BigDecimal("80"), leaf.getBigDecimal("referenceValue"));
+        Assert.assertEquals("%", leaf.getString("unit"));
     }
 
     private CalcExecuteRequest baseRequest() {
@@ -95,6 +120,12 @@ public class CalcExecutorServiceTest {
         @Override
         public Object runAlgorithm(String algsName, String dataLiteral, String configJson, String algsType) {
             return 0D;
+        }
+    }
+
+    private static class FakeCallbackClient extends ZhpgCallbackClient {
+        @Override
+        public void notifyProgress(Long taskId, int progress, String message) {
         }
     }
 }

@@ -3,12 +3,12 @@ package com.ruoyi.service.impl.zhpg;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.common.core.exception.ServiceException;
+import com.ruoyi.common.report.HtmlTemplateRenderer;
+import com.ruoyi.common.report.PlaceholderService;
 import com.ruoyi.common.security.utils.SecurityUtils;
 import com.ruoyi.domain.zhpg.ReportTemplate;
 import com.ruoyi.domain.zhpg.dto.*;
 import com.ruoyi.mapper.zhpg.ReportTemplateMapper;
-import com.ruoyi.zhpg.report.HtmlTemplateRenderer;
-import com.ruoyi.zhpg.report.PlaceholderService;
 import com.ruoyi.zhpg.report.ReportEngine;
 import com.ruoyi.service.zhpg.IReportTemplateService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,7 +44,7 @@ public class ReportTemplateServiceImpl extends ServiceImpl<ReportTemplateMapper,
         template.setTemplateDescription(request.getTemplateDescription());
         template.setEvaluationType(request.getEvaluationType());
         template.setHtmlContent(request.getHtmlContent());
-        template.setDeleted(0);
+
         template.setCreateBy(SecurityUtils.getUsername());
         template.setCreateTime(now);
         template.setUpdateTime(now);
@@ -57,7 +57,7 @@ public class ReportTemplateServiceImpl extends ServiceImpl<ReportTemplateMapper,
     @Override
     public List<ReportTemplate> listTemplates() {
         LambdaQueryWrapper<ReportTemplate> query = new LambdaQueryWrapper<>();
-        query.eq(ReportTemplate::getDeleted, 0).orderByDesc(ReportTemplate::getUpdateTime);
+        query.orderByDesc(ReportTemplate::getUpdateTime);
         return this.list(query);
     }
 
@@ -93,11 +93,7 @@ public class ReportTemplateServiceImpl extends ServiceImpl<ReportTemplateMapper,
     @Override
     @Transactional
     public void deleteTemplate(Long templateId) {
-        ReportTemplate template = findTemplate(templateId);
-        template.setDeleted(1);
-        template.setUpdateBy(SecurityUtils.getUsername());
-        template.setUpdateTime(new Date());
-        this.updateById(template);
+        this.removeById(templateId);
     }
 
     @Override
@@ -207,7 +203,7 @@ public class ReportTemplateServiceImpl extends ServiceImpl<ReportTemplateMapper,
 
     private ReportTemplate findTemplate(Long templateId) {
         ReportTemplate template = this.getById(templateId);
-        if (template == null || template.getDeleted() == 1) {
+        if (template == null) {
             throw new ServiceException("模板不存在");
         }
         return template;

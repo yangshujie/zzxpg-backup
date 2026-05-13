@@ -82,7 +82,7 @@ public class EvalResultController extends BaseController {
     @GetMapping("/{id}/reportPreviewUrl")
     public AjaxResult reportPreviewUrl(@PathVariable Long id) {
         EvalResult result = evalResultService.getById(id);
-        if (result == null || (result.getDelFlag() != null && result.getDelFlag() == 1)) {
+        if (result == null) {
             return AjaxResult.error("结果不存在");
         }
         if (StringUtils.isBlank(result.getReportUrl())) {
@@ -103,7 +103,7 @@ public class EvalResultController extends BaseController {
     @GetMapping("/{id}/reportLinks")
     public AjaxResult reportLinks(@PathVariable Long id) {
         EvalResult result = evalResultService.getById(id);
-        if (result == null || (result.getDelFlag() != null && result.getDelFlag() == 1)) {
+        if (result == null) {
             return AjaxResult.error("结果不存在");
         }
 

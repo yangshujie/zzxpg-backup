@@ -141,9 +141,7 @@ public class AlgorithmInfoServiceImpl extends ServiceImpl<AlgorithmInfoMapper, A
             if (StringUtils.isNotBlank(query.getAlgorithmType())) {
                 wrapper.eq("algorithm_type", query.getAlgorithmType());
             }
-            if (StringUtils.isNotBlank(query.getEquipmentType())) {
-                wrapper.eq("equipment_type", query.getEquipmentType());
-            }
+
             if (StringUtils.isNotBlank(query.getPublishStatus())) {
                 wrapper.eq("publish_status", query.getPublishStatus());
             }

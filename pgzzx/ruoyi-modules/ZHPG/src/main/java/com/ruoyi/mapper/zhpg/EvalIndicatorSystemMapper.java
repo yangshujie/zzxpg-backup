@@ -16,11 +16,11 @@ public interface EvalIndicatorSystemMapper extends BaseMapper<EvalIndicatorSyste
             "SELECT id AS indicatorSystemId, " +
             "       system_name AS indicatorSystemName, " +
             "       requirement_id AS requirementId, " +
-            "       CASE WHEN refined_indicator_tree IS NOT NULL AND TRIM(refined_indicator_tree) != '' " +
-            "            THEN refined_indicator_tree ELSE indicator_tree END AS treeData, " +
+            "       CASE WHEN indicator_tree_weight IS NOT NULL AND TRIM(indicator_tree_weight) != '' " +
+            "            THEN indicator_tree_weight ELSE indicator_tree END AS treeData, " +
             "       description " +
             "FROM pgzc_indicator_system " +
-            "WHERE del_flag = '0' " +
+            "WHERE COALESCE(is_template, 0) = 0 " +
             "  AND requirement_id IS NOT NULL " +
             "<if test='requirementId != null'>" +
             "  AND requirement_id = #{requirementId} " +

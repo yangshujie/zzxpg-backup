@@ -4,6 +4,7 @@ package com.ruoyi.zhpgcalc.service;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
+import com.ruoyi.common.report.IndicatorReportSectionBuilder;
 import com.ruoyi.zhpgcalc.algs.ZgpgAlgsClient;
 import com.ruoyi.zhpgcalc.dto.CalcExecuteRequest;
 import com.ruoyi.zhpgcalc.dto.CalcExecuteResponse;
@@ -94,12 +95,14 @@ public class CalcExecutorService {
             BigDecimal s = existing.setScale(2, RoundingMode.HALF_UP);
             n.put("score", s);
             n.put("calculatedValue", s);
+            applyLeafReportFields(n, s);
             return;
         }
         JSONObject cr = n.getJSONObject("computeRule");
         if (cr == null) {
             n.put("score", BigDecimal.ZERO);
             n.put("calculatedValue", BigDecimal.ZERO);
+            applyLeafReportFields(n, BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP));
             return;
         }
         try {
@@ -107,10 +110,27 @@ public class CalcExecutorService {
             BigDecimal s = v == null ? BigDecimal.ZERO : BigDecimal.valueOf(v).setScale(2, RoundingMode.HALF_UP);
             n.put("score", s);
             n.put("calculatedValue", s);
+            applyLeafReportFields(n, s);
         } catch (Exception ex) {
             log.warn("leaf compute failed: {}", ex.getMessage());
             n.put("score", BigDecimal.ZERO);
             n.put("calculatedValue", BigDecimal.ZERO);
+            applyLeafReportFields(n, BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP));
+        }
+    }
+
+    private void applyLeafReportFields(JSONObject n, BigDecimal score) {
+        if (n == null || score == null) return;
+        n.put("evalValue", score);
+        n.put("tone", tone(score));
+        if (!n.containsKey("referenceValue")) {
+            BigDecimal reference = firstNumber(n, "threshold", "valueMax", "valueMin");
+            if (reference != null) {
+                n.put("referenceValue", reference);
+            }
+        }
+        if (!n.containsKey("unit")) {
+            n.put("unit", "");
         }
     }
 
@@ -847,20 +867,20 @@ public class CalcExecutorService {
     }
 
     private String buildConclusion(CalcExecuteRequest req, BigDecimal score, String grade) {
-        String tn = StringUtils.hasText(req.getTemplateName()) ? req.getTemplateName() : "current_template";
-        String sn = StringUtils.hasText(req.getIndicatorSystemName()) ? req.getIndicatorSystemName() : "indicator_system";
-        return tn + " completed on " + sn + ", score=" + score + ", grade=" + grade;
+        String tn = StringUtils.hasText(req.getTemplateName())
+                ? IndicatorReportSectionBuilder.cleanTaskName(req.getTemplateName())
+                : "当前评估任务";
+        String sn = StringUtils.hasText(req.getIndicatorSystemName())
+                ? IndicatorReportSectionBuilder.cleanIndicatorSystemName(req.getIndicatorSystemName())
+                : "当前指标体系";
+        return tn + "已基于" + sn + "完成综合评估，综合得分为" + score + "，评定等级为" + grade + "。";
     }
 
     private String buildSuggestion(BigDecimal score, String route, JSONObject rp) {
-        String block = rp == null ? "SERIAL_EXECUTION" : rp.getString("blockStrategy");
-        String misfire = rp == null ? "DO_NOTHING" : rp.getString("misfireStrategy");
-        if (!StringUtils.hasText(block)) block = "SERIAL_EXECUTION";
-        if (!StringUtils.hasText(misfire)) misfire = "DO_NOTHING";
         if (score.compareTo(new BigDecimal("75")) >= 0) {
-            return "Result is stable. route=" + route + ", block=" + block + ", misfire=" + misfire;
+            return "当前评估结果总体稳定，建议继续保持现有能力建设节奏，并定期复核关键指标的数据质量和权重配置。";
         }
-        return "Review low-score indicators and mapping. route=" + route + ", block=" + block + ", misfire=" + misfire;
+        return "建议优先复核低分指标的数据来源、计算规则和权重配置，针对薄弱能力域制定专项改进措施并组织复测。";
     }
 
     private static class ParsedTree {

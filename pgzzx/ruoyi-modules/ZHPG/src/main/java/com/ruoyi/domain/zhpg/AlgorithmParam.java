@@ -59,6 +59,4 @@ public class AlgorithmParam extends BaseEntity {
     @ApiModelProperty(value = "排序号")
     private Integer sortOrder;
 
-    @TableLogic
-    private String delFlag;
 }

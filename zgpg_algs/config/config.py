@@ -1,3 +1,16 @@
+# 字段映射关系API地址
+FIELD_MAPPING_URL = "http://localhost:9501/fieldMappingRelation/editPred"
+
+# Kingbase数据库配置
+KINGBASE_CONFIG = {
+    'host': '127.0.0.1',
+    'port': 54321,
+    'user': 'system',
+    'password': 'Wxwx2026!!!',
+    'database': 'sjhz',
+    'schema': 'sjcl-system'
+}
+
 # Celery 5.x 配置
 class Celery_config():
     broker_url = "redis://:@127.0.0.1:6379/1"

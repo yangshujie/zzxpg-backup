@@ -29,7 +29,7 @@ public final class ZhpgIndicatorTreeJsonHelper {
         return fallback;
     }
 
-    private static String normalizeIndicatorTypeCode(String raw) {
+    public static String normalizeIndicatorTypeCode(String raw) {
         if (StringUtils.isEmpty(raw)) {
             return raw;
         }

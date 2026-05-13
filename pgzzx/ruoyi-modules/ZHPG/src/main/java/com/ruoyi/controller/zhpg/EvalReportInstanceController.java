@@ -1,7 +1,14 @@
 package com.ruoyi.controller.zhpg;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ruoyi.common.core.web.controller.BaseController;
 import com.ruoyi.common.core.web.domain.AjaxResult;
+import com.ruoyi.common.core.web.page.PageDomain;
+import com.ruoyi.common.core.web.page.TableDataInfo;
+import com.ruoyi.common.core.web.page.TableSupport;
+import com.ruoyi.common.log.annotation.Log;
+import com.ruoyi.common.log.enums.BusinessType;
+import com.ruoyi.domain.zhpg.EvalReportInstance;
 import com.ruoyi.domain.zhpg.dto.EvalReportGenerateRequest;
 import com.ruoyi.service.zhpg.IEvalReportInstanceService;
 import io.swagger.annotations.Api;
@@ -17,6 +24,23 @@ public class EvalReportInstanceController extends BaseController {
 
     @Autowired
     private IEvalReportInstanceService reportInstanceService;
+
+    @ApiOperation("分页查询评估报告生成实例")
+    @GetMapping("/list")
+    public TableDataInfo list(EvalReportInstance query) {
+        PageDomain pageDomain = TableSupport.buildPageRequest();
+        Integer pageNum = pageDomain.getPageNum();
+        Integer pageSize = pageDomain.getPageSize();
+        if (pageNum == null) {
+            pageNum = 1;
+        }
+        if (pageSize == null) {
+            pageSize = 10;
+        }
+        Page<EvalReportInstance> page = new Page<>(pageNum, pageSize);
+        Page<EvalReportInstance> result = reportInstanceService.selectReportPage(page, query);
+        return getDataTable(result);
+    }
 
     @ApiOperation("查询某个评估结果的报告生成历史")
     @GetMapping("/result/{evalResultId}/list")
@@ -35,5 +59,12 @@ public class EvalReportInstanceController extends BaseController {
     @GetMapping("/{reportId}/links")
     public AjaxResult links(@PathVariable Long reportId) {
         return AjaxResult.success(reportInstanceService.getReportLinks(reportId));
+    }
+
+    @ApiOperation("删除评估报告生成实例")
+    @Log(title = "评估报告管理", businessType = BusinessType.DELETE)
+    @DeleteMapping("/{ids}")
+    public AjaxResult remove(@PathVariable Long[] ids) {
+        return toAjax(reportInstanceService.deleteReportByIds(ids));
     }
 }

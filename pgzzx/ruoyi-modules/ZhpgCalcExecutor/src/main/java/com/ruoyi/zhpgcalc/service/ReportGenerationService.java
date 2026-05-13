@@ -7,6 +7,8 @@ import com.aspose.words.Document;
 import com.aspose.words.License;
 import com.aspose.words.SaveFormat;
 import com.ruoyi.common.core.domain.R;
+import com.ruoyi.common.report.ChartRenderer;
+import com.ruoyi.common.report.IndicatorReportSectionBuilder;
 import com.ruoyi.system.api.RemoteFileService;
 import com.ruoyi.system.api.domain.SysFile;
 import com.ruoyi.zhpgcalc.dto.CalcExecuteResponse;
@@ -53,6 +55,7 @@ public class ReportGenerationService {
 
     private final RemoteFileService remoteFileService;
     private final ReportEngine reportEngine = new ReportEngine();
+    private final ChartRenderer chartRenderer = new ChartRenderer();
 
     public ReportGenerationService(RemoteFileService remoteFileService) {
         this.remoteFileService = remoteFileService;
@@ -218,17 +221,22 @@ public class ReportGenerationService {
 
         Object scoredIndicatorTree = response.getScoredIndicatorTree();
         JSONArray parsedTree = null;
+        List<IndicatorReportSectionBuilder.Section> indicatorSections = new ArrayList<>();
         if (scoredIndicatorTree != null) {
             try {
                 parsedTree = parseTree(scoredIndicatorTree);
                 data.put("indicatorTree", parseIndicatorTree(parsedTree));
                 data.put("treeNodeCount", countTreeNodes(parsedTree));
+                indicatorSections = IndicatorReportSectionBuilder.buildSections(scoredIndicatorTree);
+                enrichSectionCharts(indicatorSections);
             } catch (Exception e) {
                 log.warn("解析指标树失败: {}", e.getMessage());
                 data.put("indicatorTree", new ArrayList<>());
                 data.put("treeNodeCount", 0);
             }
         }
+        data.put("IndicatorSections", indicatorSections);
+        data.put("indicatorSections", indicatorSections);
 
         String weightedTreeJson = request.getString("weightedTreeJson");
         if (weightedTreeJson != null && !weightedTreeJson.isEmpty()) {
@@ -248,7 +256,9 @@ public class ReportGenerationService {
                 log.info("开始处理占位符映射，共 {} 条", mappings.size());
 
                 // 预构建 AUTO_INDICATOR 解析表
-                Map<String, Object> autoIndicatorMap = buildAutoIndicatorMap(response, parsedTree, dimensions);
+                Map<String, Object> autoIndicatorMap = buildAutoIndicatorMap(response, parsedTree, indicatorSections, dimensions, request);
+                log.info("自动报告字段已构建: keys={}, indicatorSections={}", autoIndicatorMap.keySet(),
+                        indicatorSections == null ? 0 : indicatorSections.size());
 
                 for (int i = 0; i < mappings.size(); i++) {
                     JSONObject mapping = mappings.getJSONObject(i);
@@ -292,7 +302,9 @@ public class ReportGenerationService {
      */
     private Map<String, Object> buildAutoIndicatorMap(CalcExecuteResponse response,
                                                        JSONArray parsedTree,
-                                                       List<Map<String, Object>> dimensions) {
+                                                       List<IndicatorReportSectionBuilder.Section> indicatorSections,
+                                                       List<Map<String, Object>> dimensions,
+                                                       JSONObject request) {
         Map<String, Object> map = new HashMap<>();
 
         // overall_score → 综合得分
@@ -300,31 +312,294 @@ public class ReportGenerationService {
             map.put("overall_score", response.getScore());
         }
 
-        // eval_result_snapshot → 评估结果快照(JSON)
-        JSONObject snapshot = new JSONObject();
-        snapshot.put("score", response.getScore());
-        snapshot.put("grade", response.getGrade());
-        snapshot.put("gradeCn", formatGrade(response.getGrade()));
-        snapshot.put("conclusion", response.getConclusion());
-        snapshot.put("suggestion", response.getSuggestion());
-        if (response.getDimensions() != null) {
-            snapshot.put("dimensions", response.getDimensions());
-        }
-        map.put("eval_result_snapshot", snapshot.toJSONString());
+        // Deprecated: raw JSON snapshots should not be rendered into reports.
+        map.put("eval_result_snapshot", "");
 
-        // indicator_summary_table → 指标汇总表(JSON数组)
-        if (dimensions != null && !dimensions.isEmpty()) {
-            map.put("indicator_summary_table", JSON.toJSONString(dimensions));
-        }
+        String capabilityScoreTable = buildCapabilityScoreTableHtml(parsedTree, dimensions);
+        map.put("indicator_summary_table", capabilityScoreTable);
+        map.put("capability_score_table", capabilityScoreTable);
 
-        // indicator_tree → 指标树(JSON)
-        if (parsedTree != null) {
-            map.put("indicator_tree", parsedTree.toJSONString());
-        } else if (response.getScoredIndicatorTree() != null) {
-            map.put("indicator_tree", JSON.toJSONString(response.getScoredIndicatorTree()));
-        }
+        map.put("indicator_tree", buildIndicatorTreeOutlineHtml(parsedTree));
+        map.put("indicator_sections", indicatorSections == null ? new ArrayList<>() : indicatorSections);
+        map.put("experiment_overview", buildExperimentOverviewHtml(response, request, dimensions));
+        map.put("capability_radar_chart", renderRadarChart(selectRadarDimensions(parsedTree, dimensions)));
+        map.put("overall_conclusion_paragraph", buildOverallConclusionParagraph(response));
+        map.put("key_findings", buildKeyFindingsHtml(response, selectRadarDimensions(parsedTree, dimensions)));
+        map.put("improvement_suggestions", buildImprovementSuggestions(response, selectRadarDimensions(parsedTree, dimensions)));
+        map.put("final_conclusion", buildFinalConclusion(response));
 
         return map;
+    }
+
+    private String buildExperimentOverviewHtml(CalcExecuteResponse response,
+                                               JSONObject request,
+                                               List<Map<String, Object>> dimensions) {
+        String taskName = IndicatorReportSectionBuilder.cleanTaskName(request != null ? request.getString("taskName") : null);
+        String assessTaskId = request != null ? request.getString("assessTaskId") : null;
+        String systemName = IndicatorReportSectionBuilder.cleanIndicatorSystemName(response.getIndicatorSystemName());
+        StringBuilder html = new StringBuilder();
+        html.append("<table border=\"1\" cellspacing=\"0\" cellpadding=\"6\" style=\"width:100%;border-collapse:collapse;\">");
+        appendTableRow(html, "任务名称", defaultText(taskName, "未命名评估任务"));
+        appendTableRow(html, "任务编号", defaultText(assessTaskId, "-"));
+        appendTableRow(html, "指标体系", defaultText(systemName, "-"));
+        appendTableRow(html, "执行器", defaultText(response.getExecutorCode(), "-"));
+        appendTableRow(html, "综合得分", formatObject(response.getScore()));
+        appendTableRow(html, "评定等级", formatGrade(response.getGrade()));
+        appendTableRow(html, "能力维度数", String.valueOf(dimensions != null ? dimensions.size() : 0));
+        html.append("</table>");
+        return html.toString();
+    }
+
+    private void enrichSectionCharts(List<IndicatorReportSectionBuilder.Section> sections) {
+        if (sections == null || sections.isEmpty()) {
+            return;
+        }
+        for (IndicatorReportSectionBuilder.Section section : sections) {
+            if (section != null && section.isLeaf()) {
+                try {
+                    section.setChartImg(chartRenderer.renderIndicatorBar(
+                            section.getTitle(),
+                            section.getEvalValue() != null ? section.getEvalValue() : section.getScore(),
+                            section.getReferenceValue()
+                    ));
+                } catch (Exception e) {
+                    log.warn("渲染指标图表失败: title={}, error={}", section.getTitle(), e.getMessage());
+                }
+            }
+        }
+    }
+
+    private String renderRadarChart(List<Map<String, Object>> dimensions) {
+        if (dimensions == null || dimensions.isEmpty()) {
+            return "";
+        }
+        try {
+            return chartRenderer.renderRadar(dimensions);
+        } catch (Exception e) {
+            log.warn("渲染能力雷达图失败: {}", e.getMessage());
+            return "";
+        }
+    }
+
+    private List<Map<String, Object>> selectRadarDimensions(JSONArray parsedTree, List<Map<String, Object>> fallbackDimensions) {
+        List<Map<String, Object>> selected = new ArrayList<>();
+        if (parsedTree != null && !parsedTree.isEmpty()) {
+            for (int i = 0; i < parsedTree.size(); i++) {
+                JSONObject node = parsedTree.getJSONObject(i);
+                BigDecimal score = firstNumber(node, "score", "calculatedValue", "evalScore", "evalValue");
+                String label = defaultText(node.getString("label"), node.getString("name"));
+                if (score != null && label != null && !label.trim().isEmpty()) {
+                    Map<String, Object> row = new HashMap<>();
+                    row.put("label", label);
+                    row.put("score", score);
+                    row.put("tone", node.getString("tone"));
+                    selected.add(row);
+                }
+            }
+        }
+        if (!selected.isEmpty()) {
+            return selected;
+        }
+        return fallbackDimensions == null ? new ArrayList<>() : fallbackDimensions;
+    }
+
+    private String buildCapabilityScoreTableHtml(JSONArray parsedTree, List<Map<String, Object>> dimensions) {
+        if (parsedTree != null && !parsedTree.isEmpty()) {
+            return IndicatorReportSectionBuilder.buildHierarchicalSummaryTable(parsedTree);
+        }
+        if (dimensions == null || dimensions.isEmpty()) {
+            return "<p>暂无能力维度得分数据。</p>";
+        }
+        StringBuilder html = new StringBuilder();
+        html.append("<table border=\"1\" cellspacing=\"0\" cellpadding=\"6\" style=\"width:100%;border-collapse:collapse;\">")
+                .append("<thead><tr>")
+                .append("<th>能力维度</th><th>权重</th><th>得分</th><th>评定</th>")
+                .append("</tr></thead><tbody>");
+        for (Map<String, Object> dimension : dimensions) {
+            html.append("<tr>")
+                    .append("<td>").append(escapeHtml(defaultText(asString(dimension.get("label")), asString(dimension.get("name"))))).append("</td>")
+                    .append("<td>").append(escapeHtml(defaultText(asString(dimension.get("weightPercent")), formatObject(dimension.get("weight"))))).append("</td>")
+                    .append("<td>").append(escapeHtml(formatObject(dimension.get("score")))).append("</td>")
+                    .append("<td>").append(escapeHtml(formatGrade(asString(dimension.get("tone"))))).append("</td>")
+                    .append("</tr>");
+        }
+        html.append("</tbody></table>");
+        return html.toString();
+    }
+
+    private String buildIndicatorTreeOutlineHtml(JSONArray parsedTree) {
+        if (parsedTree == null || parsedTree.isEmpty()) {
+            return "<p>暂无指标树数据。</p>";
+        }
+        StringBuilder html = new StringBuilder("<ul>");
+        appendIndicatorTreeNodes(html, parsedTree);
+        html.append("</ul>");
+        return html.toString();
+    }
+
+    private void appendIndicatorTreeNodes(StringBuilder html, JSONArray nodes) {
+        for (int i = 0; i < nodes.size(); i++) {
+            JSONObject node = nodes.getJSONObject(i);
+            html.append("<li>").append(escapeHtml(defaultText(node.getString("name"), "未命名指标")));
+            BigDecimal score = node.getBigDecimal("score");
+            if (score != null) {
+                html.append("：").append(escapeHtml(formatObject(score))).append("分");
+            }
+            JSONArray children = node.getJSONArray("children");
+            if (children != null && !children.isEmpty()) {
+                html.append("<ul>");
+                appendIndicatorTreeNodes(html, children);
+                html.append("</ul>");
+            }
+            html.append("</li>");
+        }
+    }
+
+    private String buildOverallConclusionParagraph(CalcExecuteResponse response) {
+        String conclusion = sanitizeNarrative(response.getConclusion());
+        if (conclusion != null && !conclusion.trim().isEmpty()) {
+            return conclusion;
+        }
+        return "本次评估综合得分为 " + formatObject(response.getScore())
+                + "，评定结果为 " + formatGrade(response.getGrade()) + "。";
+    }
+
+    private String buildKeyFindingsHtml(CalcExecuteResponse response, List<Map<String, Object>> dimensions) {
+        StringBuilder html = new StringBuilder("<ul>");
+        html.append("<li>综合得分 ").append(escapeHtml(formatObject(response.getScore())))
+                .append("，评定结果为 ").append(escapeHtml(formatGrade(response.getGrade()))).append("。</li>");
+        if (dimensions != null && !dimensions.isEmpty()) {
+            for (Map<String, Object> dimension : dimensions) {
+                html.append("<li>")
+                        .append(escapeHtml(defaultText(asString(dimension.get("label")), asString(dimension.get("name")))))
+                        .append("得分 ")
+                        .append(escapeHtml(formatObject(dimension.get("score"))))
+                        .append("，评定为 ")
+                        .append(escapeHtml(formatGrade(asString(dimension.get("tone")))))
+                        .append("。</li>");
+            }
+        }
+        html.append("</ul>");
+        return html.toString();
+    }
+
+    private String buildImprovementSuggestions(CalcExecuteResponse response, List<Map<String, Object>> dimensions) {
+        String suggestion = sanitizeNarrative(response.getSuggestion());
+        if (suggestion != null && !suggestion.trim().isEmpty()) {
+            return "<p>" + escapeHtml(suggestion) + "</p>";
+        }
+        StringBuilder html = new StringBuilder("<ol>");
+        html.append("<li>优先复核低分能力域的数据来源、计算规则和权重配置，确认评估输入与实际试验记录一致。</li>");
+        if (dimensions != null && !dimensions.isEmpty()) {
+            int added = 0;
+            for (Map<String, Object> dimension : dimensions) {
+                BigDecimal score = toBigDecimal(dimension.get("score"));
+                if (score == null) {
+                    score = toBigDecimal(dimension.get("value"));
+                }
+                if (score != null && score.compareTo(new BigDecimal("75")) < 0 && added < 3) {
+                    html.append("<li>针对")
+                            .append(escapeHtml(defaultText(asString(dimension.get("label")), asString(dimension.get("name")))))
+                            .append("开展专项改进，补充试验样本并跟踪复测结果。</li>");
+                    added++;
+                }
+            }
+        }
+        html.append("<li>形成整改闭环后重新生成评估报告，保留前后版本对比，支撑后续决策复盘。</li>");
+        html.append("</ol>");
+        return html.toString();
+    }
+
+    private String buildFinalConclusion(CalcExecuteResponse response) {
+        String conclusion = sanitizeNarrative(response.getConclusion());
+        if (conclusion != null && !conclusion.trim().isEmpty()) {
+            return conclusion;
+        }
+        return "综上，本次通信对抗试验评估结果为" + formatGrade(response.getGrade())
+                + "，综合得分为 " + formatObject(response.getScore()) + "。";
+    }
+
+    private void appendTableRow(StringBuilder html, String label, String value) {
+        html.append("<tr><th style=\"width:24%;text-align:left;\">")
+                .append(escapeHtml(label))
+                .append("</th><td>")
+                .append(escapeHtml(value))
+                .append("</td></tr>");
+    }
+
+    private String defaultText(String value, String fallback) {
+        return value != null && !value.trim().isEmpty() ? value : fallback;
+    }
+
+    private String asString(Object value) {
+        return value != null ? String.valueOf(value) : null;
+    }
+
+    private BigDecimal firstNumber(JSONObject node, String... keys) {
+        if (node == null) {
+            return null;
+        }
+        for (String key : keys) {
+            BigDecimal value = node.getBigDecimal(key);
+            if (value != null) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    private BigDecimal toBigDecimal(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof BigDecimal) {
+            return (BigDecimal) value;
+        }
+        if (value instanceof Number) {
+            return BigDecimal.valueOf(((Number) value).doubleValue());
+        }
+        try {
+            return new BigDecimal(String.valueOf(value));
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private String sanitizeNarrative(String raw) {
+        if (raw == null) {
+            return null;
+        }
+        String cleaned = raw.trim()
+                .replaceAll("(?i)\\broute\\s*=\\s*[^,，。;；]+[,，。;；]?\\s*", "")
+                .replaceAll("(?i)\\bblock\\s*=\\s*[^,，。;；]+[,，。;；]?\\s*", "")
+                .replaceAll("(?i)\\bmisfire\\s*=\\s*[^,，。;；]+[,，。;；]?\\s*", "")
+                .replaceAll("(?i)^.*\\s+completed on\\s+.*score\\s*=\\s*[^,，。;；]+[,，。;；]?\\s*grade\\s*=\\s*[^,，。;；]+\\.?$", "")
+                .replaceAll("(?i)^Result is stable\\.?$", "")
+                .replaceAll("(?i)^Review low-score indicators and mapping\\.?$", "")
+                .replaceAll("[,，;；]\\s*$", "")
+                .trim();
+        return cleaned.isEmpty() ? null : cleaned;
+    }
+
+    private String formatObject(Object value) {
+        if (value == null) {
+            return "-";
+        }
+        if (value instanceof BigDecimal) {
+            return ((BigDecimal) value).stripTrailingZeros().toPlainString();
+        }
+        return String.valueOf(value);
+    }
+
+    private String escapeHtml(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#39;");
     }
 
     /**

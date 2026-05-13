@@ -79,7 +79,7 @@ public class ObjectiveWeightServiceImpl implements IObjectiveWeightService {
         if ("TERMINATE".equalsIgnoreCase(missingWeightPolicy)) {
             ensureWeightPresent(roots);
         }
-        WeightApplyResult renorm = indicatorTreeWeightService.applyWeights(merged, strategy, null);
+        WeightApplyResult renorm = indicatorTreeWeightService.applyWeights(merged, strategy);
         String finalTree = renorm.getIndicatorTree();
 
         StringBuilder hint = new StringBuilder();
@@ -121,12 +121,24 @@ public class ObjectiveWeightServiceImpl implements IObjectiveWeightService {
                 calls += walkAssignWeights(one, system, sampleRows, rnd, overrideModule);
                 continue;
             }
-            String nodeAlg = n.getString("weightAssignAlgorithm");
-            if (StringUtils.isEmpty(nodeAlg)) {
-                nodeAlg = system.getWeightAssignAlgorithm();
+            Object nodeAlgObj = n.get("weightAssignAlgorithm");
+            String nodeAlg = null;
+            String nodeParams = "{}";
+            if (nodeAlgObj instanceof Number) {
+                AlgorithmInfo alg = algorithmInfoService.selectAlgorithmDetail(((Number) nodeAlgObj).longValue());
+                if (alg != null) {
+                    nodeAlg = alg.getAlgorithmName();
+                    JSONObject params = n.getJSONObject("weightAssignAlgorithmParams");
+                    if (params != null) {
+                        nodeParams = params.toJSONString();
+                    }
+                }
+            } else if (nodeAlgObj instanceof String) {
+                nodeAlg = (String) nodeAlgObj;
             }
+
             String module = StringUtils.isNotEmpty(overrideModule) ? overrideModule : mapToPythonModule(nodeAlg);
-            JSONArray weights = runModuleForChildren(module, ch, sampleRows, rnd);
+            JSONArray weights = runModuleForChildren(module, ch, sampleRows, rnd, nodeParams);
             applySiblingWeights(ch, weights);
             calls++;
             for (int j = 0; j < ch.size(); j++) {
@@ -197,17 +209,17 @@ public class ObjectiveWeightServiceImpl implements IObjectiveWeightService {
         }
     }
 
-    private JSONArray runModuleForChildren(String module, JSONArray children, int sampleRows, Random rnd) {
+    private JSONArray runModuleForChildren(String module, JSONArray children, int sampleRows, Random rnd, String configJson) {
         int n = children.size();
         if (n <= 0) {
             return new JSONArray();
         }
         if ("ahp".equals(module)) {
             String literal = buildMockAhpMatrixJson(n, rnd);
-            return zgpgAlgsClient.runWeightAlgorithmSync("ahp", literal, "{}");
+            return zgpgAlgsClient.runWeightAlgorithmSync("ahp", literal, configJson);
         }
         String literal = buildMockEntropySampleMatrixJson(sampleRows, n, rnd);
-        return zgpgAlgsClient.runWeightAlgorithmSync("cal_weight", literal, "{}");
+        return zgpgAlgsClient.runWeightAlgorithmSync("cal_weight", literal, configJson);
     }
 
     /**

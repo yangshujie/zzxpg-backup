@@ -1,17 +1,24 @@
 package com.ruoyi.controller.zhpg;
 
+import com.ruoyi.common.core.domain.R;
 import com.ruoyi.common.core.web.controller.BaseController;
 import com.ruoyi.common.core.web.domain.AjaxResult;
 import com.ruoyi.domain.zhpg.dto.*;
 import com.ruoyi.service.zhpg.IReportTemplateService;
+import com.ruoyi.system.api.RemoteFileService;
+import com.ruoyi.system.api.domain.SysFile;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.UriUtils;
 
 import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,6 +31,12 @@ public class ReportTemplateController extends BaseController {
 
     @Autowired
     private IReportTemplateService templateService;
+
+    @Autowired
+    private RemoteFileService remoteFileService;
+
+    @Value("${custom-config.minio.bucketName}")
+    private String bucketName;
 
     @PostMapping
     public AjaxResult create(@Validated @RequestBody ReportTemplateCreateRequest request) {
@@ -94,5 +107,26 @@ public class ReportTemplateController extends BaseController {
     @PostMapping("/validate")
     public AjaxResult validate(@Validated @RequestBody ReportTemplateValidateRequest request) {
         return AjaxResult.success(templateService.validateTemplate(request));
+    }
+
+    /**
+     * 上传报告自定义图片
+     */
+    @PostMapping("/uploadImage")
+    public AjaxResult uploadImage(@RequestPart("file") MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            return AjaxResult.error("上传文件不能为空");
+        }
+        // 存储路径：zhpg/reportImages/yyyyMM/
+        String dirPath = "zhpg/reportImages/" + new SimpleDateFormat("yyyyMM").format(new Date()) + "/";
+        
+        R<SysFile> result = remoteFileService.upload(bucketName, dirPath, file);
+        if (result != null && result.isSuccess() && result.getData() != null) {
+            AjaxResult ajax = AjaxResult.success("上传成功");
+            ajax.put("fileName", result.getData().getUrl());
+            ajax.put("url", result.getData().getUrl());
+            return ajax;
+        }
+        return AjaxResult.error("上传失败: " + (result != null ? result.getMsg() : "文件服务无响应"));
     }
 }

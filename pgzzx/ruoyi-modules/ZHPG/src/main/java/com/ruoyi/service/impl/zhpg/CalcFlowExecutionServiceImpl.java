@@ -78,7 +78,6 @@ public class CalcFlowExecutionServiceImpl extends ServiceImpl<CalcFlowExecutionM
         QueryWrapper<CalcFlowExecution> wrapper = new QueryWrapper<>();
         wrapper.eq("template_id", templateId)
                 .eq("indicator_system_id", indicatorSystemId)
-                .eq("del_flag", "0")
                 .orderByDesc("update_time", "create_time", "id")
                 .last("limit 1");
         return baseMapper.selectOne(wrapper);

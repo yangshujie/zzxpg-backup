@@ -7,6 +7,38 @@ from algsmanagement.models import *
 import time
 from algsmanagement.XZ_orbitPos import getOrbitPic
 
+from algs.dataProcess.association_match.fuzzy_match import fuzzy_match
+from algs.dataProcess.association_match.inner_join import inner_join
+from algs.dataProcess.association_match.time_window import tw_match
+from algs.dataProcess.cartesian import cartesian
+from algs.dataProcess.conditional import conditional
+from algs.dataProcess.normalization.decimal_norm import decimal_norm
+from algs.dataProcess.normalization.minmax_norm import minmax_norm
+from algs.dataProcess.normalization.robust_scale import robust_scale
+from algs.dataProcess.normalization.zscore_standard import zscore_standard
+from algsmanagement.models import *
+import time
+from algsmanagement.XZ_orbitPos import getOrbitPic
+
+from algs.dataProcess.anomaly_detection.dbscan_outlier import dbscan_outlier
+from algs.dataProcess.anomaly_detection.iqr_outlier import iqr_outlier
+from algs.dataProcess.anomaly_detection.mad_outlier import mad_outlier
+from algs.dataProcess.anomaly_detection.regression_outlier import regression_outlier
+from algs.dataProcess.anomaly_detection.smooth_zscore import smooth_zscore
+from algs.dataProcess.anomaly_detection.three_sigma import three_sigma
+from algs.dataProcess.anomaly_detection.two_way_smooth_zscore import two_way_smooth_zscore
+from algs.dataProcess.data_bfill import data_bfill
+from algs.dataProcess.data_deduplicate.full_deduplicate import full_deduplicate
+from algs.dataProcess.data_deduplicate.subset_deduplicate import subset_deduplicate
+from algs.dataProcess.data_deduplicate.timestamp_deduplicate import timestamp_deduplicate
+from algs.dataProcess.data_ffill import data_ffill
+from algs.dataProcess.time_format.time_range import time_range
+from algsmanagement.utils.kingbase_util import KingbaseDB
+from config.config import FIELD_MAPPING_URL
+import requests
+
+# ======================== 通用 ========================
+
 # 模块导入缓存，避免重复导入（90天数据只需导入2次，而不是180次）
 _module_cache = {}
 
@@ -21,6 +53,295 @@ _performance_stats = {
     'data_convert': [],        # 数据转换耗时（tolist等）
     'total_per_day': []        # 每天总耗时
 }
+
+
+
+def to_json_safe(obj):
+    if isinstance(obj, dict):
+        return {k: to_json_safe(v) for k, v in obj.items()}
+    elif isinstance(obj, (list, tuple, set)):
+        return [to_json_safe(item) for item in obj]
+    elif isinstance(obj, np.integer):
+        return int(obj)
+    elif isinstance(obj, np.floating):
+        return None if np.isnan(obj) else float(obj)
+    elif isinstance(obj, np.bool_):
+        return bool(obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, pd.Timestamp):
+        return str(obj)
+    elif obj is pd.NaT:            # 修复点：用 is 而不是 isinstance
+        return None
+    else:
+        return obj
+
+
+def infer_sql_type(value):
+    """根据Python值推断SQL列类型"""
+    if value is None:
+        return 'TEXT'
+    if isinstance(value, bool):
+        return 'BOOLEAN'
+    if isinstance(value, (int, float)):
+        return 'NUMERIC(10,2)'
+    if isinstance(value, str):
+        return 'TEXT'
+    return 'TEXT'
+
+
+def s_save_preprocessed_to_kingbase(table_name, data):
+    """
+    将预处理后的数据保存到Kingbase数据库
+
+    Args:
+        table_name: 表名
+        data: 数据列表，如 [{'f': 1.0, 'field1': 1.0, ...}, ...]
+
+    Returns:
+        (bool, str) 成功返回 (True, '成功信息')，失败返回 (False, '错误信息')
+    """
+    if not data:
+        return False, "数据为空"
+
+    try:
+        with KingbaseDB() as db:
+            if db.table_exists(table_name):
+                # 表已存在：检查并补充缺失字段，追加数据
+                existing_cols = db.get_table_columns(table_name)
+                first_row = data[0]
+                for col_name, value in first_row.items():
+                    if col_name not in existing_cols:
+                        col_name_lower = col_name.lower()
+                        if col_name_lower == 'time' or col_name_lower == 'timestamp':
+                            col_type = 'TIMESTAMP'
+                        else:
+                            col_type = infer_sql_type(value)
+                        db.add_column(table_name, col_name, col_type)
+                cols = list(data[0].keys())
+            else:
+                # 表不存在：根据第一条数据推断列类型并创建表
+                first_row = data[0]
+                columns = {}
+                for col_name, value in first_row.items():
+                    col_name_lower = col_name.lower()
+                    if col_name_lower == 'time' or col_name_lower == 'timestamp':
+                        columns[col_name] = 'TIMESTAMP'
+                    else:
+                        columns[col_name] = infer_sql_type(value)
+                db.create_table(table_name, columns)
+                cols = list(data[0].keys())
+
+            # 插入数据（追加到已有数据后面）
+            placeholders = ', '.join(['%s'] * len(cols))
+            col_names = ', '.join([f'"{c}"' for c in cols])
+            sql = f'INSERT INTO "{table_name}" ({col_names}) VALUES ({placeholders})'
+
+            for row in data:
+                values = []
+                for col in cols:
+                    val = row.get(col)
+                    col_name_lower = col.lower()
+                    if (col_name_lower == 'time' or col_name_lower == 'timestamp') and val is not None:
+                        val = pd.to_datetime(val)
+                    elif isinstance(val, float) and np.isnan(val):
+                        val = None
+                    values.append(val)
+                db.execute(sql, values)
+
+            return True, f"成功保存 {len(data)} 条数据到表 {table_name}"
+
+    except Exception as e:
+        return False, f"保存到Kingbase失败: {str(e)}"
+
+def s_preprocess(task):
+    """
+    执行数据预处理流程
+    :param task: dict 或 JSON 字符串，包含数据源和步骤配置
+                 data_sources格式: {"表名": ["字段1", "字段2", ...], ...}
+                 可选字段: start_time, end_time 用于时间筛选
+    :return: (bool, json_str) 成功返回 True 和结果 JSON，失败返回 False 和错误 JSON
+    """
+    try:
+        # 解析输入
+        if isinstance(task, str):
+            try:
+                task = json.loads(task)
+            except (json.JSONDecodeError, TypeError) as e:
+                return False, json.dumps({"error": f"任务JSON解析失败: {e}"})
+        if not isinstance(task, dict):
+            return False, json.dumps({"error": f"任务格式错误: 期望dict，实际为{type(task).__name__}"})
+
+        steps = task.get("steps")
+        data_sources = task.get("data_sources")
+        if not steps or not data_sources:
+            return False, json.dumps({"error": "缺少 steps 或 data_sources"})
+
+        start_time = task.get("start_time",None)
+        end_time = task.get("end_time",None)
+
+        # 从Kingbase查询数据源
+
+        time_fields = {'time', 'timestamp'}
+        dataframes = {}
+        with KingbaseDB() as db:
+            for table_name, fields in data_sources.items():
+                fields = fields.keys()
+                rows = db.query_data(table_name, fields=fields, start_time=start_time, end_time=end_time)
+                if not rows:
+                    return False, json.dumps({"error": f"表 {table_name} 查询结果为空"})
+                df = pd.DataFrame(rows)
+                for col in df.columns:
+                    if col.lower() not in time_fields:
+                        df[col] = pd.to_numeric(df[col], errors='coerce')
+                dataframes[table_name] = df
+
+        ret = {}
+        ret['original'] = {name: to_json_safe(df.to_dict(orient='records')) for name, df in dataframes.items()}
+
+        # 解析模板
+        current_data = dataframes
+        # 构建函数名映射：功能名_方法名 -> 函数对象
+        func_mapping = {
+    # ========== 野值剔除处理 (6个) ==========
+            "3sigma剔野": three_sigma,
+            'Z-score剔野': smooth_zscore,
+             'IQR离群点剔野': iqr_outlier,
+            '回归残差剔野': regression_outlier,
+            'MAD离群点剔野': mad_outlier,
+             'DBSCAN离群点剔野': dbscan_outlier,
+            "双向Z-score剔野": two_way_smooth_zscore,
+            # ========== 数据值去重 (3个) ==========
+             "数据值完全去重": full_deduplicate,
+             "数据值子集去重": subset_deduplicate,
+            "数据值时间去重": timestamp_deduplicate,
+            # ========== 数据关联匹配 (3个) ==========
+             '精准匹配': inner_join,
+            '时间窗口匹配': tw_match,
+            '模糊匹配': fuzzy_match,
+            # ========== 数据排序 (3个) ==========
+            # ('数据排序', '单列排序'): single_sort,
+            # ('数据排序', '多列排序'): multi_sort,
+            # ('数据排序', '时间排序'): time_sort,
+            # ========== 一致性检验 (3个) ==========
+            # ('一致性检验', '范围一致性'): range_consistency,
+            # ('一致性检验', '格式一致性'): format_consistency,
+            # ('一致性检验', '逻辑一致性'): logic_consistency,
+            # ========== 数据格式转换 (3个) ==========
+            # ('数据格式转换', '时间格式转换'): time_format,
+            # ('数据格式转换', '数值类型转换'): type_convert,
+            # ('数据格式转换', '宽表转长表'): wide_to_long,
+            # ========== 数据规范化 (4个) ==========
+            '标准化': zscore_standard,
+            '归一化': minmax_norm,
+            '小数定标': decimal_norm,
+            '鲁棒标准化': robust_scale,
+            # ========== 数据统计分析 (4个) ==========
+            # '描述统计': descriptive_stats,
+            # '频率分布': frequency_dist,
+            # '相关性分析': correlation,
+            # '分位数统计': quantile_stats,
+            # ========== 数据置信度评估 (3个) ==========
+            # '缺失率评估': missing_rate,
+            # '数据质量评分': quality_score,
+            # '置信区间评估': confidence_interval,
+            # ========== 表格合并 (3个) ==========
+            # '内连接合并': inner_merge,
+            # '外连接合并': outer_merge,
+            # '时间对齐合并': time_align,
+            # ========== 交叉合并 (2个) ==========
+            '笛卡尔积': cartesian,
+            '条件交叉': conditional,
+            # ========== 值域合并 (1个) ==========
+            # '值域并集': range_union,
+            # ========== 时间选择 (1个) ==========
+            '时间范围选择': time_range,
+            # ========== 数据值填充 (1个) ==========
+            '后向填充':data_bfill,
+            '前向填充': data_ffill
+        }
+        ret['analysis'] = {}
+        for step in steps:
+        #取消     name = step.get('type_code')
+            enabled = step.get('enabled', True)
+            if not enabled:
+                continue
+            # method = step.get('operator_code')
+            method = step.get('operator')
+            params = step.get('parameters', {})
+
+            func = func_mapping.get(method)
+            if func is None:
+                return False, json.dumps({"error": f"未知的预处理方法: {method}"})
+
+            try:
+                success, this_step_ret = func.algsMain(data=current_data, params=params)
+                if not success:
+                    return False, json.dumps({"error": f"预处理算子{method} 执行失败: {this_step_ret}"})
+                current_data = this_step_ret['data']
+                ret['analysis'][method] = to_json_safe(this_step_ret['analysis'])
+            except Exception as e:
+                return False, json.dumps({"error": f"预处理算子 {method} 执行异常: {str(e)}"})
+        # success, this_step_ret = timestamp_deduplicate.algsMain(data=current_data)
+        # current_data = this_step_ret['data']
+        # success, this_step_ret = two_way_smooth_zscore.algsMain(data=current_data)
+        # current_data = this_step_ret['data']
+        # 将最终数据存入结果，同样处理类型转换
+        ret['preprocessed'] = {}
+        for name, df in current_data.items():
+            ret['preprocessed']["pre_" + name] = to_json_safe(df.to_dict(orient='records'))
+            s_save_preprocessed_to_kingbase("pre_" + name, df.to_dict(orient='records'))
+
+        # 调用字段映射关系接口，将字段信息同步到评估平台
+        # 新逻辑：根据新表名锁定旧表名，将旧表的字段映射到新表
+        field_mapping_list = []
+        for new_table_name in ret['preprocessed'].keys():
+            # 从新表名中找出所有被包含的旧表名
+            matched_old_tables = []
+            for old_table_name in data_sources.keys():
+                if old_table_name in new_table_name:
+                    matched_old_tables.append(old_table_name)
+            # 将匹配的旧表的字段映射到新表
+            for old_table_name in matched_old_tables:
+                for field_name, field_id in data_sources[old_table_name].items():
+                    field_mapping_list.append({
+                        "fieldName3": field_name,
+                        "id": field_id,
+                        "tableName3": new_table_name
+                    })
+        try:
+            resp = requests.post(FIELD_MAPPING_URL, json=field_mapping_list, timeout=10)
+            resp.raise_for_status()
+        except Exception as e:
+            print(f"调用字段映射关系接口失败: {str(e)}")
+
+        #修改ycl_task表中指定task_id的status为"已完成"
+        task_id = task.get("task_id")
+        if task_id:
+            try:
+                with KingbaseDB() as db:
+                    success, msg = db.update_task_status(task_id, "已完成")
+                    if not success:
+                        print(f"更新任务状态失败: {msg}")
+            except Exception as e:
+                # 更新状态失败不影响主流程，仅记录日志
+                print(f"更新任务状态异常: {str(e)}")
+        return True, json.dumps(ret, ensure_ascii=False)
+    except Exception as e:
+        task_id = task.get("task_id") if isinstance(task, dict) else None
+        if task_id:
+            try:
+                with KingbaseDB() as db:
+                    success, msg = db.update_task_status(task_id, "失败")
+                    if not success:
+                        print(f"更新任务状态失败: {msg}")
+            except Exception as e:
+                # 更新状态失败不影响主流程，仅记录日志
+                print(f"更新任务状态异常: {str(e)}")
+        return False, json.dumps({"error": f"全局异常: {str(e)}"})
+
+
+#========================================
 
 def get_performance_stats():
     """
@@ -414,37 +735,37 @@ def iter_n_sigma(time, data, n):
     # 直接返回过滤后的数据
     return time[mask].tolist(), data[mask].tolist()
 
-
-def three_sigma(time, data):
-    """
-    优化版本：减少不必要的迭代和转换，提前退出
-    """
-    count = 5
-    data_size = len(data)
-    time = np.array(time)
-    data = np.array(data)
-    
-    for _ in range(count):
-        average = np.nanmean(data)
-        std = np.nanstd(data)
-        
-        # 使用布尔索引
-        mask = (data <= (average + 3 * std)) & (data >= (average - 3 * std)) & (np.abs(data) <= 10000)
-        
-        # 如果没有任何数据被剔除，提前退出
-        if np.all(mask):
-            break
-            
-        # 更新数据
-        time = time[mask]
-        data = data[mask]
-        
-        # 如果数据量没有变化，提前退出
-        if len(data) == data_size:
-            break
-        data_size = len(data)
-    
-    return time.tolist(), data.tolist()
+#
+# def three_sigma(time, data):
+#     """
+#     优化版本：减少不必要的迭代和转换，提前退出
+#     """
+#     count = 5
+#     data_size = len(data)
+#     time = np.array(time)
+#     data = np.array(data)
+#
+#     for _ in range(count):
+#         average = np.nanmean(data)
+#         std = np.nanstd(data)
+#
+#         # 使用布尔索引
+#         mask = (data <= (average + 3 * std)) & (data >= (average - 3 * std)) & (np.abs(data) <= 10000)
+#
+#         # 如果没有任何数据被剔除，提前退出
+#         if np.all(mask):
+#             break
+#
+#         # 更新数据
+#         time = time[mask]
+#         data = data[mask]
+#
+#         # 如果数据量没有变化，提前退出
+#         if len(data) == data_size:
+#             break
+#         data_size = len(data)
+#
+#     return time.tolist(), data.tolist()
 
 
 def iter_three_sigma(time, data):
@@ -578,6 +899,8 @@ def data_prehandle(dataframes):
     except Exception as e:
         return False, e.args
 
+
+#========================================
 
 def s_algs_load(task):
     try:

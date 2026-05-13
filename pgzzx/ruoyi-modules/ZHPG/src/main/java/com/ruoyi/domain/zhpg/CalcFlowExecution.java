@@ -61,6 +61,4 @@ public class CalcFlowExecution extends BaseEntity {
     @ApiModelProperty("DRAFT/CONFIGURING/RUNNING/SUCCESS/FAILED/REPORT_READY")
     private String status;
 
-    @TableLogic
-    private String delFlag;
 }

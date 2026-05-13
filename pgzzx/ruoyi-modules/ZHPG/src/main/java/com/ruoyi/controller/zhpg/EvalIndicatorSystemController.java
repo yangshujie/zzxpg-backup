@@ -177,7 +177,7 @@ public class EvalIndicatorSystemController extends BaseController {
 
     @ApiOperation("接收需求分析等外部系统下发的细化指标体系（需求元数据 + treeData）。"
             + "合并已有记录时优先 targetIndicatorSystemId / indicatorSystemId；"
-            + "均未传时按 treeData 根节点 id（与 pgzc_indicator_system.id_code 一致，纯数字时亦可匹配主键 id）定位并写入 refined_indicator_tree；"
+            + "均未传时按 treeData 根节点 id（与 pgzc_indicator_system.id_code 一致，纯数字时亦可匹配主键 id）定位并写入 indicator_tree_weight；"
             + "可传 requirementId（或嵌套 indicatorSystem.requirementId）写入 pgzc_indicator_system.requirement_id。")
     @Log(title = "评估指标体系", businessType = BusinessType.IMPORT)
     @PostMapping("/receiveRefinedFromRequirement")
@@ -190,35 +190,6 @@ public class EvalIndicatorSystemController extends BaseController {
         return AjaxResult.success(saved);
     }
 
-    @ApiOperation("主分协同：接收分系统回传的完整指标体系（构建阶段设为已回传细化 REFINED）")
-    @Log(title = "评估指标体系", businessType = BusinessType.UPDATE)
-    @PostMapping("/{id}/receiveRefined")
-    public AjaxResult receiveRefined(@PathVariable Long id, @RequestBody Map<String, Object> body) {
-        EvalIndicatorSystem system = systemService.getById(id);
-        if (system == null) {
-            return AjaxResult.error("指标体系不存在");
-        }
-        if (!"主分协同".equals(ZhpgIndicatorTreeJsonHelper.normalizeWorkModeCode(system.getWorkMode(), ""))) {
-            return AjaxResult.error("仅主分协同模式的指标体系支持接收回传");
-        }
-        Object refinedTreeObj = body.get("indicatorTree");
-        if (refinedTreeObj == null || String.valueOf(refinedTreeObj).trim().isEmpty()) {
-            return AjaxResult.error("回传的指标树不能为空");
-        }
-        String sourceSubsystem = body.get("sourceSubsystem") != null ? body.get("sourceSubsystem").toString() : "需求分析分系统";
-        String normalizedTree = ZhpgIndicatorTreeJsonHelper.normalizeIndicatorTreeTypes(refinedTreeObj.toString());
-        system.setRefinedIndicatorTree(normalizedTree);
-        if (StringUtils.isNotEmpty(normalizedTree)) {
-            String wm = ZhpgIndicatorTreeJsonHelper.extractWorkMode(normalizedTree, system.getWorkMode());
-            system.setWorkMode(ZhpgIndicatorTreeJsonHelper.normalizeWorkModeCode(wm, system.getWorkMode()));
-        }
-        system.setBuildPhase("REFINED");
-        system.setSourceSubsystem(sourceSubsystem);
-        system.setRefinedTime(new Date());
-        system.setUpdateBy(SecurityUtils.getUsername());
-        system.setUpdateTime(new Date());
-        return toAjax(systemService.updateSystem(system));
-    }
 
     @ApiOperation("外部系统选择 - 查询所有指标体系（支持下拉框，支持关键字搜索）")
     @GetMapping("/select")

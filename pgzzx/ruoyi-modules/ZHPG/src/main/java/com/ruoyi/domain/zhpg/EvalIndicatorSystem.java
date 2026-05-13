@@ -51,26 +51,24 @@ public class EvalIndicatorSystem extends BaseEntity {
     @ApiModelProperty(value = "原始指标树结构JSON（主分协同下为粗建/未回传版本，不被回传覆盖）")
     private String indicatorTree;
 
-    @TableField("refined_indicator_tree")
-    @ApiModelProperty(value = "主分协同下分系统回传的细化指标树JSON；权重计算以此为准（非空时）。内部流转通常为空。")
-    private String refinedIndicatorTree;
-
-    @ApiModelProperty(value = "含权重的指标树JSON")
+    @ApiModelProperty(value = "结果/加权指标树JSON（包含回传细化后的结构或权重计算后的结果）")
     private String indicatorTreeWeight;
 
-    @Excel(name = "权重分配算法")
-    @ApiModelProperty(value = "权重分配算法")
-    private String weightAssignAlgorithm;
-
-    @ApiModelProperty(value = "权重分配算法参数JSON")
-    private String weightAssignParams;
 
     @TableField("conduction_config")
     @ApiModelProperty(value = "默认传导算法配置JSON（串联/并联/热备/冷备/表决等）")
     private String conductionConfig;
 
+    @TableField("weight_assign_config")
+    @ApiModelProperty(value = "默认权重分配算法配置JSON")
+    private String weightAssignConfig;
+
     @ApiModelProperty(value = "是否启用（0=测试中 1=已启用）")
     private Integer isApplied;
+
+    @TableField("is_template")
+    @ApiModelProperty(value = "是否模板：0=指标体系实例 1=指标体系模板")
+    private Integer isTemplate;
 
     @ApiModelProperty(value = "来源模板ID")
     private Long templateId;
@@ -99,6 +97,4 @@ public class EvalIndicatorSystem extends BaseEntity {
     @ApiModelProperty(value = "分系统回传细化时间")
     private Date refinedTime;
 
-    @TableLogic
-    private String delFlag;
 }

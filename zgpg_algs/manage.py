@@ -23,6 +23,6 @@ app.register_blueprint(algsmanagement, url_prefix='/algsmanagement')
 
 if __name__ == '__main__':
     # app.run("0.0.0.0",6000,threaded=False,processes=4)
-    app.run("0.0.0.0", 6090)
+    app.run("0.0.0.0", 6000)
     # manage.run()
     #python -m celery -A manage.celery worker -l info -P eventlet

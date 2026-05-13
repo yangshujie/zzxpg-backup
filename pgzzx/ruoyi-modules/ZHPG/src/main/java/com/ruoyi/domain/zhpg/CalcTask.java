@@ -71,8 +71,6 @@ public class CalcTask extends BaseEntity {
     @ApiModelProperty(value = "综合计算异步结果JSON或失败信息")
     private String comprehensiveAsyncJson;
 
-    @TableLogic
-    private String delFlag;
 
     /** 阶段日志列表（非数据库字段） */
     @TableField(exist = false)
