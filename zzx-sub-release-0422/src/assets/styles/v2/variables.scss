@@ -1,0 +1,42 @@
+// Theme Variables - Celestial Sentinel / Tech Aesthetic
+// Rooted in Deep Space Blue (#10131a)
+
+// Colors - Surface Hierarchy
+$bg-color: #10131a; // surface
+$surface-low: #191c22;
+$surface-high: #272a31;
+$surface-highest: #32353c;
+$bg-color-overlay: rgba(16, 19, 26, 0.85);
+$card-bg-color: #191c22; // surface_container_low
+
+// Primary Accents
+$primary-color: #a4e6ff; // primary
+$primary-container: #00d1ff; // primary_container (Vibrant Cyan)
+$success-color: #2ff801; // secondary_container (Status: Nominal)
+$warning-color: #ffbd2e; // Amber
+$danger-color: #ff3c5b; // Neon red
+$info-color: #1e90ff;
+
+$text-color-primary: #e0eafc;
+$text-color-secondary: #8fa3b8;
+$text-color-placeholder: #4a5d73;
+
+$border-color: rgba(164, 230, 255, 0.15); // outline_variant at 15% opacity
+$border-color-hover: #00d1ff;
+
+// Special Gradients
+$cyber-gradient: linear-gradient(135deg, #74d1f3 0%, #00d1ff 100%);
+
+// Effects
+$box-shadow-base: 0 4px 12px rgba(0, 0, 0, 0.5);
+$box-shadow-neon: 0 0 15px rgba(0, 209, 255, 0.3);
+$diffused-shadow: 0px 24px 48px rgba(0, 209, 255, 0.08);
+
+$backdrop-filter: blur(12px);
+
+// Sizes
+$header-height: 60px;
+$sider-width: 240px;
+$padding-base: 20px;
+$border-radius-base: 4px;
+$border-radius-tactical: 2px; // sharp & technical

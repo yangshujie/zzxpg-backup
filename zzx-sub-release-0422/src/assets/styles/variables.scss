@@ -1,0 +1,34 @@
+// Theme Variables - Cyberpunk/Tech Aesthetic
+
+// Colors
+$bg-color: #050b14; // Deep dark blue/black background
+$bg-color-overlay: rgba(5, 11, 20, 0.85);
+$sider-bg-color: #0a1525;
+$header-bg-color: #0a1525;
+$card-bg-color: rgba(16, 33, 56, 0.6); // Glassmorphism base
+
+$text-color-primary: #e0eafc;
+$text-color-secondary: #8fa3b8;
+$text-color-placeholder: #4a5d73;
+
+$primary-color: #00f2ff; // Cyan neon
+$success-color: #00ff9d; // Neon green
+$warning-color: #ffbd2e; // Amber
+$danger-color: #ff3c5b; // Neon red
+$info-color: #1e90ff; // Dodger blue
+
+$border-color: #1c3b5a;
+$border-color-hover: #00f2ff;
+
+// Effects
+$box-shadow-base: 0 4px 12px rgba(0, 0, 0, 0.5);
+$box-shadow-neon: 0 0 10px rgba(0, 242, 255, 0.3);
+$box-shadow-neon-inset: inset 0 0 8px rgba(0, 242, 255, 0.1);
+
+$backdrop-filter: blur(10px);
+
+// Sizes
+$header-height: 60px;
+$sider-width: 240px;
+$padding-base: 20px;
+$border-radius-base: 4px;
