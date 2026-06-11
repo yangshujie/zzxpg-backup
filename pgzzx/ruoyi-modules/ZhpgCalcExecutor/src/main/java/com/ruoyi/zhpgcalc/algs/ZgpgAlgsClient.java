@@ -12,7 +12,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,7 +23,7 @@ import java.util.Map;
 @Component
 public class ZgpgAlgsClient {
 
-    @Value("${zhpg.algs.base-url:http://127.0.0.1:6090}")
+    @Value("${zhpg.algs.base-url:http://127.0.0.1:6000}")
     private String baseUrl;
 
     @Value("${zhpg.algs.connect-timeout-ms:10000}")
@@ -47,39 +46,12 @@ public class ZgpgAlgsClient {
         String type = algsType == null || algsType.isEmpty() ? "character" : algsType;
 
         List<Map<String, Object>> bodies = buildCompatibleRequestBodies(algsName, dataLiteral, cfg, type);
-        return executeWithCompatibility(bodies.get(0), bodies.get(1));
+        return executeOnce(bodies.get(0));
     }
 
     List<Map<String, Object>> buildCompatibleRequestBodies(String algsName, String dataLiteral, String configJson, String algsType) {
         Map<String, Object> legacyBody = buildLegacyZgpgAlgsRequestBody(algsName, dataLiteral, configJson, algsType);
-        Map<String, Object> hubBody = buildHubRequestBody(algsName, dataLiteral, configJson, algsType);
-        return java.util.Arrays.asList(legacyBody, hubBody);
-    }
-
-    Map<String, Object> buildHubRequestBody(String algsName, String dataLiteral, String configJson, String algsType) {
-        Map<String, Object> body = new HashMap<>();
-        String cfg = configJson == null || configJson.isEmpty() ? "{}" : configJson;
-        String type = algsType == null || algsType.isEmpty() ? "character" : algsType;
-
-        // New Hub format: alg_name + args + structured config object.
-        String fullAlgName = algsName;
-        if (algsType != null && !algsType.isEmpty() && !algsName.contains("/")) {
-            fullAlgName = type + "/" + algsName;
-        }
-        body.put("alg_name", fullAlgName);
-        try {
-            body.put("args", Collections.singletonList(JSON.parse(dataLiteral)));
-        } catch (Exception e) {
-            body.put("args", Collections.singletonList(dataLiteral));
-        }
-        try {
-            body.put("config", JSON.parseObject(cfg));
-        } catch (Exception e) {
-            Map<String, Object> fallbackCfg = new HashMap<>();
-            fallbackCfg.put("rawConfig", cfg);
-            body.put("config", fallbackCfg);
-        }
-        return body;
+        return java.util.Collections.singletonList(legacyBody);
     }
 
     Map<String, Object> buildLegacyZgpgAlgsRequestBody(String algsName, String dataLiteral, String configJson, String algsType) {
@@ -95,15 +67,6 @@ public class ZgpgAlgsClient {
         body.put("algs_type", type);
         body.put("config", cfg);
         return body;
-    }
-
-    private Object executeWithCompatibility(Map<String, Object> preferredBody, Map<String, Object> fallbackBody) {
-        try {
-            return executeOnce(preferredBody);
-        } catch (RuntimeException ex) {
-            log.warn("Preferred algorithm request format failed, retrying compatible request format: {}", ex.getMessage());
-            return executeOnce(fallbackBody);
-        }
     }
 
     private Object executeOnce(Map<String, Object> body) {

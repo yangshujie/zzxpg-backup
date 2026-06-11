@@ -186,8 +186,7 @@ import { Plus, ArrowDown, Search, Edit } from '@element-plus/icons-vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { listCollectForms, generateFormItems, changeFormStatus, batchIssueForms, issueForm, delCollectForms, updateCollectForm, listInterfaceInfosPage } from "@/api/dataCollection/index"
-import { useDict } from '@/utils/dict'
-const { zhpg_equipment_type } = useDict('zhpg_equipment_type')
+import { getZhpgEquipmentTypeLabel } from '@/constants/zhpgIndicatorSystem'
 const router = useRouter()
 const route = useRoute()
 const loading = ref(false)
@@ -217,8 +216,7 @@ const activeRow = ref(null)
 
 const dataSourceList = ref([])
 const issuingUnitLabel = (value) => {
-    console.log("value ", value, zhpg_equipment_type.value)
-    const aaa = zhpg_equipment_type.value.find(dict => dict.value === value)?.label || value
+    const aaa = getZhpgEquipmentTypeLabel(value)
     console.log("aaa ", aaa)
     return aaa
 }

@@ -83,7 +83,7 @@ public interface IEvalIndicatorService extends IService<EvalIndicator> {
             n.orderNum = ind.getOrderNum();
             n.description = ind.getDescription();
             n.isApplied = ind.getIsApplied();
-            n.isBottomNode = ind.getIsBottomNode();
+            n.isBottomNode = ind.getIsBottomNode() == null ? null : ind.getIsBottomNode() != 0;
             return n;
         }
 

@@ -3,7 +3,7 @@
     <div class="workbench-toolbar">
       <el-button-group class="toolbar-grp">
         <el-button type="primary" icon="Plus" @click="onAddRoot">添加根节点</el-button>
-        <el-button icon="Download" @click="$emit('import-indicators')">从指标导入</el-button>
+        <el-button v-if="showIndicatorImport" icon="Download" @click="$emit('import-indicators')">从指标导入</el-button>
         <el-button v-if="showTemplateImport" icon="Document" @click="$emit('import-template')">从模板导入</el-button>
         <el-button
           v-if="weightTuningMode !== 'none'"
@@ -200,11 +200,30 @@
             />
           </el-form-item>
           <el-form-item label="权重分配算法">
-            <el-select v-model="localWeightAssign" clearable placeholder="未选则体系全局" style="width: 100%">
-              <el-option v-for="o in weightAssignOptions" :key="o.value" :label="o.label" :value="o.value" />
+            <el-select
+              v-model="localWeightAssign"
+              clearable
+              placeholder="未选则体系全局"
+              style="width: 100%"
+              @change="onLocalWeightAlgorithmChange"
+            >
+              <el-option
+                v-for="o in weightAssignOptions"
+                :key="o.value"
+                :label="o.label + (o.isSubjective ? '（主观）' : '（客观）')"
+                :value="o.value"
+              />
             </el-select>
           </el-form-item>
-          <template v-if="weightAssignParamsDef.length">
+          <el-form-item v-if="localSelectedSubtype" label="主观参数">
+            <div class="node-subj-param-row">
+              <el-button type="primary" plain icon="Setting" @click="openSubjNodeParamDialog">
+                重新配置参数（{{ localSelectedSubtype }}）
+              </el-button>
+              <span class="node-subj-param-hint">选择主观算法时已自动弹出；点击此按钮可再次打开重新配置</span>
+            </div>
+          </el-form-item>
+          <template v-else-if="weightAssignParamsDef.length">
             <el-form-item
               v-for="p in weightAssignParamsDef"
               :key="p.paramField"
@@ -243,17 +262,26 @@
     <ZhpgWeightTuningDialog
       v-model="weightTuningVisible"
       :tree-data="treeData"
+      :system-id="systemId"
       :show-objective-weight="showObjectiveWeight"
       :objective-weight-loading="objectiveWeightLoading"
       :objective-weight-disabled="objectiveWeightDisabled"
       @run-objective-weight="$emit('run-objective-weight')"
+      @tree-saved="payload => $emit('tree-saved', payload)"
+      @subjective-computed="payload => $emit('subjective-computed', payload)"
+    />
+
+    <ZhpgSubjectiveNodeParamsDialog
+      v-model="subjNodeParamDialogVisible"
+      :parent-node="selectedNode"
+      :subtype="localSelectedSubtype"
+      @done="onSubjNodeParamDone"
     />
   </div>
 </template>
 
 <script setup>
 import { ref, watch, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
-import { useDict } from '@/utils/dict'
 import { Splitpanes, Pane } from 'splitpanes'
 import 'splitpanes/dist/splitpanes.css'
 import { Graph as G6Graph } from '@antv/g6'
@@ -261,7 +289,10 @@ import { FullScreen } from '@element-plus/icons-vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import ZhpgCalcMethodFields from '@/views/zhpg/components/ZhpgCalcMethodFields.vue'
 import ZhpgWeightTuningDialog from '@/views/zhpg/components/ZhpgWeightTuningDialog.vue'
+import ZhpgSubjectiveNodeParamsDialog from '@/views/zhpg/components/subjective/ZhpgSubjectiveNodeParamsDialog.vue'
+import { resolveSubtypeFromOptions } from '@/utils/zhpg/zhpgWeightAssignAlgorithms'
 import { ZHPG_VALUE_CATEGORY_OPTIONS, getZhpgValueCategoryLabel } from '@/constants/zhpgIndicatorValueCategory'
+import { ZHPG_EQUIPMENT_TYPE_OPTIONS } from '@/constants/zhpgIndicatorSystem'
 import {
   ZHPG_WEIGHT_ASSIGN_OPTIONS,
   getZhpgWeightAssignLabel,
@@ -504,7 +535,7 @@ class Graph extends G6Graph {
   }
 }
 
-const emit = defineEmits(['import-indicators', 'import-template', 'edit-node', 'run-objective-weight'])
+const emit = defineEmits(['import-indicators', 'import-template', 'edit-node', 'run-objective-weight', 'tree-saved', 'subjective-computed'])
 const themeStore = useThemeStore();
 const props = defineProps({
   variant: {
@@ -516,6 +547,8 @@ const props = defineProps({
   /** 为 true 时在父级 flex 布局下占满剩余高度（侧栏 + 全高工作台场景） */
   fillParentHeight: { type: Boolean, default: false },
   showTemplateImport: { type: Boolean, default: false },
+  /** 是否显示「从指标导入」按钮；执行流程等只做"再次编辑"的场景可置 false（导入为整树替换，不适合执行态） */
+  showIndicatorImport: { type: Boolean, default: true },
   draggable: { type: Boolean, default: true },
   /** 首个根节点默认名称：与模板名称 / 指标体系名称对齐，由父级传入 */
   preferredRootLabel: { type: String, default: '' },
@@ -537,7 +570,9 @@ const props = defineProps({
   /** 透传：客观赋权计算加载状态 */
   objectiveWeightLoading: { type: Boolean, default: false },
   /** 透传：客观赋权计算禁用状态 */
-  objectiveWeightDisabled: { type: Boolean, default: false }
+  objectiveWeightDisabled: { type: Boolean, default: false },
+  /** 当前指标体系 id（用于保存 / 主观赋权计算调用后端） */
+  systemId: { type: [Number, String], default: null }
 })
 
 const treeData = defineModel('treeData', { type: Array, default: () => [] })
@@ -599,7 +634,7 @@ function normalizeNodeConductionString(node) {
 const valueCategoryOptions = ZHPG_VALUE_CATEGORY_OPTIONS
 const weightAssignOptions = ref([])
 const conductionMethodOptions = ref([])
-const { zhpg_equipment_type } = useDict('zhpg_equipment_type')
+const zhpg_equipment_type = ZHPG_EQUIPMENT_TYPE_OPTIONS
 
 /** 指标体系根节点装备类型 → 配置算法里数据源默认分中心 */
 const defaultDataSourceCenter = computed(() => {
@@ -698,6 +733,47 @@ function closeNodeLocalAlgoDialog() {
   nodeLocalAlgoDialog.value = false
 }
 
+// ================= 单节点主观赋权参数对话框 =================
+const subjNodeParamDialogVisible = ref(false)
+
+/** 当前 select 所选算法推断出的主观 subtype（6 种中文之一），客观或未选时为 ''  */
+const localSelectedSubtype = computed(() =>
+  resolveSubtypeFromOptions(localWeightAssign.value, weightAssignOptions.value) || ''
+)
+
+/** 选了算法后：客观 → 显示参数表单；主观 → 立即弹出节点参数对话框 */
+function onLocalWeightAlgorithmChange() {
+  const subtype = localSelectedSubtype.value
+  if (!subtype) return
+  if (!selectedNode.value) return
+  if (!Array.isArray(selectedNode.value.children) || !selectedNode.value.children.length) {
+    ElMessage.warning('当前节点无子节点，无需配置主观参数')
+    return
+  }
+  // 节点只保存算法 ID，主观算法类型由后端按算法表解析
+  selectedNode.value.weightAssignAlgorithm = localWeightAssign.value
+  subjNodeParamDialogVisible.value = true
+}
+
+/** 提供"重新配置参数"按钮的入口，每次点击都重新打开（修复参考项目"二次点击没反应"的 bug） */
+function openSubjNodeParamDialog() {
+  if (!selectedNode.value) {
+    ElMessage.warning('请先选择一个父节点')
+    return
+  }
+  if (!Array.isArray(selectedNode.value.children) || !selectedNode.value.children.length) {
+    ElMessage.warning('当前节点无子节点，无需配置')
+    return
+  }
+  if (!localSelectedSubtype.value) return
+  selectedNode.value.weightAssignAlgorithm = localWeightAssign.value
+  subjNodeParamDialogVisible.value = true
+}
+
+function onSubjNodeParamDone() {
+  ElMessage.success('本节点主观赋权参数已更新')
+}
+
 const workbenchNodeWeightSummary = computed(() => {
   const n = selectedNode.value
   if (!n || selectedNodeIsLeaf.value) return '—'
@@ -724,6 +800,7 @@ function clearWorkbenchNodeAlgoOverride() {
   const n = selectedNode.value
   if (!n) return
   delete n.weightAssignAlgorithm
+  delete n.subtype
   delete n.conductionAlgorithm
   // 同时清空本地状态
   localWeightAssign.value = ''
@@ -2399,6 +2476,17 @@ defineExpose({
   min-width: 100px;
   justify-content: center;
   border-style: dashed;
+}
+.node-subj-param-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+}
+.node-subj-param-hint {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 .node-algo-tag :deep(.el-tag__content) {
   overflow: hidden;

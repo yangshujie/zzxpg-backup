@@ -21,16 +21,6 @@ export function buildIndicatorSystemTreePayload({
       ? form.buildPhase || workModeValues.INITIAL_DRAFT
       : form.buildPhase
 
-  if (workbenchUsesRefinedTree) {
-    payload.indicatorTreeWeight = serialized
-    payload.indicatorTree = form.indicatorTree
-  } else {
-    payload.indicatorTreeWeight = form.indicatorTreeWeight
-    if (form.indicatorTreeWeight != null && String(form.indicatorTreeWeight).trim() !== '') {
-      payload.indicatorTreeWeight = form.indicatorTreeWeight
-    }
-  }
-
   if (form.id == null) {
     payload.isTemplate = 0
   }

@@ -24,7 +24,7 @@ import java.util.Map;
 @Component
 public class ZhpgZgpgAlgsClient {
 
-    @Value("${zhpg.algs.base-url:http://127.0.0.1:6090}")
+    @Value("${zhpg.algs.base-url:http://127.0.0.1:6000}")
     private String baseUrl;
 
     @Value("${zhpg.algs.connect-timeout-ms:10000}")

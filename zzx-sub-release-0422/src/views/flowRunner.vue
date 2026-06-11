@@ -88,24 +88,16 @@
             </el-col>
           </el-row>
           <el-row :gutter="20">
-            <el-col :span="8">
+            <el-col :span="12">
               <el-form-item label="超时时间(秒)">
                 <el-input-number v-model="stageConfig.scheduleConfig.config.timeoutSeconds" :min="0" :max="3600"
                   style="width: 100%" />
               </el-form-item>
             </el-col>
-            <el-col :span="8">
+            <el-col :span="12">
               <el-form-item label="失败重试次数">
                 <el-input-number v-model="stageConfig.scheduleConfig.config.retryTimes" :min="0" :max="10"
                   style="width: 100%" />
-              </el-form-item>
-            </el-col>
-            <el-col :span="8">
-              <el-form-item label="错过调度">
-                <el-select v-model="stageConfig.scheduleConfig.config.misfireStrategy" style="width: 100%">
-                  <el-option label="忽略" value="DO_NOTHING" />
-                  <el-option label="立即补触发" value="FIRE_ONCE_NOW" />
-                </el-select>
               </el-form-item>
             </el-col>
           </el-row>
@@ -141,16 +133,19 @@
         </div>
 
         <!-- 树编辑器对话框 -->
-        <el-dialog v-model="treeEditorVisible" title="指标树编辑（本次计算覆盖）" height="800px" fullscreen append-to-body
-          destroy-on-close>
+        <el-dialog v-model="treeEditorVisible" title="指标树编辑" height="800px" fullscreen append-to-body
+          destroy-on-close @opened="onTreeEditorOpened">
           <div class="tree-editor-wrap">
             <IndicatorTreeWorkbench ref="workbenchRef" v-model:tree-data="weightTreeData"
-              v-model:selected-node="selectedTreeNode" variant="system" fill-parent-height :weight-tuning-mode="'full'"
-              :weight-assign-algorithm="indicatorSystemDetail?.weightAssignAlgorithm"
-              :conduction-algorithm="indicatorSystemDetail?.conductionAlgorithm" show-objective-weight
-              :objective-weight-loading="objectiveWeightLoading"
-              :objective-weight-disabled="!effectiveIndicatorSystemId || !weightTreeData?.length"
-              @run-objective-weight="runObjectiveWeight" />
+              v-model:selected-node="selectedTreeNode" variant="system" split-height="calc(100vh - 200px)"
+              weight-tuning-mode="none"
+              :system-id="effectiveIndicatorSystemId"
+              :conduction-algorithm="indicatorSystemDetail?.conductionAlgorithm"
+              :global-work-mode="indicatorSystemDetail?.workMode || ''"
+              :preferred-root-label="indicatorSystemDetail?.systemName || indicatorSystemDetail?.indicatorSystemName || ''"
+              :hide-leaf-calc-method="false"
+              :show-objective-weight="false"
+              :show-indicator-import="false" />
           </div>
           <template #footer>
             <el-button @click="cancelTreeEdits">取 消</el-button>
@@ -158,32 +153,10 @@
           </template>
         </el-dialog>
 
-        <ZhpgWeightTuningDialog v-model="weightTuningVisible" :tree-data="weightTreeData" show-objective-weight
-          :objective-weight-loading="objectiveWeightLoading"
-          :objective-weight-disabled="!effectiveIndicatorSystemId || !weightTreeData?.length"
-          @run-objective-weight="runObjectiveWeight" />
-
-        <el-dialog v-model="objectiveWeightProgressVisible" title="权重赋权计算" width="520px" append-to-body align-center
-          :close-on-click-modal="false" :close-on-press-escape="false" :show-close="objectiveWeightDone"
-          destroy-on-close @closed="onObjectiveWeightDialogClosed">
-          <div class="objective-weight-progress">
-            <el-steps direction="vertical" :active="objectiveWeightStepsActive" finish-status="success">
-              <el-step title="校验与准备" description="确认指标体系已保存，并解析当前指标树结构" />
-              <el-step title="组装层级数据" description="按父子层级生成用于赋权的样本矩阵" />
-              <el-step title="权重赋权计算" description="调用算法服务计算权重，可能需要等待一段时间" />
-              <el-step title="回写与刷新" description="保存带权重的指标树快照，并刷新当前向导" />
-            </el-steps>
-            <div v-if="objectiveWeightLoading" class="objective-weight-status">
-              <el-icon class="is-loading">
-                <Loading />
-              </el-icon>
-              <span>正在计算，请稍候，勿关闭本窗口</span>
-            </div>
-          </div>
-          <template v-if="objectiveWeightDone" #footer>
-            <el-button type="primary" @click="closeObjectiveWeightProgressDialog">知道了</el-button>
-          </template>
-        </el-dialog>
+        <ZhpgWeightWorkbenchDialog v-model="weightTuningVisible"
+          :system-id="effectiveIndicatorSystemId"
+          :system-name="indicatorSystemDetail?.systemName || indicatorSystemDetail?.indicatorSystemName || ''"
+          @updated="onWeightWorkbenchUpdated" />
       </div>
 
       <!-- Step 3: 综合分析计算 -->
@@ -207,11 +180,77 @@
               </el-form-item>
             </el-col>
             <el-col :span="8">
+              <el-form-item label="预处理批次">
+                <el-input v-if="urlBatchId !== null" :model-value="batchDisplayName" disabled style="width: 100%" />
+                <el-select v-else v-model="stageConfig.comprehensiveCalc.config.batchId" :placeholder="loadingBatches ? '正在加载批次...' : (!requirementId ? '请选择预处理批次' : (batchOptions.length === 0 ? '无需预处理批次' : '请选择预处理批次'))" :disabled="!!requirementId && batchOptions.length === 0 && !loadingBatches" :loading="loadingBatches" @visible-change="handleBatchSelectVisibleChange" style="width: 100%" filterable clearable>
+                  <el-option v-for="item in batchOptions" :key="item.id" :label="`${item.batchName} (ID: ${item.id})`" :value="item.id" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row :gutter="20">
+            <el-col :span="8">
+              <el-form-item label="聚合策略来源">
+                <el-select v-model="stageConfig.comprehensiveCalc.config.aggregationSource" style="width: 100%">
+                  <el-option label="沿用运行时指标体系配置" value="INDICATOR_SYSTEM" />
+                  <el-option label="流程覆盖指定" value="TEMPLATE_OVERRIDE" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="8" v-show="stageConfig.comprehensiveCalc.config.aggregationSource === 'TEMPLATE_OVERRIDE'">
+              <el-form-item label="覆盖聚合算法">
+                <el-select v-model="stageConfig.comprehensiveCalc.config.overrideAggregationAlg" placeholder="请选择聚合算法" filterable clearable style="width: 100%">
+                  <el-option v-for="alg in aggregationAlgorithmList" :key="alg.id" :label="alg.algorithmName" :value="alg.id" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
               <el-form-item label="输出中间结果">
                 <el-switch v-model="stageConfig.comprehensiveCalc.config.intermediateResultOutput" />
               </el-form-item>
             </el-col>
           </el-row>
+          <!-- 评分等级配置（高颜值只读展示面板） -->
+          <div class="score-level-display-panel" style="margin-top: 20px; border-top: 1px dashed var(--el-border-color-lighter); padding-top: 18px;">
+            <div class="section-title" style="font-size: 13px; margin-bottom: 14px; color: var(--el-text-color-regular); font-weight: 600; display: flex; align-items: center; gap: 6px;">
+              <el-icon style="color: var(--el-color-primary); font-size: 14px;"><Grid /></el-icon>
+              <span>评估分级策略</span>
+            </div>
+            <div class="score-level-cards-wrapper">
+              <el-row :gutter="12">
+                <el-col 
+                  v-for="(level, index) in sortedScoreLevels" 
+                  :key="index" 
+                  :xs="24" :sm="12" :md="6"
+                  style="margin-bottom: 12px;"
+                >
+                  <div class="score-level-premium-card" :style="{ borderColor: getLevelStyle(level.name).border }">
+                    <div class="card-left-section">
+                      <span 
+                        class="level-badge" 
+                        :style="{ 
+                          backgroundColor: getLevelStyle(level.name).bg, 
+                          color: getLevelStyle(level.name).color 
+                        }"
+                      >
+                        {{ level.name }}
+                      </span>
+                    </div>
+                    <div class="card-right-section">
+                      <div class="threshold-label">分值要求</div>
+                      <div class="threshold-value" :style="{ color: getLevelStyle(level.name).color }">
+                        <span class="symbol">得分 ≥</span>
+                        <span class="number">{{ level.threshold }}</span>
+                        <span class="unit">分</span>
+                      </div>
+                    </div>
+                    <!-- 炫光微修饰 -->
+                    <div class="glow-layer" :style="{ background: `radial-gradient(circle at 100% 0%, ${getLevelStyle(level.name).bg} 0%, transparent 70%)` }"></div>
+                  </div>
+                </el-col>
+              </el-row>
+            </div>
+          </div>
         </el-form>
 
         <!-- 执行控制 + 日志面板（仅执行模式） -->
@@ -1088,16 +1127,17 @@
 import { ref, reactive, computed, onMounted, onBeforeUnmount, nextTick, getCurrentInstance, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Loading, ArrowLeft, ArrowRight, ArrowDown, VideoPlay, Download, TrendCharts, Collection, DocumentChecked, DataAnalysis, Document, Medal, Setting, DataLine, InfoFilled, WarningFilled, List, Refresh, StarFilled, Clock } from '@element-plus/icons-vue'
+import { ArrowLeft, ArrowRight, ArrowDown, VideoPlay, Download, TrendCharts, Collection, DocumentChecked, DataAnalysis, Document, Medal, Setting, DataLine, InfoFilled, WarningFilled, List, Refresh, StarFilled, Clock } from '@element-plus/icons-vue'
 import axios from 'axios'
 import { getCalcFlow } from '@/api/zhpg/calcFlow'
 import { getCalcTask, runCalcTask } from '@/api/zhpg/calcTask'
 import { getCalcFlowExecution, initCalcFlowExecution, runCalcFlowExecution, saveCalcFlowExecutionConfig } from '@/api/zhpg/calcFlowExecution'
-import { getIndicatorSystem, objectiveWeightIndicatorSystem, updateIndicatorSystem, selectIndicatorSystem } from '@/api/zhpg/indicatorSystem'
+import { getIndicatorSystem, updateIndicatorSystem, selectIndicatorSystem } from '@/api/zhpg/indicatorSystem'
 import { getEvalResult, getEvalResultByTask, listEvalResult } from '@/api/zhpg/evalResult'
 import { generateEvalReport, getEvalReportLinks, listEvalReportsByResult } from '@/api/zhpg/evalReport'
 import { listTemplates, getTemplate } from '@/api/zhpg/report'
 import { listAllAlgorithm, previewAlgorithmCode } from '@/api/zhpg/algorithm'
+import { listPreprocessBatch } from '@/api/zhpg/externalData'
 import { highlightSourceCode } from '@/utils/zhpg/pythonSyntaxHighlight'
 import {
   buildViewportYTicks,
@@ -1130,8 +1170,8 @@ import {
   FLOW_STEP_STATUS
 } from '@/utils/zhpg/calcFlowState'
 import { parseIndicatorTreeToForest, serializeForestToIndicatorTree } from '@/utils/zhpg/zhpgIndicatorTreeJson'
-import IndicatorTreeWorkbench from '@/components/IndicatorTreeWorkbench.vue'
-import ZhpgWeightTuningDialog from '@/components/ZhpgWeightTuningDialog.vue'
+import IndicatorTreeWorkbench from '@/views/zhpg/components/IndicatorTreeWorkbench.vue'
+import ZhpgWeightWorkbenchDialog from '@/views/zhpg/components/ZhpgWeightWorkbenchDialog.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -1142,7 +1182,8 @@ const props = defineProps({
   templateId: { type: [Number, String], default: null },
   indicatorSystemId: { type: [Number, String], default: null },
   requirementIdProp: { type: [Number, String], default: null },
-  taskNameProp: { type: String, default: '' }
+  taskNameProp: { type: String, default: '' },
+  batchIdProp: { type: [Number, String], default: null }
 })
 
 const emit = defineEmits(['exit', 'finished'])
@@ -1154,6 +1195,10 @@ const requirementId = computed(() => Number(props.requirementIdProp || route.que
 const initialTaskId = computed(() => Number(route.query.taskId) || null)
 const initialEvalResultId = computed(() => Number(route.query.evalResultId) || null)
 const initialExecutionId = computed(() => Number(route.query.executionId) || null)
+const urlBatchId = computed(() => {
+  const b = route.query.batchId || props.batchIdProp
+  return b !== undefined && b !== null && b !== '' ? Number(b) : null
+})
 const taskName = ref(props.taskNameProp || route.query.taskName || '')
 const currentExecution = ref(null)
 const routeContextKey = computed(() => JSON.stringify({
@@ -1381,11 +1426,22 @@ const stageConfig = reactive({
       retryTimes: 0
     }
   },
+  weightCalc: {
+    config: {}
+  },
   comprehensiveCalc: {
     config: {
       algorithmChainMode: 'SERIAL',
       nullDataPolicy: 'ZERO_FILL',
-      intermediateResultOutput: false
+      intermediateResultOutput: false,
+      batchId: null,
+      aggregationSource: 'INDICATOR_SYSTEM',
+      overrideAggregationAlg: null,
+      scoreLevels: [
+        { name: '优秀', threshold: 90 },
+        { name: '良好', threshold: 75 },
+        { name: '及格', threshold: 60 }
+      ]
     }
   },
   reportOutput: {
@@ -1398,14 +1454,24 @@ const stageConfig = reactive({
 const runtimePolicy = ref({})
 
 function normalizeReportOutputConfig() {
-  stageConfig.reportOutput.config = {
-    reportTemplateId: stageConfig.reportOutput.config?.reportTemplateId || null,
-    placeholderMappings: normalizeReportMappings(stageConfig.reportOutput.config?.placeholderMappings || [])
+  const current = stageConfig.reportOutput.config || {}
+  const nextTemplateId = current.reportTemplateId || null
+  const nextMappings = normalizeReportMappings(current.placeholderMappings || [])
+  const hasTemplateChanged = current.reportTemplateId !== nextTemplateId
+  const hasMappingsChanged = JSON.stringify(current.placeholderMappings || []) !== JSON.stringify(nextMappings)
+  if (hasTemplateChanged || hasMappingsChanged) {
+    stageConfig.reportOutput.config = {
+      reportTemplateId: nextTemplateId,
+      placeholderMappings: nextMappings
+    }
   }
 }
 
 function buildRuntimeConfigJson() {
   normalizeReportOutputConfig()
+  if (stageConfig.scheduleConfig?.config) {
+    stageConfig.scheduleConfig.config.misfireStrategy = 'DO_NOTHING'
+  }
   return JSON.stringify({
     stages: {
       scheduleConfig: {
@@ -1414,6 +1480,13 @@ function buildRuntimeConfigJson() {
         stageOrder: 1,
         enabled: true,
         config: JSON.parse(JSON.stringify(stageConfig.scheduleConfig.config || {}))
+      },
+      weightCalc: {
+        stageCode: 'WEIGHT_CALC',
+        stageName: '权重计算',
+        stageOrder: 2,
+        enabled: true,
+        config: JSON.parse(JSON.stringify(stageConfig.weightCalc.config || {}))
       },
       comprehensiveCalc: {
         stageCode: 'COMPREHENSIVE_CALC',
@@ -1430,7 +1503,10 @@ function buildRuntimeConfigJson() {
         config: JSON.parse(JSON.stringify(stageConfig.reportOutput.config || {}))
       }
     },
-    runtimePolicy: runtimePolicy.value || {}
+    runtimePolicy: {
+      blockStrategy: stageConfig.scheduleConfig.config.blockStrategy,
+      misfireStrategy: 'DO_NOTHING'
+    }
   })
 }
 
@@ -1442,7 +1518,11 @@ function applyRuntimeConfigJson(configJson) {
   if (!configJson) return
   try {
     const cfg = typeof configJson === 'string' ? JSON.parse(configJson) : configJson
-    if (cfg.runtimePolicy) runtimePolicy.value = cfg.runtimePolicy
+    if (cfg.runtimePolicy) {
+      runtimePolicy.value = cfg.runtimePolicy
+    } else {
+      runtimePolicy.value = {}
+    }
     if (cfg.stages) {
       Object.keys(cfg.stages).forEach(key => {
         if (stageConfig[key] && cfg.stages[key]?.config) {
@@ -1450,13 +1530,28 @@ function applyRuntimeConfigJson(configJson) {
         }
       })
     }
+    
+    // 兼容并归一化运行时调度策略
+    const blockStrategy = cfg.stages?.scheduleConfig?.config?.blockStrategy || cfg.runtimePolicy?.blockStrategy || 'SERIAL_EXECUTION'
+    const misfireStrategy = cfg.stages?.scheduleConfig?.config?.misfireStrategy || cfg.runtimePolicy?.misfireStrategy || 'DO_NOTHING'
+    
+    stageConfig.scheduleConfig.config.blockStrategy = blockStrategy
+    stageConfig.scheduleConfig.config.misfireStrategy = misfireStrategy
+    runtimePolicy.value.blockStrategy = blockStrategy
+    runtimePolicy.value.misfireStrategy = misfireStrategy
+
+    if (urlBatchId.value !== null) {
+      stageConfig.comprehensiveCalc.config.batchId = urlBatchId.value
+    } else if (mode.value === 'execute' && !initialExecutionId.value) {
+      stageConfig.comprehensiveCalc.config.batchId = null
+    }
     normalizeReportOutputConfig()
     const reportCfg = stageConfig.reportOutput.config
     if (reportCfg.reportTemplateId) {
       onReportTemplateChange(reportCfg.reportTemplateId, { silent: true })
     }
-  } catch {
-    // ignore malformed config and keep current preset
+  } catch (e) {
+    console.warn('解析 configJson 失败', e)
   }
 }
 
@@ -1574,6 +1669,57 @@ watch(stageConfig, () => {
   scheduleSaveExecutionDraft()
 }, { deep: true })
 
+const batchOptions = ref([])
+const loadingBatches = ref(false)
+
+const batchDisplayName = computed(() => {
+  if (urlBatchId.value !== null) {
+    const found = batchOptions.value.find(item => item.id === urlBatchId.value)
+    if (found) {
+      return `${found.batchName} (ID: ${found.id})`
+    }
+    return `${urlBatchId.value} (URL已指定，不可编辑)`
+  }
+  return ''
+})
+
+async function fetchBatchOptions() {
+  if (!requirementId.value) {
+    batchOptions.value = []
+    return
+  }
+  loadingBatches.value = true
+  try {
+    const res = await listPreprocessBatch({
+      requirementCode: String(requirementId.value),
+      pageNum: 1,
+      pageSize: 100
+    })
+    const dataObj = res?.data || res
+    batchOptions.value = dataObj?.records || dataObj?.rows || (Array.isArray(dataObj) ? dataObj : [])
+  } catch (e) {
+    console.error('获取预处理批次列表失败:', e)
+  } finally {
+    loadingBatches.value = false
+  }
+}
+
+function handleBatchSelectVisibleChange(visible) {
+  if (visible) {
+    fetchBatchOptions()
+  }
+}
+
+watch(requirementId, () => {
+  fetchBatchOptions()
+}, { immediate: true })
+
+watch(urlBatchId, (newVal) => {
+  if (newVal !== null) {
+    stageConfig.comprehensiveCalc.config.batchId = newVal
+  }
+}, { immediate: true })
+
 const routeStrategyOptions = [
   { label: '第一个', value: 'FIRST' },
   { label: '轮询', value: 'ROUND' },
@@ -1581,6 +1727,68 @@ const routeStrategyOptions = [
   { label: '一致性哈希', value: 'CONSISTENT_HASH' },
   { label: '故障转移', value: 'FAILOVER' }
 ]
+
+
+const aggregationAlgorithmList = computed(() => {
+  return Object.values(algoMap.value).filter(alg => alg.algorithmType === '聚合传导')
+})
+
+function addScoreLevel() {
+  if (!stageConfig.comprehensiveCalc.config.scoreLevels) {
+    stageConfig.comprehensiveCalc.config.scoreLevels = []
+  }
+  stageConfig.comprehensiveCalc.config.scoreLevels.push({
+    name: '',
+    threshold: 0
+  })
+}
+
+function removeScoreLevel(index) {
+  if (stageConfig.comprehensiveCalc.config.scoreLevels) {
+    stageConfig.comprehensiveCalc.config.scoreLevels.splice(index, 1)
+  }
+}
+
+const sortedScoreLevels = computed(() => {
+  const levels = stageConfig.comprehensiveCalc?.config?.scoreLevels || []
+  return [...levels].sort((a, b) => {
+    const tA = Number(a.threshold) || 0
+    const tB = Number(b.threshold) || 0
+    return tB - tA
+  })
+})
+
+function getLevelStyle(name) {
+  if (!name) return { bg: 'rgba(148, 163, 184, 0.08)', color: '#64748b', border: 'rgba(148, 163, 184, 0.2)' }
+  const n = name.trim()
+  if (n.includes('优') || n.toLowerCase().includes('excellent') || n.toLowerCase().includes('a')) {
+    return {
+      bg: 'rgba(16, 185, 129, 0.08)',
+      color: '#10b981',
+      border: 'rgba(16, 185, 129, 0.24)'
+    }
+  }
+  if (n.includes('良') || n.toLowerCase().includes('good') || n.toLowerCase().includes('b')) {
+    return {
+      bg: 'rgba(59, 130, 246, 0.08)',
+      color: '#3b82f6',
+      border: 'rgba(59, 130, 246, 0.24)'
+    }
+  }
+  if (n.includes('及格') || n.includes('中') || n.includes('合格') || n.toLowerCase().includes('pass') || n.toLowerCase().includes('c')) {
+    return {
+      bg: 'rgba(245, 158, 11, 0.08)',
+      color: '#f59e0b',
+      border: 'rgba(245, 158, 11, 0.24)'
+    }
+  }
+  return {
+    bg: 'rgba(239, 68, 68, 0.08)',
+    color: '#ef4444',
+    border: 'rgba(239, 68, 68, 0.24)'
+  }
+}
+
 
 // ==================== Step 2 树数据 ====================
 const weightTreeData = ref([])
@@ -1590,19 +1798,10 @@ const weightTuningVisible = ref(false)
 const workbenchRef = ref(null)
 const originalTreeSnapshot = ref(null)
 const treeSaving = ref(false)
-const objectiveWeightLoading = ref(false)
-const objectiveWeightProgressVisible = ref(false)
-const objectiveWeightStep = ref(0)
-const objectiveWeightDone = ref(false)
-let objectiveWeightStepTimers = []
 
 const hasUnsavedTreeChanges = computed(() => {
   if (!originalTreeSnapshot.value) return false
   return JSON.stringify(weightTreeData.value || []) !== JSON.stringify(originalTreeSnapshot.value || [])
-})
-const objectiveWeightStepsActive = computed(() => {
-  if (objectiveWeightDone.value) return 4
-  return objectiveWeightStep.value
 })
 
 const flatNodeCount = computed(() => countNodes(weightTreeData.value))
@@ -1625,8 +1824,55 @@ function countNodes(list) {
 }
 
 function openTreeEditor() { treeEditorVisible.value = true }
-function openWeightTuning() {
+// 全屏弹窗打开瞬间 G6 容器尺寸为 0，需在动画结束（@opened）后重绘并 fit，否则图形区为空
+function onTreeEditorOpened() {
+  nextTick(() => workbenchRef.value?.renderGraph?.({ fitView: true }))
+}
+async function openWeightTuning() {
+  if (!effectiveIndicatorSystemId.value) {
+    ElMessage.warning('缺少指标体系 ID，无法进行权重调优')
+    return
+  }
+  // 工作台按已保存的指标树加载/计算；若有未保存的树编辑，先落库再打开，避免覆盖丢失
+  if (hasUnsavedTreeChanges.value) {
+    try {
+      await ElMessageBox.confirm(
+        '当前指标树存在未保存修改。权重调优会基于已保存的指标树进行，是否先保存当前修改？',
+        '保存当前修改',
+        {
+          confirmButtonText: '保存并继续',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }
+      )
+    } catch {
+      return
+    }
+    const saved = await confirmTreeEdits({ keepDialogOpen: true, silent: true })
+    if (!saved) return
+  }
   weightTuningVisible.value = true
+}
+// 工作台完成「一键计算权重」或「保存手动微调」后回写带权重树：刷新预览 + 标记步骤 + 存草稿
+async function onWeightWorkbenchUpdated(treeWeightJson) {
+  if (treeWeightJson) {
+    const nextTree = parseIndicatorTreeToForest(treeWeightJson)
+    if (nextTree.length) {
+      weightTreeData.value = nextTree
+      originalTreeSnapshot.value = JSON.parse(JSON.stringify(nextTree))
+    }
+    indicatorSystemDetail.value = {
+      ...(indicatorSystemDetail.value || {}),
+      indicatorTreeWeight: treeWeightJson
+    }
+  } else {
+    await loadIndicatorSystem()
+  }
+  markStepCompleted(flowStepState, 'weightCalc')
+  markCalculationStale()
+  await saveExecutionDraft({ silent: true })
+  await nextTick()
+  workbenchRef.value?.renderGraph?.()
 }
 async function confirmTreeEdits(options = {}) {
   const currentIndicatorSystemId = effectiveIndicatorSystemId.value
@@ -1683,105 +1929,8 @@ function resetWeightOverride() {
   ElMessage.success('已恢复为最近一次保存状态')
 }
 
-function clearObjectiveWeightStepTimers() {
-  objectiveWeightStepTimers.forEach(id => clearTimeout(id))
-  objectiveWeightStepTimers = []
-}
-function closeObjectiveWeightProgressDialog() {
-  objectiveWeightProgressVisible.value = false
-}
-function onObjectiveWeightDialogClosed() {
-  clearObjectiveWeightStepTimers()
-  objectiveWeightLoading.value = false
-  objectiveWeightDone.value = false
-  objectiveWeightStep.value = 0
-}
-async function runObjectiveWeight() {
-  const currentIndicatorSystemId = effectiveIndicatorSystemId.value
-  if (!currentIndicatorSystemId) {
-    ElMessage.warning('缺少指标体系 ID，无法进行权重赋权')
-    return
-  }
-  if (!weightTreeData.value?.length) {
-    ElMessage.warning('指标树为空')
-    return
-  }
-
-  try {
-    if (hasUnsavedTreeChanges.value) {
-      await ElMessageBox.confirm(
-        '当前指标树存在未保存修改。权重赋权会基于已保存的指标树计算，是否先保存当前修改？',
-        '保存当前修改',
-        {
-          confirmButtonText: '保存并继续',
-          cancelButtonText: '取消',
-          type: 'warning'
-        }
-      )
-      const saved = await confirmTreeEdits({ keepDialogOpen: true, silent: true })
-      if (!saved) return
-    }
-
-    await ElMessageBox.confirm(
-      '权重赋权会重新计算并覆盖当前指标树权重。请确认是否继续？',
-      '确认权重赋权',
-      {
-        confirmButtonText: '继续计算',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    )
-  } catch {
-    return
-  }
-
-  clearObjectiveWeightStepTimers()
-  objectiveWeightStep.value = 0
-  objectiveWeightDone.value = false
-  objectiveWeightProgressVisible.value = true
-  objectiveWeightLoading.value = true
-
-  objectiveWeightStepTimers.push(setTimeout(() => { objectiveWeightStep.value = 1 }, 320))
-  objectiveWeightStepTimers.push(setTimeout(() => { objectiveWeightStep.value = 2 }, 880))
-
-  try {
-    const res = await objectiveWeightIndicatorSystem(currentIndicatorSystemId, { persist: true, mockSampleRows: 8 })
-    clearObjectiveWeightStepTimers()
-    objectiveWeightStep.value = 3
-    const payload = res?.data || {}
-    const weightedTreeJson = payload.indicatorTreeWeight || payload.indicatorTree
-    if (weightedTreeJson) {
-      const nextTree = parseIndicatorTreeToForest(weightedTreeJson)
-      if (nextTree.length) {
-        weightTreeData.value = nextTree
-        originalTreeSnapshot.value = JSON.parse(JSON.stringify(nextTree))
-      }
-      indicatorSystemDetail.value = {
-        ...(indicatorSystemDetail.value || {}),
-        indicatorTreeWeight: payload.indicatorTreeWeight,
-        indicatorTree: payload.indicatorTree || indicatorSystemDetail.value?.indicatorTree
-      }
-      markStepCompleted(flowStepState, 'weightCalc')
-      markCalculationStale()
-      await saveExecutionDraft({ silent: true })
-      await nextTick()
-      workbenchRef.value?.renderGraph?.()
-    } else {
-      await loadIndicatorSystem()
-    }
-    objectiveWeightLoading.value = false
-    objectiveWeightDone.value = true
-    ElMessage.success(res?.msg || '权重赋权完成')
-    if (payload.hint) ElMessage.info(String(payload.hint))
-  } catch {
-    clearObjectiveWeightStepTimers()
-    objectiveWeightProgressVisible.value = false
-    objectiveWeightLoading.value = false
-    objectiveWeightStep.value = 0
-    objectiveWeightDone.value = false
-    ElMessage.error('权重赋权计算失败')
-  }
-}
+// 客观/主观/手动赋权已统一到「权重分配调优」工作台（ZhpgWeightWorkbenchDialog · computeWeightsSmart）；
+// 指标树编辑器仅负责结构编辑，不再内嵌独立的客观赋权入口。
 
 // ==================== Step 3: 计算执行 ====================
 const calcStatus = ref('')
@@ -1817,6 +1966,12 @@ async function startCalc() {
   if (!templateId.value || (!effectiveIndicatorSystemId.value && !requirementId.value)) {
     ElMessage.warning('缺少流程模板或指标体系，无法发起计算')
     return
+  }
+  if (urlBatchId.value === null && !stageConfig.comprehensiveCalc.config.batchId) {
+    if (batchOptions.value && batchOptions.value.length > 0) {
+      ElMessage.warning('请先选择预处理批次后再进行计算！')
+      return
+    }
   }
   
   if (calcRunning.value && currentCalcTaskId.value) {
@@ -1857,6 +2012,7 @@ async function startCalc() {
         taskName: taskName.value || undefined,
         indicatorSystemId: effectiveIndicatorSystemId.value || undefined,
         requirementId: requirementId.value || undefined,
+        batchId: stageConfig.comprehensiveCalc.config.batchId || undefined,
         runtimeConfigJson: buildRuntimeConfigJson(),
         skipWeightLog: true
       })
@@ -1914,6 +2070,7 @@ function applyTaskDetail(task) {
   if (!task) return
   currentTaskDetail.value = task
   currentCalcTaskId.value = task.id || currentCalcTaskId.value
+  const oldStatus = calcStatus.value
   calcStatus.value = task.runStatus || task.status || calcStatus.value
   calcProgress.value = Number(task.progressPercent ?? task.progress ?? calcProgress.value ?? 0)
   calcLogs.value = mapTaskLogs(task)
@@ -1924,7 +2081,9 @@ function applyTaskDetail(task) {
   } else if (calcStatus.value === 'FAILED') {
     markStepFailed(flowStepState, 'comprehensiveCalc', task.currentStage || '计算任务失败')
   }
-  scheduleSaveExecutionDraft()
+  if (calcStatus.value !== oldStatus || calcFinished.value || calcStatus.value === 'FAILED') {
+    scheduleSaveExecutionDraft()
+  }
 }
 
 async function refreshCurrentTaskLogs() {
@@ -2562,7 +2721,6 @@ function resetRunnerState() {
   clearTimeout(draftSaveTimer)
   draftSaveTimer = null
   clearCalcPolling()
-  clearObjectiveWeightStepTimers()
 
   executionReady.value = false
   currentExecution.value = null
@@ -2581,7 +2739,8 @@ function resetRunnerState() {
   Object.assign(stageConfig.comprehensiveCalc.config, {
     algorithmChainMode: 'SERIAL',
     nullDataPolicy: 'ZERO_FILL',
-    intermediateResultOutput: false
+    intermediateResultOutput: false,
+    batchId: urlBatchId.value !== null ? urlBatchId.value : null
   })
   Object.assign(stageConfig.reportOutput.config, {
     reportTemplateId: null,
@@ -2599,10 +2758,6 @@ function resetRunnerState() {
   treeEditorVisible.value = false
   weightTuningVisible.value = false
   treeSaving.value = false
-  objectiveWeightLoading.value = false
-  objectiveWeightProgressVisible.value = false
-  objectiveWeightStep.value = 0
-  objectiveWeightDone.value = false
 
   calcStatus.value = ''
   calcProgress.value = 0
@@ -2660,7 +2815,6 @@ onBeforeUnmount(() => {
   clearTimeout(draftSaveTimer)
   saveExecutionDraft({ silent: true })
   clearCalcPolling()
-  clearObjectiveWeightStepTimers()
   stopTraceFlowPan()
   stopPreprocessChartPan()
   if (traceFlowWheelFrame != null) {
@@ -3660,6 +3814,98 @@ function buildMockTree(rootName) {
 </script>
 
 <style scoped lang="scss">
+
+/* 评分等级高级只读卡片 */
+.score-level-premium-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: var(--el-fill-color-blank);
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 8px;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
+    background: var(--el-fill-color-light);
+  }
+
+  .card-left-section {
+    z-index: 2;
+    .level-badge {
+      font-size: 13px;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 6px;
+      letter-spacing: 0.5px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    }
+  }
+
+  .card-right-section {
+    z-index: 2;
+    text-align: right;
+    
+    .threshold-label {
+      font-size: 11px;
+      color: var(--el-text-color-secondary);
+      margin-bottom: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .threshold-value {
+      font-family: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      display: flex;
+      align-items: baseline;
+      gap: 2px;
+      justify-content: flex-end;
+
+      .symbol {
+        font-size: 11px;
+        opacity: 0.85;
+        font-weight: 500;
+      }
+
+      .number {
+        font-size: 18px;
+        line-height: 1;
+      }
+
+      .unit {
+        font-size: 11px;
+        opacity: 0.85;
+        font-weight: 500;
+        margin-left: 1px;
+      }
+    }
+  }
+
+  .glow-layer {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100px;
+    height: 100px;
+    opacity: 0.6;
+    pointer-events: none;
+    z-index: 1;
+    transition: opacity 0.3s;
+  }
+
+  &:hover .glow-layer {
+    opacity: 0.8;
+  }
+}
+
+
 /* =============================================================================
    Celestial Command Interface - Flow Runner Theme
    ============================================================================= */

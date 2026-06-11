@@ -187,6 +187,7 @@
                 <el-select v-model="scope.row.paramType" placeholder="类型" size="small">
                   <el-option label="字符串" value="string" />
                   <el-option label="数值" value="number" />
+                  <el-option label="布尔值" value="boolean" />
                   <el-option label="数组" value="array" />
                   <el-option label="字典" value="dictionary" />
                   <el-option label="时间" value="date" />
@@ -202,6 +203,13 @@
                   size="small"
                   controls-position="right"
                   style="width: 100%"
+                />
+                <el-switch
+                  v-else-if="scope.row.paramType === 'boolean'"
+                  v-model="scope.row.defaultValue"
+                  active-value="true"
+                  inactive-value="false"
+                  size="small"
                 />
                 <el-input v-else v-model="scope.row.defaultValue" placeholder="默认值" size="small" />
               </template>
@@ -239,6 +247,7 @@
                 <el-select v-model="scope.row.paramType" placeholder="类型" size="small">
                   <el-option label="字符串" value="string" />
                   <el-option label="数值" value="number" />
+                  <el-option label="布尔值" value="boolean" />
                   <el-option label="数组" value="array" />
                   <el-option label="字典" value="dictionary" />
                   <el-option label="时间" value="date" />
@@ -255,6 +264,13 @@
                   size="small"
                   controls-position="right"
                   style="width: 100%"
+                />
+                <el-switch
+                  v-else-if="scope.row.paramType === 'boolean'"
+                  v-model="scope.row.defaultValue"
+                  active-value="true"
+                  inactive-value="false"
+                  size="small"
                 />
                 <el-input v-else v-model="scope.row.defaultValue" placeholder="默认值" size="small" />
               </template>
@@ -292,6 +308,7 @@
                 <el-select v-model="scope.row.paramType" placeholder="类型" size="small">
                   <el-option label="字符串" value="string" />
                   <el-option label="数值" value="number" />
+                  <el-option label="布尔值" value="boolean" />
                   <el-option label="数组" value="array" />
                   <el-option label="字典" value="dictionary" />
                 </el-select>

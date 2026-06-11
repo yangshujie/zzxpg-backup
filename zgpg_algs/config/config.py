@@ -2,7 +2,7 @@
 FIELD_MAPPING_URL = "http://localhost:9501/fieldMappingRelation/editPred"
 
 # Kingbase数据库配置
-KINGBASE_CONFIG = {
+KINGBASE_CONFIG_sjhz = {
     'host': '127.0.0.1',
     'port': 54321,
     'user': 'system',
@@ -10,7 +10,20 @@ KINGBASE_CONFIG = {
     'database': 'sjhz',
     'schema': 'sjcl-system'
 }
-
+KINGBASE_CONFIG_zhpq= {
+    'host': '10.20.162.108',
+    'port': 54321,
+    'user': 'system',
+    'password': 'Wxwx2026!!!',
+    'database': 'zhpg',
+    'schema': 'public'
+}
+# 'host': '10.20.162.108',
+# 'port': 54321,
+# 'user': 'system',
+# 'password': 'Wxwx2026!!!',
+# 'database': 'txxtpq',
+# 'schema': 'algorithm'
 # Celery 5.x 配置
 class Celery_config():
     broker_url = "redis://:@127.0.0.1:6379/1"

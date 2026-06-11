@@ -1,0 +1,215 @@
+/* 主观赋权 6 个子组件共用样式 —— 与 pgzzx 既有暗色风格保持一致 */
+.subjective-main {
+  position: relative;
+  width: 100%;
+  min-height: 460px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.subj-left-tree {
+  width: 280px;
+  max-height: 460px;
+  overflow-y: auto;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  padding: 8px;
+  background: var(--el-fill-color-blank);
+}
+.subj-right {
+  flex: 1;
+  min-width: 0;
+  max-height: 460px;
+  overflow-y: auto;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: var(--el-fill-color-blank);
+}
+.subj-hint {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  margin-bottom: 8px;
+}
+.subj-hint em {
+  font-style: normal;
+  color: var(--el-color-primary);
+}
+.subj-parent-tag {
+  display: inline-block;
+  padding: 4px 10px;
+  border: 1px solid var(--el-color-primary-light-5);
+  border-radius: 999px;
+  background: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+.subj-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.subj-card {
+  width: 200px;
+  padding: 8px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  background: var(--el-fill-color-blank);
+}
+.subj-card-title {
+  font-size: 13px;
+  text-align: center;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed var(--el-border-color-lighter);
+  color: var(--el-text-color-primary);
+  margin-bottom: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.subj-num {
+  width: 100%;
+}
+.subj-footer {
+  width: 100%;
+  text-align: right;
+  padding-top: 8px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.subj-node-ok {
+  color: var(--el-color-success);
+}
+.subj-node-ok::after {
+  content: ' ✓';
+}
+.subj-node-bad {
+  color: var(--el-color-warning);
+}
+
+/* AHP 矩阵专用 */
+.subj-ccfx-content {
+  display: flex;
+  width: 100%;
+  overflow: auto;
+}
+.subj-ccfx-left-col {
+  width: 120px;
+  flex-shrink: 0;
+}
+.subj-ccfx-right {
+  flex: 1;
+  overflow-x: auto;
+}
+.subj-ccfx-cell {
+  width: 120px;
+  height: 32px;
+  line-height: 32px;
+  border: 1px solid var(--el-border-color-lighter);
+  text-align: center;
+  font-size: 12px;
+  box-sizing: border-box;
+}
+.subj-ccfx-cell.head {
+  font-weight: 600;
+  background: var(--el-fill-color-light);
+}
+.subj-ccfx-row {
+  display: flex;
+  flex-wrap: nowrap;
+}
+
+/* 专家 tabs */
+:deep(.subj-expert-tabs .el-tabs__header) {
+  margin: 0 0 8px 0;
+}
+
+:global(html.dark .zhpg-global-subj-dialog) .subjective-main,
+:global(body[data-theme="dark"] .zhpg-global-subj-dialog) .subjective-main,
+:global(.dark-theme .zhpg-global-subj-dialog) .subjective-main {
+  gap: 14px;
+}
+
+:global(html.dark .zhpg-global-subj-dialog) .subj-left-tree,
+:global(html.dark .zhpg-global-subj-dialog) .subj-right,
+:global(body[data-theme="dark"] .zhpg-global-subj-dialog) .subj-left-tree,
+:global(body[data-theme="dark"] .zhpg-global-subj-dialog) .subj-right,
+:global(.dark-theme .zhpg-global-subj-dialog) .subj-left-tree,
+:global(.dark-theme .zhpg-global-subj-dialog) .subj-right {
+  background: var(--subj-dialog-panel, #08192c);
+  border-color: var(--subj-dialog-border, rgba(0, 194, 255, 0.24));
+}
+
+:global(html.dark .zhpg-global-subj-dialog) .subj-right,
+:global(body[data-theme="dark"] .zhpg-global-subj-dialog) .subj-right,
+:global(.dark-theme .zhpg-global-subj-dialog) .subj-right {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+:global(html.dark .zhpg-global-subj-dialog) .subj-hint,
+:global(body[data-theme="dark"] .zhpg-global-subj-dialog) .subj-hint,
+:global(.dark-theme .zhpg-global-subj-dialog) .subj-hint {
+  color: var(--subj-dialog-muted, #8fb0c8);
+}
+
+:global(html.dark .zhpg-global-subj-dialog) .subj-hint em,
+:global(body[data-theme="dark"] .zhpg-global-subj-dialog) .subj-hint em,
+:global(.dark-theme .zhpg-global-subj-dialog) .subj-hint em {
+  color: var(--subj-dialog-accent, #00d9ff);
+}
+
+:global(html.dark .zhpg-global-subj-dialog) .subj-parent-tag,
+:global(body[data-theme="dark"] .zhpg-global-subj-dialog) .subj-parent-tag,
+:global(.dark-theme .zhpg-global-subj-dialog) .subj-parent-tag {
+  color: var(--subj-dialog-accent, #00d9ff);
+  background: rgba(0, 217, 255, 0.12);
+  border-color: var(--subj-dialog-border-strong, rgba(0, 224, 255, 0.36));
+}
+
+:global(html.dark .zhpg-global-subj-dialog) .subj-card,
+:global(body[data-theme="dark"] .zhpg-global-subj-dialog) .subj-card,
+:global(.dark-theme .zhpg-global-subj-dialog) .subj-card {
+  background: var(--subj-dialog-card, #0b2038);
+  border-color: rgba(0, 194, 255, 0.22);
+}
+
+:global(html.dark .zhpg-global-subj-dialog) .subj-card-title,
+:global(body[data-theme="dark"] .zhpg-global-subj-dialog) .subj-card-title,
+:global(.dark-theme .zhpg-global-subj-dialog) .subj-card-title {
+  color: var(--subj-dialog-text, #dbeafe);
+  border-bottom-color: rgba(0, 194, 255, 0.2);
+}
+
+:global(html.dark .zhpg-global-subj-dialog) .el-tree,
+:global(body[data-theme="dark"] .zhpg-global-subj-dialog) .el-tree,
+:global(.dark-theme .zhpg-global-subj-dialog) .el-tree {
+  --el-tree-bg-color: var(--subj-dialog-panel, #08192c);
+  --el-tree-node-hover-bg-color: rgba(0, 217, 255, 0.1);
+  background: var(--subj-dialog-panel, #08192c);
+  color: var(--subj-dialog-text, #dbeafe);
+}
+
+:global(html.dark .zhpg-global-subj-dialog) .el-input__wrapper,
+:global(html.dark .zhpg-global-subj-dialog) .el-input-number .el-input__wrapper,
+:global(body[data-theme="dark"] .zhpg-global-subj-dialog) .el-input__wrapper,
+:global(body[data-theme="dark"] .zhpg-global-subj-dialog) .el-input-number .el-input__wrapper,
+:global(.dark-theme .zhpg-global-subj-dialog) .el-input__wrapper,
+:global(.dark-theme .zhpg-global-subj-dialog) .el-input-number .el-input__wrapper {
+  background: var(--subj-dialog-bg, #071426);
+  border: 1px solid var(--subj-dialog-border-strong, rgba(0, 224, 255, 0.36));
+  box-shadow: none;
+}
+
+:global(html.dark .zhpg-global-subj-dialog) .el-input-number__decrease,
+:global(html.dark .zhpg-global-subj-dialog) .el-input-number__increase,
+:global(body[data-theme="dark"] .zhpg-global-subj-dialog) .el-input-number__decrease,
+:global(body[data-theme="dark"] .zhpg-global-subj-dialog) .el-input-number__increase,
+:global(.dark-theme .zhpg-global-subj-dialog) .el-input-number__decrease,
+:global(.dark-theme .zhpg-global-subj-dialog) .el-input-number__increase {
+  color: var(--subj-dialog-muted, #8fb0c8);
+  background: var(--subj-dialog-soft, #0a1a30);
+  border-color: var(--subj-dialog-border, rgba(0, 194, 255, 0.24));
+}

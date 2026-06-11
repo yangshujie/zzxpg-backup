@@ -11,9 +11,6 @@ public class CalcFlowExecutionRunRequest {
     @ApiModelProperty("task name")
     private String taskName;
 
-    @ApiModelProperty("assess task id")
-    private Long assessTaskId;
-
     @ApiModelProperty("runtime config json")
     private String runtimeConfigJson;
 

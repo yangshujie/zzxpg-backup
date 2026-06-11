@@ -170,7 +170,7 @@ public class ZhpgIndicatorLibrarySyncHelper {
 
         JSONArray children = node.getJSONArray("children");
         boolean hasChildren = children != null && !children.isEmpty();
-        indicator.setIsBottomNode(!hasChildren);
+        indicator.setIsBottomNode(hasChildren ? 0 : 1);
 
         // 4. 执行持久化
         if (isNew) {

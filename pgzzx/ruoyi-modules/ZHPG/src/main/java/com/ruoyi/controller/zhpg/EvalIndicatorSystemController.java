@@ -14,8 +14,13 @@ import com.ruoyi.common.security.utils.SecurityUtils;
 import com.ruoyi.domain.zhpg.EvalIndicatorSystem;
 import com.ruoyi.service.zhpg.IEvalIndicatorSystemService;
 import com.ruoyi.service.zhpg.IObjectiveWeightService;
+import com.ruoyi.service.zhpg.ISubjectiveWeightService;
 import com.ruoyi.domain.zhpg.dto.ObjectiveWeightComputeResult;
+import com.ruoyi.domain.zhpg.dto.SubjectiveWeightComputeResult;
+import com.ruoyi.domain.zhpg.dto.WeightApplyResult;
 import com.ruoyi.zhpg.util.ZhpgIndicatorTreeJsonHelper;
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -41,6 +46,9 @@ public class EvalIndicatorSystemController extends BaseController {
 
     @Autowired
     private IObjectiveWeightService objectiveWeightService;
+
+    @Autowired
+    private ISubjectiveWeightService subjectiveWeightService;
 
     @ApiOperation("分页查询指标体系列表")
     @GetMapping("/list")
@@ -82,6 +90,12 @@ public class EvalIndicatorSystemController extends BaseController {
     @DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable Long[] ids) {
         return toAjax(systemService.deleteSystemByIds(ids));
+    }
+
+    @ApiOperation("检测指标体系是否被引用")
+    @GetMapping("/checkReferences/{ids}")
+    public AjaxResult checkReferences(@PathVariable Long[] ids) {
+        return AjaxResult.success(systemService.checkSystemReferences(ids));
     }
 
     @ApiOperation("基于模板创建指标体系")
@@ -211,5 +225,93 @@ public class EvalIndicatorSystemController extends BaseController {
         data.put("mockNote", r.getMockNote());
         data.put("algorithmCallCount", r.getAlgorithmCallCount());
         return AjaxResult.success(data);
+    }
+
+    @ApiOperation("主观赋权：按各父节点保存的算法（不校验/相似度法/校验/理论证据法/连环比率法/层次分析）"
+            + "与子节点参数计算权重并写回 indicator_tree_weight；请求体可选 persist（默认 true）")
+    @Log(title = "评估指标体系", businessType = BusinessType.UPDATE)
+    @PostMapping("/{id}/subjectiveWeight")
+    public AjaxResult subjectiveWeight(@PathVariable Long id, @RequestBody(required = false) Map<String, Object> body) {
+        JSONObject opts = body == null || body.isEmpty() ? new JSONObject() : new JSONObject(body);
+        SubjectiveWeightComputeResult r = subjectiveWeightService.computeForSystem(id, opts, SecurityUtils.getUsername());
+        Map<String, Object> data = new HashMap<>();
+        data.put("indicatorTreeWeight", r.getIndicatorTreeWeight());
+        data.put("hint", r.getHint());
+        data.put("parentNodeCount", r.getParentNodeCount());
+        data.put("ahpFailCount", r.getAhpFailCount());
+        return AjaxResult.success(data);
+    }
+    
+    @ApiOperation("智能综合赋权：根据各节点配置自动分发客观/主观赋权逻辑")
+    @Log(title = "评估指标体系", businessType = BusinessType.UPDATE)
+    @PostMapping("/{id}/computeWeightsSmart")
+    public AjaxResult computeWeightsSmart(@PathVariable Long id, @RequestBody(required = false) Map<String, Object> body) {
+        JSONObject opts = body == null || body.isEmpty() ? new JSONObject() : new JSONObject(body);
+        Object result = systemService.computeWeightsSmart(id, opts, SecurityUtils.getUsername());
+        return AjaxResult.success(result);
+    }
+
+    @ApiOperation("AHP 一致性校验：传入 n×n 互反判断矩阵（元素可为数字或 \"a/b\" 字符串），"
+            + "返回 { ok, cr } —— CR ≤ 0.1 视为通过")
+    @PostMapping("/checkAHP")
+    public AjaxResult checkAHP(@RequestBody Object body) {
+        if (body == null) {
+            return AjaxResult.error("判断矩阵不能为空");
+        }
+        JSONArray matrix;
+        try {
+            matrix = body instanceof JSONArray ? (JSONArray) body : JSON.parseArray(JSON.toJSONString(body));
+        } catch (Exception e) {
+            return AjaxResult.error("判断矩阵解析失败: " + e.getMessage());
+        }
+        if (matrix == null || matrix.isEmpty()) {
+            return AjaxResult.error("判断矩阵不能为空");
+        }
+        try {
+            double cr = subjectiveWeightService.calcAhpCr(matrix);
+            Map<String, Object> data = new HashMap<>();
+            data.put("ok", cr <= 0.1d);
+            data.put("cr", cr);
+            data.put("threshold", 0.1d);
+            return AjaxResult.success(cr <= 0.1d ? "一致性校验通过" : "一致性校验未通过(CR>0.1)", data);
+        } catch (Exception e) {
+            return AjaxResult.error("一致性校验失败: " + e.getMessage());
+        }
+    }
+
+    @ApiOperation("保存用户手动编辑后的指标树权重（对应「权重分配调优」对话框「完成」操作）；"
+            + "请求体：{ systemId / id, indicatorTree(JSON 字符串或对象) }")
+    @Log(title = "评估指标体系", businessType = BusinessType.UPDATE)
+    @PostMapping("/applyTreeWeights")
+    public AjaxResult applyTreeWeights(@RequestBody Map<String, Object> body) {
+        if (body == null || body.isEmpty()) {
+            return AjaxResult.error("请求体不能为空");
+        }
+        Object idObj = body.get("systemId");
+        if (idObj == null) {
+            idObj = body.get("id");
+        }
+        Long systemId;
+        try {
+            systemId = idObj == null ? null : Long.valueOf(String.valueOf(idObj));
+        } catch (NumberFormatException e) {
+            return AjaxResult.error("systemId 无效");
+        }
+        if (systemId == null || systemId <= 0) {
+            return AjaxResult.error("systemId 不能为空");
+        }
+        Object treeObj = body.get("indicatorTree");
+        if (treeObj == null) {
+            treeObj = body.get("treeData");
+        }
+        if (treeObj == null) {
+            return AjaxResult.error("indicatorTree 不能为空");
+        }
+        String treeJson = (treeObj instanceof String) ? (String) treeObj : JSON.toJSONString(treeObj);
+        WeightApplyResult r = subjectiveWeightService.applyUserEditedTreeWeights(systemId, treeJson, SecurityUtils.getUsername());
+        Map<String, Object> data = new HashMap<>();
+        data.put("indicatorTreeWeight", r.getIndicatorTree());
+        data.put("hint", r.getHint());
+        return AjaxResult.success("保存成功", data);
     }
 }

@@ -65,21 +65,13 @@ public class ObjectiveWeightServiceImpl implements IObjectiveWeightService {
         Long seed = options != null && options.containsKey("mockSeed") ? options.getLong("mockSeed") : null;
         Random rnd = seed != null ? new Random(seed) : new Random();
         String overrideModule = resolveOverrideWeightModule(options);
-        String missingWeightPolicy = options != null ? options.getString("missingWeightPolicy") : null;
 
         ParsedTree meta = ZhpgIndicatorTreeJsonHelper.parseForWeight(sourceJson);
         JSONArray roots = JSON.parseArray(meta.getRootsForWeight().toJSONString());
         int calls = walkAssignWeights(roots, system, sampleRows, rnd, overrideModule);
 
         String merged = ZhpgIndicatorTreeJsonHelper.serializeAfterWeight(meta, roots);
-        String strategy = "RENORMALIZE";
-        if ("EQUAL_DISTRIBUTE".equalsIgnoreCase(missingWeightPolicy)) {
-            strategy = "EQUAL";
-        }
-        if ("TERMINATE".equalsIgnoreCase(missingWeightPolicy)) {
-            ensureWeightPresent(roots);
-        }
-        WeightApplyResult renorm = indicatorTreeWeightService.applyWeights(merged, strategy);
+        WeightApplyResult renorm = indicatorTreeWeightService.applyWeights(merged, "RENORMALIZE");
         String finalTree = renorm.getIndicatorTree();
 
         StringBuilder hint = new StringBuilder();
@@ -100,6 +92,32 @@ public class ObjectiveWeightServiceImpl implements IObjectiveWeightService {
         }
 
         return new ObjectiveWeightComputeResult(finalTree, hint.toString(), mockNote, calls);
+    }
+
+    @Override
+    public void computeSingleNode(JSONObject parent, JSONArray children, int sampleRows, java.util.Random rnd) {
+        if (parent == null || children == null || children.isEmpty()) {
+            return;
+        }
+        Object nodeAlgObj = parent.get("weightAssignAlgorithm");
+        String nodeAlg = null;
+        String nodeParams = "{}";
+        if (nodeAlgObj instanceof Number) {
+            AlgorithmInfo alg = algorithmInfoService.selectAlgorithmDetail(((Number) nodeAlgObj).longValue());
+            if (alg != null) {
+                nodeAlg = alg.getAlgorithmName();
+                JSONObject params = parent.getJSONObject("weightAssignAlgorithmParams");
+                if (params != null) {
+                    nodeParams = params.toJSONString();
+                }
+            }
+        } else if (nodeAlgObj instanceof String) {
+            nodeAlg = (String) nodeAlgObj;
+        }
+
+        String module = mapToPythonModule(nodeAlg);
+        JSONArray weights = runModuleForChildren(module, children, sampleRows, rnd, nodeParams);
+        applySiblingWeights(children, weights);
     }
 
     private int walkAssignWeights(JSONArray nodes, EvalIndicatorSystem system, int sampleRows, Random rnd,
@@ -175,25 +193,6 @@ public class ObjectiveWeightServiceImpl implements IObjectiveWeightService {
             }
         }
         return mapToPythonModule(alg.getAlgorithmName());
-    }
-
-    private void ensureWeightPresent(JSONArray nodes) {
-        if (nodes == null || nodes.isEmpty()) {
-            return;
-        }
-        for (int i = 0; i < nodes.size(); i++) {
-            JSONObject n = nodes.getJSONObject(i);
-            JSONArray ch = n.getJSONArray("children");
-            if (ch == null || ch.isEmpty()) {
-                continue;
-            }
-            for (int j = 0; j < ch.size(); j++) {
-                if (ch.getJSONObject(j).get("weight") == null) {
-                    throw new ServiceException("存在缺失权重，按 missingWeightPolicy=TERMINATE 终止计算");
-                }
-            }
-            ensureWeightPresent(ch);
-        }
     }
 
     private static String mapToPythonModule(String uiCode) {

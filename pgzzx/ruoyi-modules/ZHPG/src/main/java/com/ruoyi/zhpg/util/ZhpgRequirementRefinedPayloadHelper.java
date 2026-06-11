@@ -113,7 +113,7 @@ public final class ZhpgRequirementRefinedPayloadHelper {
         }
         Long rid = payload != null ? payload.getLong("requirementId") : null;
         if (StringUtils.isNotEmpty(rootLabel) && rid != null && rid > 0) {
-            return rootLabel.trim() + "（需求" + rid + "）";
+            return stripAutoRequirementSuffix(rootLabel.trim()) + "（需求" + rid + "）";
         }
         if (StringUtils.isNotEmpty(rootLabel)) {
             return rootLabel.trim();
@@ -135,6 +135,17 @@ public final class ZhpgRequirementRefinedPayloadHelper {
             }
         }
         return "外部下发指标体系-" + System.currentTimeMillis();
+    }
+
+    private static String stripAutoRequirementSuffix(String name) {
+        if (StringUtils.isEmpty(name)) {
+            return name;
+        }
+        String cleaned = name.trim();
+        while (cleaned.matches(".*（需求\\d+）\\s*$")) {
+            cleaned = cleaned.replaceFirst("\\s*（需求\\d+）\\s*$", "").trim();
+        }
+        return cleaned;
     }
 
     /**

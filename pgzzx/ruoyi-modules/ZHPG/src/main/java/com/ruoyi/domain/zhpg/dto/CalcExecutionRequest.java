@@ -20,9 +20,6 @@ public class CalcExecutionRequest {
     @ApiModelProperty("执行任务名称")
     private String taskName;
 
-    @ApiModelProperty("关联评估任务ID")
-    private Long assessTaskId;
-
     @ApiModelProperty(value = "运行时指标体系ID")
     private Long indicatorSystemId;
 
@@ -34,4 +31,7 @@ public class CalcExecutionRequest {
 
     @ApiModelProperty("是否跳过权重计算阶段展示（主流程第三步点击计算时使用）")
     private Boolean skipWeightLog;
+
+    @ApiModelProperty("预处理批次ID")
+    private Long batchId;
 }

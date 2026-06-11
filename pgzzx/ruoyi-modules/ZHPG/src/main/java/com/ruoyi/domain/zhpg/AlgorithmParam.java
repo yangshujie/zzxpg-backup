@@ -1,6 +1,7 @@
 package com.ruoyi.domain.zhpg;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.ruoyi.common.core.web.domain.BaseEntity;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -20,6 +21,7 @@ import javax.validation.constraints.Size;
 @Accessors(chain = true)
 @TableName("pgzc_algorithm_param")
 @ApiModel(value = "算法参数")
+@JsonIgnoreProperties(ignoreUnknown = true, value = { "searchValue", "params", "createBy", "createTime", "updateBy", "updateTime", "remark" })
 public class AlgorithmParam extends BaseEntity {
 
     private static final long serialVersionUID = 1L;
@@ -42,7 +44,7 @@ public class AlgorithmParam extends BaseEntity {
     @ApiModelProperty(value = "参数字段名(英文标识)")
     private String paramField;
 
-    @ApiModelProperty(value = "参数类型(string/number/array/dictionary/date/tel/template)")
+    @ApiModelProperty(value = "参数类型(string/number/boolean/array/dictionary/date/tel/template)")
     private String paramType;
 
     @ApiModelProperty(value = "默认值")

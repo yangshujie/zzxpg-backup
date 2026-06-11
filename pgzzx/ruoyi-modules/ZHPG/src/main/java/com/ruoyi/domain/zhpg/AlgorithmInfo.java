@@ -1,6 +1,8 @@
 package com.ruoyi.domain.zhpg;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ruoyi.common.core.annotation.Excel;
 import com.ruoyi.common.core.web.domain.BaseEntity;
@@ -14,6 +16,7 @@ import lombok.experimental.Accessors;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 算法信息实体
@@ -66,7 +69,21 @@ public class AlgorithmInfo extends BaseEntity {
 
     /** 算法参数列表（非数据库字段；字段名避免与 BaseEntity#params 冲突，JSON 仍用 params） */
     @JsonProperty("params")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @TableField(exist = false)
     @ApiModelProperty(value = "算法参数列表")
     private List<AlgorithmParam> algorithmParams;
+
+    @Override
+    @JsonIgnore
+    public Map<String, Object> getParams() {
+        return super.getParams();
+    }
+
+    @Override
+    @JsonIgnore
+    public String getSearchValue() {
+        return super.getSearchValue();
+    }
 }
+

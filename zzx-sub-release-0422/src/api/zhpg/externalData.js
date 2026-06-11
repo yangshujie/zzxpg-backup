@@ -28,3 +28,15 @@ export function listExternalData(query) {
     params: query
   })
 }
+
+/**
+ * 获取预处理批次列表
+ * @param {object} query
+ */
+export function listPreprocessBatch(query) {
+  return externalService({
+    url: '/preprocess/batch/list',
+    method: 'get',
+    params: query
+  })
+}

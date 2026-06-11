@@ -15,6 +15,7 @@ export const ZHPG_WEIGHT_ASSIGN_OPTIONS = [
 
 export function getZhpgWeightAssignLabel(val, dynamicOptions) {
   if (val == null || val === '') return '—'
+  if (val === '不校验') return '重要程度归一法'
   if (Array.isArray(dynamicOptions)) {
     const d = dynamicOptions.find(o => o.value === String(val))
     if (d) return d.label

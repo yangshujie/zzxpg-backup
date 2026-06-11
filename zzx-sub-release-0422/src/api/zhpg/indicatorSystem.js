@@ -51,23 +51,6 @@ export function disableIndicatorSystem(id) {
   return request({ url: '/zhpg/indicatorSystem/' + id + '/disableApplied', method: 'post' })
 }
 
-// /** 客观赋权：模拟样本 + zgpg_algs；可选 persist、mockSampleRows、mockSeed */
-// export function objectiveWeightIndicatorSystem(id, data) {
-//   return request({
-//     url: '/zhpg/indicatorSystem/' + id + '/objectiveWeight',
-//     method: 'post',
-//     data: data || {},
-//     timeout: 360000
-//   })
-// }
-
-// export function selectIndicatorSystem(keyword) {
-//   return request({
-//     url: '/zhpg/indicatorSystem/select',
-//     method: 'get',
-//     params: keyword ? { keyword } : {}
-//   })
-// }
 
 export function startCosign(id) {
   return request({ url: '/zhpg/indicatorSystem/' + id + '/cosign', method: 'post' })
@@ -89,9 +72,24 @@ export function createFromTemplate(data) {
   return request({ url: '/zhpg/indicatorSystem/createFromTemplate', method: 'post', data })
 }
 
-/** 指标体系：按层均分或按正值归一（strategy: AUTO | EQUAL | RENORMALIZE） */
+/** 保存用户手动编辑后的指标树权重；body: { systemId, indicatorTree } */
 export function applyIndicatorTreeWeights(data) {
   return request({ url: '/zhpg/indicatorSystem/applyTreeWeights', method: 'post', data })
+}
+
+/** AHP 一致性校验：传入 n×n 比值矩阵（数字或 "a/b" 字符串），返回 { ok, cr, threshold } */
+export function checkAhpConsistency(matrix) {
+  return request({ url: '/zhpg/indicatorSystem/checkAHP', method: 'post', data: matrix })
+}
+
+/** 主观赋权：按各父节点保存的 6 种算法（不校验/相似度法/校验/理论证据法/连环比率法/层次分析）计算并写回 */
+export function subjectiveWeightIndicatorSystem(id, data) {
+  return request({
+    url: '/zhpg/indicatorSystem/' + id + '/subjectiveWeight',
+    method: 'post',
+    data: data || {},
+    timeout: 120000
+  })
 }
 
 // ==================== 主分协同：构建阶段管理 ====================
@@ -115,6 +113,17 @@ export function objectiveWeightIndicatorSystem(id, data) {
     timeout: 360000
   })
 }
+
+/** 智能综合赋权：根据各节点配置自动分发客观/主观逻辑；可选 persist、mockSampleRows、mockSeed */
+export function computeWeightsSmart(id, data) {
+  return request({
+    url: '/zhpg/indicatorSystem/' + id + '/computeWeightsSmart',
+    method: 'post',
+    data: data || {},
+    timeout: 360000
+  })
+}
+
 /** 客观赋权：模拟样本 + zgpg_algs；可选 persist、mockSampleRows、mockSeed（算法+Celery 可能较慢） */
 export function finalizeRefined(id) {
   return request({ url: '/zhpg/indicatorSystem/' + id + '/finalizeRefined', method: 'post' })
@@ -123,4 +132,9 @@ export function finalizeRefined(id) {
 /** 主分协同：获取初始粗建指标树快照 */
 export function getInitialTree(id) {
   return request({ url: '/zhpg/indicatorSystem/' + id + '/initialTree', method: 'get' })
+}
+
+/** 批量检测指标体系是否被其他模块引用 */
+export function checkSystemReferences(ids) {
+  return request({ url: '/zhpg/indicatorSystem/checkReferences/' + ids, method: 'get' })
 }

@@ -111,11 +111,13 @@ public class CalcExecutorService {
             n.put("score", s);
             n.put("calculatedValue", s);
             applyLeafReportFields(n, s);
+            applyCriterionAfterScore(n);
         } catch (Exception ex) {
             log.warn("leaf compute failed: {}", ex.getMessage());
             n.put("score", BigDecimal.ZERO);
             n.put("calculatedValue", BigDecimal.ZERO);
             applyLeafReportFields(n, BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP));
+            applyCriterionAfterScore(n);
         }
     }
 
@@ -136,7 +138,7 @@ public class CalcExecutorService {
 
     private JSONObject meta(JSONObject n) {
         JSONObject m = new JSONObject();
-        for (String k : Arrays.asList("indicatorType", "valueCategory", "unit", "valueMin", "valueMax", "workMode", "type")) {
+        for (String k : Arrays.asList("indicatorType", "valueCategory", "unit", "valueMin", "valueMax", "workMode", "type", "evalCriterion")) {
             Object v = n.get(k);
             if (v != null) m.put(k, v);
         }
@@ -214,7 +216,72 @@ public class CalcExecutorService {
                 if (StringUtils.hasText(key)) cfg.put(key, c.getString("defaultValue"));
             }
         }
-        if (meta != null) for (String k : meta.keySet()) cfg.putIfAbsent(k, meta.get(k));
+        if (meta != null) {
+            for (String k : meta.keySet()) {
+                if (!"evalCriterion".equals(k)) {
+                    cfg.putIfAbsent(k, meta.get(k));
+                }
+            }
+            // 评估准则参数同源注入极值
+            JSONObject evalCriterion = meta.getJSONObject("evalCriterion");
+            if (evalCriterion != null) {
+                BigDecimal best = evalCriterion.getBigDecimal("bestValue");
+                BigDecimal worst = evalCriterion.getBigDecimal("worstValue");
+                String direction = evalCriterion.getString("valueCategory");
+                if (!StringUtils.hasText(direction)) {
+                    direction = meta.getString("valueCategory");
+                }
+                if (!StringUtils.hasText(direction)) {
+                    direction = meta.getString("type");
+                }
+                
+                // 从 LEVEL_MAP tiers 中提取
+                if ((best == null || worst == null) && "LEVEL_MAP".equals(evalCriterion.getString("ruleType"))) {
+                    String ruleJsonStr = evalCriterion.getString("ruleJson");
+                    if (StringUtils.hasText(ruleJsonStr)) {
+                        try {
+                            JSONObject ruleJson = JSON.parseObject(ruleJsonStr);
+                            JSONArray tiers = ruleJson.getJSONArray("tiers");
+                            if (tiers != null && !tiers.isEmpty()) {
+                                BigDecimal minLimit = null;
+                                BigDecimal maxLimit = null;
+                                for (int idx = 0; idx < tiers.size(); idx++) {
+                                    JSONObject tier = tiers.getJSONObject(idx);
+                                    BigDecimal low = tier.getBigDecimal("valueMin");
+                                    BigDecimal high = tier.getBigDecimal("valueMax");
+                                    if (low != null) {
+                                        if (minLimit == null || low.compareTo(minLimit) < 0) minLimit = low;
+                                    }
+                                    if (high != null) {
+                                        if (maxLimit == null || high.compareTo(maxLimit) > 0) maxLimit = high;
+                                    }
+                                }
+                                if ("效益型".equals(direction) || "BENEFIT".equalsIgnoreCase(direction)) {
+                                    if (best == null) best = maxLimit;
+                                    if (worst == null) worst = minLimit;
+                                } else if ("成本型".equals(direction) || "COST".equalsIgnoreCase(direction)) {
+                                    if (best == null) best = minLimit;
+                                    if (worst == null) worst = maxLimit;
+                                }
+                            }
+                        } catch (Exception e) {
+                            log.warn("提取等级映射极值出错", e);
+                        }
+                    }
+                }
+                
+                if (best != null) {
+                    cfg.put("bestValue", best);
+                    cfg.put("best_value", best);
+                    cfg.put("best", best);
+                }
+                if (worst != null) {
+                    cfg.put("worstValue", worst);
+                    cfg.put("worst_value", worst);
+                    cfg.put("worst", worst);
+                }
+            }
+        }
 
         try {
             Object result = zgpgAlgsClient.runAlgorithm(name, buildData(input, rows, externalDataContext != null), cfg.toJSONString(), mapAlgoType(algoNode.getString("algoType")));
@@ -298,15 +365,22 @@ public class CalcExecutorService {
             log.warn("[数据输入] 模式=EXTERNAL_API，但 assessTaskId 为空，降级为模拟数据");
             return null;
         }
+        Long batchId = request.getBatchId();
+        if (batchId == null && cc != null) {
+            batchId = cc.getLong("batchId");
+        }
+        if (batchId == null) {
+            log.warn("[数据输入] batchId 为空，不使用外部批次数据进行计算");
+        }
         List<String> indicatorLabels = collectLeafLabels(roots);
-        log.info("[数据输入] 模式=EXTERNAL_API, assessTaskId={}, 叶节点指标列表={}", request.getAssessTaskId(), indicatorLabels);
+        log.info("[数据输入] 模式=EXTERNAL_API, batchId={}, assessTaskId={}, 叶节点指标列表={}", batchId, request.getAssessTaskId(), indicatorLabels);
         if (indicatorLabels.isEmpty()) {
             log.warn("[数据输入] 叶节点指标列表为空，降级为模拟数据");
             return null;
         }
         try {
             List<ExternalEvaluationDataClient.ExternalDataItem> items =
-                    externalEvaluationDataClient.fetchEvaluationData(request.getAssessTaskId(), indicatorLabels);
+                    externalEvaluationDataClient.fetchEvaluationData(batchId, String.valueOf(request.getAssessTaskId()), indicatorLabels);
             log.info("[数据输入] 外部接口返回 {} 条数据项", items == null ? 0 : items.size());
             if (items != null) {
                 for (ExternalEvaluationDataClient.ExternalDataItem item : items) {
@@ -645,6 +719,10 @@ public class CalcExecutorService {
     }
     private BigDecimal calcOverall(JSONArray roots, JSONArray dims, JSONObject cc, Long taskId) {
         if (roots == null || roots.isEmpty()) return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+        
+        // 1. 一票否决控制预处理
+        processVetoControl(roots);
+        
         BigDecimal sum = BigDecimal.ZERO;
         int cnt = 0;
         
@@ -736,6 +814,8 @@ public class CalcExecutorService {
         JSONArray childWeights = new JSONArray();
         BigDecimal weighted = BigDecimal.ZERO;
         BigDecimal totalW = BigDecimal.ZERO;
+        BigDecimal minChildScore = null;
+        
         for (int i = 0; i < ch.size(); i++) {
             JSONObject c = ch.getJSONObject(i);
             BigDecimal s = calcNode(c, cc);
@@ -745,6 +825,10 @@ public class CalcExecutorService {
             childWeights.add(w);
             weighted = weighted.add(s.multiply(w));
             totalW = totalW.add(w);
+            
+            if (minChildScore == null || s.compareTo(minChildScore) < 0) {
+                minChildScore = s;
+            }
         }
 
         BigDecimal agg;
@@ -760,11 +844,122 @@ public class CalcExecutorService {
             agg = weighted.divide(totalW, 2, RoundingMode.HALF_UP);
         }
 
+        // 短板均值补偿逻辑
+        if (agg != null && minChildScore != null) {
+            JSONObject evalCriterion = n.getJSONObject("evalCriterion");
+            if (evalCriterion != null && "SHORT_BOARD_COMP".equals(evalCriterion.getString("ruleType"))) {
+                String ruleJsonStr = evalCriterion.getString("ruleJson");
+                if (StringUtils.hasText(ruleJsonStr)) {
+                    try {
+                        JSONObject ruleJson = JSON.parseObject(ruleJsonStr);
+                        BigDecimal lambda = ruleJson.getBigDecimal("lambda");
+                        if (lambda != null && lambda.compareTo(BigDecimal.ZERO) > 0) {
+                            BigDecimal sixty = new BigDecimal("60");
+                            if (minChildScore.compareTo(sixty) < 0) {
+                                BigDecimal diff = sixty.subtract(minChildScore);
+                                BigDecimal penalty = lambda.multiply(diff);
+                                agg = agg.subtract(penalty);
+                                if (agg.compareTo(BigDecimal.ZERO) < 0) {
+                                    agg = BigDecimal.ZERO;
+                                }
+                                log.info("节点[{}]触发短板补偿：最低子项分数={}, lambda={}, 罚分={}, 聚合后分数={}", 
+                                        n.getString("label"), minChildScore, lambda, penalty, agg);
+                            }
+                        }
+                    } catch (Exception e) {
+                        log.warn("节点[{}]计算短板补偿出错: {}", n.getString("label"), e.getMessage());
+                    }
+                }
+            }
+        }
+
+        // 一票否决与等级映射覆盖
         if (agg != null) {
-            // 确保聚合后的父节点得分也是百分制
             agg = normalizeToHundred(agg);
             n.put("score", agg);
             n.put("calculatedValue", agg);
+            
+            // 1. 根据聚合后的分数计算正常等级和结论
+            applyCriterionAfterScore(n);
+            
+            // 2. 抹零处罚覆盖
+            if (n.containsKey("vetoPunishedScore")) {
+                agg = n.getBigDecimal("vetoPunishedScore");
+                n.put("score", agg);
+                n.put("calculatedValue", agg);
+                String limitLevel = n.getString("vetoLevelLimit");
+                n.put("grade", StringUtils.hasText(limitLevel) ? limitLevel : "不合格");
+                n.put("tone", "risk");
+                log.info("节点[{}]触发一票否决强行归零惩罚，等级覆盖为 {}", n.getString("label"), n.getString("grade"));
+            }
+            
+            // 3. 降级扣分与限级惩罚覆盖
+            if (n.getBooleanValue("vetoDowngrade", false)) {
+                BigDecimal deduct = n.getBigDecimal("vetoScoreDeduct");
+                if (deduct == null) {
+                    deduct = new BigDecimal("20");
+                }
+                agg = agg.subtract(deduct);
+                if (agg.compareTo(BigDecimal.ZERO) < 0) {
+                    agg = BigDecimal.ZERO;
+                }
+                n.put("score", agg);
+                n.put("calculatedValue", agg);
+                log.info("节点[{}]触发一票否决降级惩罚，扣减 {} 分，扣后分数为 {}", n.getString("label"), deduct, agg);
+                
+                // 扣分后重新评定正常的等级
+                applyCriterionAfterScore(n);
+                
+                // 应用限制最高等级
+                String limitLevel = n.getString("vetoLevelLimit");
+                if (StringUtils.hasText(limitLevel)) {
+                    String currentGrade = n.getString("grade");
+                    if (currentGrade != null && !currentGrade.equals(limitLevel)) {
+                        JSONObject evalCriterion = n.getJSONObject("evalCriterion");
+                        if (evalCriterion != null && "LEVEL_MAP".equals(evalCriterion.getString("ruleType"))) {
+                            String ruleJsonStr = evalCriterion.getString("ruleJson");
+                            if (StringUtils.hasText(ruleJsonStr)) {
+                                try {
+                                    JSONObject ruleJson = JSON.parseObject(ruleJsonStr);
+                                    JSONArray tiers = ruleJson.getJSONArray("tiers");
+                                    if (tiers != null && !tiers.isEmpty()) {
+                                        int currentIndex = -1;
+                                        int limitIndex = -1;
+                                        for (int i = 0; i < tiers.size(); i++) {
+                                            String tName = tiers.getJSONObject(i).getString("name");
+                                            if (tName != null) {
+                                                if (tName.equals(currentGrade)) currentIndex = i;
+                                                if (tName.equals(limitLevel)) limitIndex = i;
+                                            }
+                                        }
+                                        if (currentIndex >= 0 && limitIndex >= 0 && currentIndex < limitIndex) {
+                                            n.put("grade", limitLevel);
+                                            n.put("tone", toneByGrade(limitLevel));
+                                            log.info("节点[{}]等级从[{}]强行限制为限制最高等级[{}]", n.getString("label"), currentGrade, limitLevel);
+                                        }
+                                    }
+                                } catch (Exception e) {
+                                    log.warn("一票否决降级限级比较出错: {}", e.getMessage());
+                                }
+                            }
+                        } else {
+                            n.put("grade", limitLevel);
+                            n.put("tone", toneByGrade(limitLevel));
+                        }
+                    } else if (currentGrade == null) {
+                        n.put("grade", limitLevel);
+                        n.put("tone", toneByGrade(limitLevel));
+                    }
+                }
+            }
+            
+            // 4. 直接定级处罚覆盖
+            if (n.getBooleanValue("vetoDirectFail", false)) {
+                String limitLevel = n.getString("vetoLevelLimit");
+                n.put("grade", StringUtils.hasText(limitLevel) ? limitLevel : "不合格");
+                n.put("tone", "risk");
+                log.info("节点[{}]触发一票否决强制限制等级，覆盖为 {}", n.getString("label"), n.getString("grade"));
+            }
         }
         return agg;
     }
@@ -881,6 +1076,217 @@ public class CalcExecutorService {
             return "当前评估结果总体稳定，建议继续保持现有能力建设节奏，并定期复核关键指标的数据质量和权重配置。";
         }
         return "建议优先复核低分指标的数据来源、计算规则和权重配置，针对薄弱能力域制定专项改进措施并组织复测。";
+    }
+
+    private void applyCriterionAfterScore(JSONObject n) {
+        if (n == null) return;
+        JSONObject evalCriterion = n.getJSONObject("evalCriterion");
+        if (evalCriterion == null) return;
+
+        BigDecimal score = n.getBigDecimal("score");
+        if (score == null) return;
+
+        String ruleType = evalCriterion.getString("ruleType");
+        String conclusionTemplate = evalCriterion.getString("conclusionTemplate");
+        String indicatorLabel = n.getString("label");
+
+        String resolvedGrade = null;
+        String resolvedConclusion = null;
+
+        if ("LEVEL_MAP".equals(ruleType)) {
+            String ruleJsonStr = evalCriterion.getString("ruleJson");
+            if (StringUtils.hasText(ruleJsonStr)) {
+                try {
+                    JSONObject ruleJson = JSON.parseObject(ruleJsonStr);
+                    JSONArray tiers = ruleJson.getJSONArray("tiers");
+                    if (tiers != null && !tiers.isEmpty()) {
+                        for (int i = 0; i < tiers.size(); i++) {
+                            JSONObject tier = tiers.getJSONObject(i);
+                            BigDecimal min = tier.getBigDecimal("valueMin");
+                            BigDecimal max = tier.getBigDecimal("valueMax");
+                            boolean match = false;
+                            
+                            if (min != null && max != null) {
+                                if (score.compareTo(min) >= 0 && score.compareTo(max) <= 0) {
+                                    match = true;
+                                }
+                            } else if (min != null) {
+                                if (score.compareTo(min) >= 0) {
+                                    match = true;
+                                }
+                            } else if (max != null) {
+                                if (score.compareTo(max) <= 0) {
+                                    match = true;
+                                }
+                            }
+                            
+                            if (match) {
+                                resolvedGrade = tier.getString("name");
+                                resolvedConclusion = tier.getString("conclusion");
+                                break;
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    log.warn("解析等级映射准则出错: {}", e.getMessage());
+                }
+            }
+        }
+
+
+        if (resolvedGrade != null) {
+            n.put("grade", resolvedGrade);
+            n.put("tone", toneByGrade(resolvedGrade));
+        }
+
+        if (StringUtils.isEmpty(resolvedConclusion) && StringUtils.hasText(conclusionTemplate)) {
+            resolvedConclusion = conclusionTemplate;
+        }
+
+        if (StringUtils.hasText(resolvedConclusion)) {
+            String finalConclusion = resolvedConclusion
+                    .replace("{name}", StringUtils.hasText(indicatorLabel) ? indicatorLabel : "")
+                    .replace("{label}", StringUtils.hasText(indicatorLabel) ? indicatorLabel : "")
+                    .replace("{score}", score.setScale(1, RoundingMode.HALF_UP).toString())
+                    .replace("{grade}", resolvedGrade != null ? resolvedGrade : "");
+            n.put("conclusion", finalConclusion);
+        }
+    }
+
+    private String toneByGrade(String grade) {
+        if (grade == null) return "pass";
+        if (grade.contains("优")) return "excellent";
+        if (grade.contains("良")) return "good";
+        if (grade.contains("中") || grade.contains("合格")) return "pass";
+        return "risk";
+    }
+
+    private void processVetoControl(JSONArray roots) {
+        if (roots == null || roots.isEmpty()) return;
+        for (int i = 0; i < roots.size(); i++) {
+            JSONObject subSystemNode = roots.getJSONObject(i);
+            scanVetoAndMark(subSystemNode, subSystemNode);
+        }
+    }
+
+    private void scanVetoAndMark(JSONObject node, JSONObject subSystemNode) {
+        if (node == null) return;
+        JSONArray children = node.getJSONArray("children");
+        if (children == null || children.isEmpty()) {
+            JSONObject evalCriterion = node.getJSONObject("evalCriterion");
+            if (evalCriterion != null && evalCriterion.getInteger("isMandatory") != null && evalCriterion.getInteger("isMandatory") == 1) {
+                BigDecimal score = node.getBigDecimal("score");
+                String grade = node.getString("grade");
+                
+                boolean isFailed = false;
+                String lowestGradeName = findLowestGradeName(evalCriterion);
+                if (grade != null) {
+                    if (lowestGradeName != null && grade.equals(lowestGradeName)) {
+                        isFailed = true;
+                    } else if (grade.contains("不合格") || grade.contains("不及格") || grade.equals("差")) {
+                        isFailed = true;
+                    }
+                }
+                if (!isFailed && score != null && score.compareTo(new BigDecimal("60")) < 0) {
+                    isFailed = true;
+                }
+                
+                if (isFailed) {
+                    String vetoAction = evalCriterion.getString("vetoAction");
+                    if (!StringUtils.hasText(vetoAction)) {
+                        vetoAction = "DIRECT_ZERO";
+                    }
+                    log.info("指标[{}]触发一票否决限制！分数={}, 等级={}, 动作={}", node.getString("label"), score, grade, vetoAction);
+                    
+                    String limitLevel = parseVetoLevelLimit(evalCriterion);
+                    if ("DIRECT_ZERO".equals(vetoAction)) {
+                        subSystemNode.put("vetoPunishedScore", BigDecimal.ZERO);
+                        if (StringUtils.hasText(limitLevel)) {
+                            subSystemNode.put("vetoLevelLimit", limitLevel);
+                        }
+                        subSystemNode.put("tone", "risk");
+                    } else if ("DIRECT_FAIL".equals(vetoAction)) {
+                        subSystemNode.put("vetoDirectFail", true);
+                        subSystemNode.put("vetoLevelLimit", StringUtils.hasText(limitLevel) ? limitLevel : "不合格");
+                        subSystemNode.put("tone", "risk");
+                    } else if ("DOWNGRADE".equals(vetoAction)) {
+                        subSystemNode.put("vetoDowngrade", true);
+                        subSystemNode.put("vetoScoreDeduct", parseVetoScoreDeduct(evalCriterion));
+                        if (StringUtils.hasText(limitLevel)) {
+                            subSystemNode.put("vetoLevelLimit", limitLevel);
+                        }
+                    }
+                }
+            }
+            return;
+        }
+        for (int i = 0; i < children.size(); i++) {
+            scanVetoAndMark(children.getJSONObject(i), subSystemNode);
+        }
+    }
+
+    private String findLowestGradeName(JSONObject evalCriterion) {
+        if (evalCriterion == null) return null;
+        String ruleJsonStr = evalCriterion.getString("ruleJson");
+        if (StringUtils.hasText(ruleJsonStr)) {
+            try {
+                JSONObject ruleJson = JSON.parseObject(ruleJsonStr);
+                JSONArray tiers = ruleJson.getJSONArray("tiers");
+                if (tiers != null && !tiers.isEmpty()) {
+                    String lowestName = null;
+                    BigDecimal lowestMin = null;
+                    for (int i = 0; i < tiers.size(); i++) {
+                        JSONObject tier = tiers.getJSONObject(i);
+                        BigDecimal min = tier.getBigDecimal("valueMin");
+                        String name = tier.getString("name");
+                        if (min != null && name != null) {
+                            if (lowestMin == null || min.compareTo(lowestMin) < 0) {
+                                lowestMin = min;
+                                lowestName = name;
+                            }
+                        }
+                    }
+                    return lowestName;
+                }
+            } catch (Exception e) {
+                // ignore
+            }
+        }
+        return null;
+    }
+
+    private String parseVetoLevelLimit(JSONObject evalCriterion) {
+        if (evalCriterion == null) return null;
+        String ruleJsonStr = evalCriterion.getString("ruleJson");
+        if (StringUtils.hasText(ruleJsonStr)) {
+            try {
+                JSONObject ruleJson = JSON.parseObject(ruleJsonStr);
+                JSONObject vetoParams = ruleJson.getJSONObject("vetoParams");
+                if (vetoParams != null && vetoParams.containsKey("vetoLevelLimit")) {
+                    return vetoParams.getString("vetoLevelLimit");
+                }
+            } catch (Exception e) {
+                // ignore
+            }
+        }
+        return null;
+    }
+
+    private BigDecimal parseVetoScoreDeduct(JSONObject evalCriterion) {
+        if (evalCriterion == null) return new BigDecimal("20");
+        String ruleJsonStr = evalCriterion.getString("ruleJson");
+        if (StringUtils.hasText(ruleJsonStr)) {
+            try {
+                JSONObject ruleJson = JSON.parseObject(ruleJsonStr);
+                JSONObject vetoParams = ruleJson.getJSONObject("vetoParams");
+                if (vetoParams != null && vetoParams.containsKey("vetoScoreDeduct")) {
+                    return vetoParams.getBigDecimal("vetoScoreDeduct");
+                }
+            } catch (Exception e) {
+                // ignore
+            }
+        }
+        return new BigDecimal("20");
     }
 
     private static class ParsedTree {

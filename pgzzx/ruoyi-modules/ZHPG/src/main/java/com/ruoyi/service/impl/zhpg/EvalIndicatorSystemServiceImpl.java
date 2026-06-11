@@ -1,12 +1,15 @@
 package com.ruoyi.service.impl.zhpg;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.common.core.exception.ServiceException;
 import com.ruoyi.common.core.utils.StringUtils;
 import com.ruoyi.domain.zhpg.EvalIndicatorSystem;
 import com.ruoyi.domain.zhpg.dto.EvalIndicatorSystemSelectVO;
+import com.ruoyi.domain.zhpg.dto.WeightApplyResult;
+import com.ruoyi.zhpg.util.ZhpgIndicatorTreeJsonHelper.ParsedTree;
 import com.ruoyi.mapper.zhpg.EvalIndicatorSystemMapper;
 import com.ruoyi.service.zhpg.IEvalIndicatorSystemService;
 import com.ruoyi.zhpg.util.ZhpgIndicatorLibrarySyncHelper;
@@ -14,12 +17,26 @@ import com.ruoyi.zhpg.util.ZhpgIndicatorSystemTreeHelper;
 import com.ruoyi.zhpg.util.ZhpgIndicatorTreeJsonHelper;
 import com.ruoyi.zhpg.util.ZhpgRequirementRefinedPayloadHelper;
 import com.ruoyi.service.zhpg.IEvalIndicatorService;
+import com.ruoyi.service.zhpg.IObjectiveWeightService;
+import com.ruoyi.service.zhpg.ISubjectiveWeightService;
+import com.ruoyi.service.zhpg.IIndicatorTreeWeightService;
+import com.ruoyi.service.zhpg.IAlgorithmInfoService;
+import com.ruoyi.mapper.zhpg.EvalCriterionSetMapper;
+import com.ruoyi.mapper.zhpg.EvalTaskTemplateMapper;
+import com.ruoyi.mapper.zhpg.CalcFlowTemplateMapper;
+import com.ruoyi.domain.zhpg.EvalCriterionSet;
+import com.ruoyi.domain.zhpg.EvalTaskTemplate;
+import com.ruoyi.domain.zhpg.CalcFlowTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import java.util.Arrays;
 import java.util.Date;
@@ -46,6 +63,29 @@ public class EvalIndicatorSystemServiceImpl
 
     @Autowired
     private EvaluationResultLineageClient evaluationResultLineageClient;
+
+    @Autowired
+    @org.springframework.context.annotation.Lazy
+    private IObjectiveWeightService objectiveWeightService;
+
+    @Autowired
+    @org.springframework.context.annotation.Lazy
+    private ISubjectiveWeightService subjectiveWeightService;
+
+    @Autowired
+    private IIndicatorTreeWeightService indicatorTreeWeightService;
+
+    @Autowired
+    private IAlgorithmInfoService algorithmInfoService;
+
+    @Autowired
+    private EvalCriterionSetMapper evalCriterionSetMapper;
+
+    @Autowired
+    private EvalTaskTemplateMapper evalTaskTemplateMapper;
+
+    @Autowired
+    private CalcFlowTemplateMapper calcFlowTemplateMapper;
 
     @Override
     public Page<EvalIndicatorSystem> selectSystemPage(Page page, EvalIndicatorSystem query) {
@@ -103,13 +143,92 @@ public class EvalIndicatorSystemServiceImpl
         syncIndicatorSystemIdCodeFromTree(system);
         validateSystemIdCodeUnique(system, system.getId());
         int rows = baseMapper.updateById(system);
+        if (StringUtils.isNotEmpty(system.getIndicatorTree()) && StringUtils.isEmpty(system.getIndicatorTreeWeight())) {
+            clearIndicatorTreeWeight(system.getId());
+        }
         submitIndicatorSystemLineage(system);
         return rows;
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public int deleteSystemByIds(Long[] ids) {
+        if (ids == null || ids.length == 0) {
+            return 0;
+        }
+        for (Long id : ids) {
+            EvalIndicatorSystem system = baseMapper.selectById(id);
+            if (system == null) {
+                continue;
+            }
+            // 1. 校验评估准则集关联
+            QueryWrapper<EvalCriterionSet> criterionQuery = new QueryWrapper<>();
+            criterionQuery.eq("indicator_system_id", id);
+            List<EvalCriterionSet> criterionSets = evalCriterionSetMapper.selectList(criterionQuery);
+            if (criterionSets != null && !criterionSets.isEmpty()) {
+                String names = criterionSets.stream().map(EvalCriterionSet::getSetName).collect(Collectors.joining("，"));
+                throw new ServiceException(String.format("指标体系「%s」无法删除：已被评估准则集【%s】引用，请先在评估准则管理中删除对应准则集。", system.getSystemName(), names));
+            }
+
+            // 2. 校验评估任务模板关联
+            QueryWrapper<EvalTaskTemplate> taskQuery = new QueryWrapper<>();
+            taskQuery.eq("indicator_system_id", id);
+            List<EvalTaskTemplate> taskTemplates = evalTaskTemplateMapper.selectList(taskQuery);
+            if (taskTemplates != null && !taskTemplates.isEmpty()) {
+                String names = taskTemplates.stream().map(EvalTaskTemplate::getTemplateName).collect(Collectors.joining("，"));
+                throw new ServiceException(String.format("指标体系「%s」无法删除：已被评估任务模板【%s】引用，请先解除引用关系。", system.getSystemName(), names));
+            }
+
+            // 3. 校验计算流程模板关联
+            QueryWrapper<CalcFlowTemplate> flowQuery = new QueryWrapper<>();
+            flowQuery.eq("indicator_system_id", id);
+            List<CalcFlowTemplate> flowTemplates = calcFlowTemplateMapper.selectList(flowQuery);
+            if (flowTemplates != null && !flowTemplates.isEmpty()) {
+                String names = flowTemplates.stream().map(CalcFlowTemplate::getTemplateName).collect(Collectors.joining("，"));
+                throw new ServiceException(String.format("指标体系「%s」无法删除：已被计算流程模板【%s】引用，请先解除引用关系。", system.getSystemName(), names));
+            }
+        }
         return baseMapper.deleteBatchIds(Arrays.asList(ids));
+    }
+
+    @Override
+    public Map<Long, List<String>> checkSystemReferences(Long[] ids) {
+        Map<Long, List<String>> result = new HashMap<>();
+        if (ids == null || ids.length == 0) {
+            return result;
+        }
+        for (Long id : ids) {
+            List<String> refs = new ArrayList<>();
+            
+            // 1. 评估准则集
+            QueryWrapper<EvalCriterionSet> criterionQuery = new QueryWrapper<>();
+            criterionQuery.eq("indicator_system_id", id);
+            List<EvalCriterionSet> criterionSets = evalCriterionSetMapper.selectList(criterionQuery);
+            if (criterionSets != null && !criterionSets.isEmpty()) {
+                refs.add("评估准则集：" + criterionSets.stream().map(EvalCriterionSet::getSetName).collect(Collectors.joining("，")));
+            }
+
+            // 2. 评估任务模板
+            QueryWrapper<EvalTaskTemplate> taskQuery = new QueryWrapper<>();
+            taskQuery.eq("indicator_system_id", id);
+            List<EvalTaskTemplate> taskTemplates = evalTaskTemplateMapper.selectList(taskQuery);
+            if (taskTemplates != null && !taskTemplates.isEmpty()) {
+                refs.add("评估任务模板：" + taskTemplates.stream().map(EvalTaskTemplate::getTemplateName).collect(Collectors.joining("，")));
+            }
+
+            // 3. 计算流程模板
+            QueryWrapper<CalcFlowTemplate> flowQuery = new QueryWrapper<>();
+            flowQuery.eq("indicator_system_id", id);
+            List<CalcFlowTemplate> flowTemplates = calcFlowTemplateMapper.selectList(flowQuery);
+            if (flowTemplates != null && !flowTemplates.isEmpty()) {
+                refs.add("计算流程模板：" + flowTemplates.stream().map(CalcFlowTemplate::getTemplateName).collect(Collectors.joining("，")));
+            }
+
+            if (!refs.isEmpty()) {
+                result.put(id, refs);
+            }
+        }
+        return result;
     }
 
     @Override
@@ -317,11 +436,8 @@ public class EvalIndicatorSystemServiceImpl
             throw new ServiceException("指标体系不存在");
         }
         applyRequirementIdFromPayload(payload, system);
-        system.setIndicatorTreeWeight(indicatorTreeJson);
-        // 同步主树（如果主树为空或根据业务需要覆盖）
-        if (StringUtils.isEmpty(system.getIndicatorTree())) {
-            system.setIndicatorTree(indicatorTreeJson);
-        }
+        system.setIndicatorTree(indicatorTreeJson);
+        system.setIndicatorTreeWeight(null);
 
         String block = ZhpgRequirementRefinedPayloadHelper.buildDescription(payload);
         if (StringUtils.isNotEmpty(block)) {
@@ -346,6 +462,15 @@ public class EvalIndicatorSystemServiceImpl
         system.setUpdateTime(new Date());
         updateSystem(system);
         return getById(targetId);
+    }
+
+    private void clearIndicatorTreeWeight(Long targetId) {
+        if (targetId == null) {
+            return;
+        }
+        UpdateWrapper<EvalIndicatorSystem> wrapper = new UpdateWrapper<>();
+        wrapper.eq("id", targetId).set("indicator_tree_weight", null);
+        baseMapper.update(null, wrapper);
     }
 
     /**
@@ -377,9 +502,6 @@ public class EvalIndicatorSystemServiceImpl
         system.setIndicatorTree(indicatorTreeJson);
         String extractedMode = ZhpgIndicatorTreeJsonHelper.extractWorkMode(indicatorTreeJson, DEFAULT_WORK_MODE);
         String normalizedMode = ZhpgIndicatorTreeJsonHelper.normalizeWorkModeCode(extractedMode, DEFAULT_WORK_MODE);
-        if ("主分协同".equals(normalizedMode)) {
-            system.setIndicatorTreeWeight(indicatorTreeJson);
-        }
         String src = payload.getString("sourceSubsystem");
         system.setSourceSubsystem(StringUtils.isNotEmpty(src) ? src.trim() : "需求分析分系统");
         system.setStatus("DRAFT");
@@ -415,7 +537,7 @@ public class EvalIndicatorSystemServiceImpl
                     system.getIndicatorTree(), system.getIsTemplate(), systemId, systemName, indicatorService, operator));
         }
 
-        // 同步结果/权重树（包含回传细化或权重结果）
+        // 同步权重快照树（结构变化后通常为空，仅权重计算/调优后存在）
         if (StringUtils.isNotEmpty(system.getIndicatorTreeWeight())) {
             system.setIndicatorTreeWeight(librarySyncHelper.syncTreeToLibrary(
                     system.getIndicatorTreeWeight(), system.getIsTemplate(), systemId, systemName, indicatorService, operator));
@@ -425,7 +547,7 @@ public class EvalIndicatorSystemServiceImpl
     private void submitIndicatorSystemLineage(EvalIndicatorSystem system) {
         try {
             Object tree = null;
-            // 回传细化场景主要写入 indicatorTreeWeight，需优先使用该树写血缘。
+            // 有权重快照时优先使用；否则使用当前结构树。
             if (StringUtils.isNotEmpty(system.getIndicatorTreeWeight())) {
                 tree = JSON.parse(system.getIndicatorTreeWeight());
             } else if (StringUtils.isNotEmpty(system.getIndicatorTree())) {
@@ -440,4 +562,137 @@ public class EvalIndicatorSystemServiceImpl
         }
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Object computeWeightsSmart(Long systemId, JSONObject options, String operator) {
+        if (systemId == null || systemId <= 0) {
+            throw new ServiceException("指标体系ID无效");
+        }
+        EvalIndicatorSystem system = getById(systemId);
+        if (system == null) {
+            throw new ServiceException("指标体系不存在");
+        }
+        String sourceJson = ZhpgIndicatorSystemTreeHelper.jsonForWeightCalculation(system);
+        if (StringUtils.isEmpty(sourceJson)) {
+            throw new ServiceException("指标树为空，无法计算权重");
+        }
+
+        ParsedTree meta = ZhpgIndicatorTreeJsonHelper.parseForWeight(sourceJson);
+        JSONArray roots = JSON.parseArray(meta.getRootsForWeight().toJSONString());
+
+        SmartWalkStat stat = new SmartWalkStat();
+        // 客观赋权所需的参数
+        int sampleRows = options != null ? options.getIntValue("mockSampleRows", 8) : 8;
+        Long seed = options != null && options.containsKey("mockSeed") ? options.getLong("mockSeed") : null;
+        java.util.Random rnd = seed != null ? new java.util.Random(seed) : new java.util.Random();
+
+        walkSmart(roots, stat, sampleRows, rnd);
+
+        String merged = ZhpgIndicatorTreeJsonHelper.serializeAfterWeight(meta, roots);
+        WeightApplyResult renorm = indicatorTreeWeightService.applyWeights(merged, "RENORMALIZE");
+        String finalTree = renorm.getIndicatorTree();
+
+        StringBuilder hint = new StringBuilder();
+        hint.append("智能赋权完成：共处理 ").append(stat.totalParents).append(" 个节点。");
+        if (stat.objectiveCalls > 0) {
+            hint.append(" 其中客观算法调用 ").append(stat.objectiveCalls).append(" 次。");
+        }
+        if (stat.subjectiveCount > 0) {
+            hint.append(" 主观赋权节点 ").append(stat.subjectiveCount).append(" 个。");
+        }
+        if (stat.ahpFailCount > 0) {
+            hint.append(" 警告：").append(stat.ahpFailCount).append(" 个 AHP 节点一致性校验未通过。");
+        }
+        if (StringUtils.isNotEmpty(renorm.getHint())) {
+            hint.append(" ").append(renorm.getHint());
+        }
+
+        boolean persist = true;
+        if (options != null && options.containsKey("persist")) {
+            Boolean p = options.getBoolean("persist");
+            persist = p == null || p;
+        }
+
+        if (persist) {
+            system.setIndicatorTreeWeight(finalTree);
+            system.setUpdateTime(new java.util.Date());
+            if (StringUtils.isNotEmpty(operator)) {
+                system.setUpdateBy(operator);
+            }
+            updateById(system);
+        }
+
+        JSONObject result = new JSONObject();
+        result.put("indicatorTreeWeight", finalTree);
+        result.put("hint", hint.toString());
+        result.put("objectiveCalls", stat.objectiveCalls);
+        result.put("subjectiveCount", stat.subjectiveCount);
+        result.put("ahpFailCount", stat.ahpFailCount);
+        return result;
+    }
+
+    private static class SmartWalkStat {
+        int totalParents = 0;
+        int objectiveCalls = 0;
+        int subjectiveCount = 0;
+        int ahpFailCount = 0;
+    }
+
+    private void walkSmart(JSONArray nodes, SmartWalkStat stat, int sampleRows, java.util.Random rnd) {
+        if (nodes == null || nodes.isEmpty()) return;
+        for (int i = 0; i < nodes.size(); i++) {
+            JSONObject n = nodes.getJSONObject(i);
+            JSONArray ch = n.getJSONArray("children");
+            if (ch == null || ch.isEmpty()) continue;
+
+            stat.totalParents++;
+            if (ch.size() == 1) {
+                ch.getJSONObject(0).put("weight", 1.0);
+            } else {
+                Object algRef = n.get("weightAssignAlgorithm");
+                boolean isObjective = false;
+                if (algRef instanceof Number) {
+                    isObjective = true;
+                } else if (algRef instanceof String) {
+                    String s = ((String) algRef).trim();
+                    if (s.matches("\\d+")) isObjective = true;
+                }
+
+                if (isObjective) {
+                    // 调用客观赋权单节点逻辑（通过反射或将 ObjectiveWeightServiceImpl 的核心逻辑抽离，
+                    // 这里为了简单，我们直接模拟 ObjectiveWeightServiceImpl 的 walkAssignWeights 核心逻辑）
+                    stat.objectiveCalls++;
+                    // 由于目前 ObjectiveWeightServiceImpl 逻辑较为闭塞，我们通过 options 参数
+                    // 调用其 computeForSystem 可能导致整棵树重算。
+                    // 理想做法是重构 ObjectiveWeightServiceImpl，暴露单节点计算方法。
+                    // 暂时这里手动处理客观单节点分发：
+                    try {
+                        dispatchObjectiveNode(n, ch, sampleRows, rnd);
+                    } catch (Exception e) {
+                        log.error("节点[{}]客观赋权失败: {}", n.getString("label"), e.getMessage());
+                    }
+                } else {
+                    // 调用主观赋权单节点逻辑
+                    stat.subjectiveCount++;
+                    try {
+                        dispatchSubjectiveNode(n, ch, stat);
+                    } catch (Exception e) {
+                        log.error("节点[{}]主观赋权失败: {}", n.getString("label"), e.getMessage());
+                    }
+                }
+            }
+            walkSmart(ch, stat, sampleRows, rnd);
+        }
+    }
+
+    private void dispatchObjectiveNode(JSONObject parent, JSONArray children, int sampleRows, java.util.Random rnd) {
+        objectiveWeightService.computeSingleNode(parent, children, sampleRows, rnd);
+    }
+
+    private void dispatchSubjectiveNode(JSONObject parent, JSONArray children, SmartWalkStat stat) {
+        JSONObject s = new JSONObject();
+        s.put("ahpFailCount", 0);
+        subjectiveWeightService.computeSingleNode(parent, children, s);
+        stat.ahpFailCount += s.getIntValue("ahpFailCount", 0);
+    }
 }

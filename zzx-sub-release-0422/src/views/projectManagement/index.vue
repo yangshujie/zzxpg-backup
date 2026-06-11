@@ -1999,12 +1999,23 @@ const onPaneReady = (vueFlowInstance) => {
 
     .el-input__wrapper {
       background: rgba(255, 255, 255, 0.05);
-      border: 1px solid $border-color;
+      box-shadow: 0 0 0 1px $border-color inset !important;
+      border: none !important;
       color: $text-color-primary;
 
       &:hover {
-        border-color: $primary-color;
+        box-shadow: 0 0 0 1px $primary-color inset !important;
       }
+
+      &.is-focus {
+        box-shadow: 0 0 0 1px $primary-color inset, 0 0 8px rgba(0, 242, 255, 0.2) !important;
+      }
+    }
+
+    .el-input__inner {
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
     }
   }
 

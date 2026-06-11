@@ -3,6 +3,7 @@ package com.ruoyi.domain.zhpg;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.ruoyi.common.core.web.domain.BaseEntity;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -16,6 +17,7 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 @TableName("pgzc_algorithm_requirement_param")
 @ApiModel(value = "算法需求参数要求")
+@JsonIgnoreProperties(ignoreUnknown = true, value = { "searchValue", "params", "createBy", "createTime", "updateBy", "updateTime", "remark" })
 public class AlgorithmRequirementParam extends BaseEntity {
 
     private static final long serialVersionUID = 1L;

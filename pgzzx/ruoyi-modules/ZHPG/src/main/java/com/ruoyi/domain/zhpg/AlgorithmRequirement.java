@@ -1,6 +1,8 @@
 package com.ruoyi.domain.zhpg;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ruoyi.common.core.annotation.Excel;
 import com.ruoyi.common.core.web.domain.BaseEntity;
@@ -14,6 +16,7 @@ import lombok.experimental.Accessors;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 算法需求实体
@@ -95,7 +98,21 @@ public class AlgorithmRequirement extends BaseEntity {
 
     /** 需求参数要求列表（非数据库字段，避免与BaseEntity.params冲突） */
     @JsonProperty("params")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @TableField(exist = false)
     @ApiModelProperty(value = "需求参数要求列表")
     private List<AlgorithmRequirementParam> requirementParams;
+
+    @Override
+    @JsonIgnore
+    public Map<String, Object> getParams() {
+        return super.getParams();
+    }
+
+    @Override
+    @JsonIgnore
+    public String getSearchValue() {
+        return super.getSearchValue();
+    }
 }
+

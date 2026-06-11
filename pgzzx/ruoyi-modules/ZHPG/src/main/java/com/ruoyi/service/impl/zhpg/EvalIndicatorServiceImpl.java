@@ -5,11 +5,9 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.common.core.exception.ServiceException;
 import com.ruoyi.common.core.utils.StringUtils;
-import com.ruoyi.common.security.utils.DictUtils;
 import com.ruoyi.domain.zhpg.EvalIndicator;
 import com.ruoyi.mapper.zhpg.EvalIndicatorMapper;
 import com.ruoyi.service.zhpg.IEvalIndicatorService;
-import com.ruoyi.system.api.domain.SysDictData;
 import com.ruoyi.zhpg.util.ZhpgIndicatorTreeJsonHelper;
 import org.springframework.stereotype.Service;
 
@@ -36,7 +34,15 @@ import java.util.UUID;
 public class EvalIndicatorServiceImpl extends ServiceImpl<EvalIndicatorMapper, EvalIndicator>
         implements IEvalIndicatorService {
 
-    private static final String DICT_EQUIPMENT_TYPE = "zhpg_equipment_type";
+    private static final Set<String> EQUIPMENT_TYPE_VALUES = new HashSet<>(Arrays.asList(
+            "space_recon",
+            "space_domain_awareness",
+            "space_defense",
+            "space_track_control",
+            "space_launch",
+            "sea_based_space",
+            "无"
+    ));
 
     @Override
     public Page<EvalIndicator> selectIndicatorPage(Page page, EvalIndicator query) {
@@ -71,7 +77,7 @@ public class EvalIndicatorServiceImpl extends ServiceImpl<EvalIndicatorMapper, E
         EvalIndicator merged = buildMerged(existing, indicator);
         normalizeAndValidate(merged, indicator.getId());
 
-        if (!Boolean.TRUE.equals(merged.getIsBottomNode())) {
+        if (!isBottom(merged.getIsBottomNode())) {
             merged.setCalcMethod(null);
             merged.setAlgorithmId(null);
             merged.setValueMin(null);
@@ -283,19 +289,19 @@ public class EvalIndicatorServiceImpl extends ServiceImpl<EvalIndicatorMapper, E
             throw new ServiceException("装备类型不能为空");
         }
         indicator.setIndicatorType(legacyResolveIndicatorTypeFromEquipment(indicator.getIndicatorType()));
-        validateIndicatorTypeDict(indicator.getIndicatorType());
+        validateIndicatorType(indicator.getIndicatorType());
         indicator.setValueCategory(normalizeValueCategory(indicator.getValueCategory()));
         if (indicator.getIsBottomNode() == null) {
-            indicator.setIsBottomNode(true);
+            indicator.setIsBottomNode(1);
         }
 
         validateParent(indicator, currentId);
         validateChildrenTypeConsistency(currentId, indicator.getIndicatorType());
-        if (Boolean.TRUE.equals(indicator.getIsBottomNode()) && currentId != null && existsChildren(currentId)) {
+        if (isBottom(indicator.getIsBottomNode()) && currentId != null && existsChildren(currentId)) {
             throw new ServiceException("当前指标存在子指标，不能设置为底层指标");
         }
 
-        if (!Boolean.TRUE.equals(indicator.getIsBottomNode())) {
+        if (!isBottom(indicator.getIsBottomNode())) {
             indicator.setCalcMethod(null);
             indicator.setAlgorithmId(null);
             indicator.setValueMin(null);
@@ -397,9 +403,14 @@ public class EvalIndicatorServiceImpl extends ServiceImpl<EvalIndicatorMapper, E
 
     private boolean resolveBottomNode(EvalIndicator indicator) {
         if (indicator.getIsBottomNode() != null) {
-            return indicator.getIsBottomNode();
+            return isBottom(indicator.getIsBottomNode());
         }
         return !existsChildren(indicator.getId());
+    }
+
+    /** 底层节点标志归一：smallint 1=底层，其余（含 null/0）视为非底层。 */
+    private static boolean isBottom(Integer flag) {
+        return flag != null && flag == 1;
     }
 
     private boolean existsChildren(Long indicatorId) {
@@ -458,21 +469,10 @@ public class EvalIndicatorServiceImpl extends ServiceImpl<EvalIndicatorMapper, E
         return ZhpgIndicatorTreeJsonHelper.normalizeIndicatorTypeCode(eq);
     }
 
-    private void validateIndicatorTypeDict(String indicatorType) {
-        List<SysDictData> types;
-        try {
-            types = DictUtils.getDictCache(DICT_EQUIPMENT_TYPE);
-        } catch (Exception ex) {
-            return;
-        }
-        if (types == null || types.isEmpty()) return;
+    private void validateIndicatorType(String indicatorType) {
         String normalized = legacyResolveIndicatorTypeFromEquipment(indicatorType);
-        for (SysDictData row : types) {
-            if (!"0".equals(row.getStatus())) continue;
-            if (normalized.equals(legacyResolveIndicatorTypeFromEquipment(row.getDictValue()))) {
-                return;
-            }
+        if (!EQUIPMENT_TYPE_VALUES.contains(normalized)) {
+            throw new ServiceException("指标类型不在 ZHPG 装备类型允许范围内");
         }
-        throw new ServiceException("指标类型不在字典「" + DICT_EQUIPMENT_TYPE + "」允许范围内");
     }
 }

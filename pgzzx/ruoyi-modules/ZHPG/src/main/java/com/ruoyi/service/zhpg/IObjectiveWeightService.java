@@ -1,6 +1,7 @@
 package com.ruoyi.service.zhpg;
 
 import com.ruoyi.domain.zhpg.dto.ObjectiveWeightComputeResult;
+import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 
 /**
@@ -16,4 +17,9 @@ public interface IObjectiveWeightService {
      * @param operator  写库时的更新人（persist=true 时建议非空）
      */
     ObjectiveWeightComputeResult computeForSystem(Long systemId, JSONObject options, String operator);
+
+    /**
+     * 对单个父节点执行客观赋权计算（不递归）。直接修改 children 数组中的节点权重。
+     */
+    void computeSingleNode(JSONObject parent, JSONArray children, int sampleRows, java.util.Random rnd);
 }

@@ -409,10 +409,28 @@ const routes = [
             meta: { title: '综合评估流程模板管理' }
           },
           {
+            path: 'task',
+            name: 'TemplateTask',
+            component: () => import('@/views/zhpg/rwgj/taskTemplate/index.vue'),
+            meta: { title: '任务模板管理' }
+          },
+          {
             path: 'report',
             name: 'TemplateReport',
             component: () => import('@/views/zhpg/report/manage.vue'),
             meta: { title: '评估报告模板管理' }
+          },
+          {
+            path: 'criterion',
+            name: 'TemplateCriterion',
+            component: () => import('@/views/zhpg/rwgj/criterion/index.vue'),
+            meta: { title: '评估准则管理' }
+          },
+          {
+            path: 'criterion-designer',
+            name: 'TemplateCriterionDesigner',
+            component: () => import('@/views/zhpg/rwgj/criterion/designer.vue'),
+            meta: { title: '评估准则设计' }
           }
         ]
       },

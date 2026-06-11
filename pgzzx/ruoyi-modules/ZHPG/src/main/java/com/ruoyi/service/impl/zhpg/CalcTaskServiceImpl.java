@@ -22,6 +22,7 @@ import com.ruoyi.domain.zhpg.dto.CalcTaskAsyncResult;
 import com.ruoyi.domain.zhpg.dto.ReportDownloadData;
 import com.ruoyi.domain.zhpg.dto.ReportTemplateRenderRequest;
 import com.ruoyi.domain.zhpg.dto.ObjectiveWeightComputeResult;
+import com.ruoyi.domain.zhpg.dto.SubjectiveWeightComputeResult;
 import com.ruoyi.domain.zhpg.dto.WeightApplyResult;
 import com.ruoyi.mapper.zhpg.CalcTaskMapper;
 import com.ruoyi.mapper.zhpg.CalcTaskStageLogMapper;
@@ -33,6 +34,8 @@ import com.ruoyi.service.zhpg.IEvalResultService;
 import com.ruoyi.service.zhpg.IIndicatorTreeWeightService;
 import com.ruoyi.service.zhpg.IObjectiveWeightService;
 import com.ruoyi.service.zhpg.IReportTemplateService;
+import com.ruoyi.service.zhpg.ISubjectiveWeightService;
+import com.ruoyi.service.zhpg.IEvalCriterionService;
 import com.ruoyi.zhpg.util.ZhpgIndicatorSystemTreeHelper;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -78,11 +81,13 @@ public class CalcTaskServiceImpl extends ServiceImpl<CalcTaskMapper, CalcTask> i
     private final IEvalIndicatorSystemService indicatorSystemService;
     private final IIndicatorTreeWeightService indicatorTreeWeightService;
     private final IObjectiveWeightService objectiveWeightService;
+    private final ISubjectiveWeightService subjectiveWeightService;
     private final IAlgorithmInfoService algorithmInfoService;
     private final IEvalResultService evalResultService;
     private final IReportTemplateService reportTemplateService;
     private final XxlJobAdminClient xxlJobAdminClient;
     private final EvaluationResultLineageClient evaluationResultLineageClient;
+    private final IEvalCriterionService evalCriterionService;
 
     @Value("${zhpg.calc.xxl-job.admin-base-url:}")
     private String xxlJobAdminBaseUrl;
@@ -92,21 +97,25 @@ public class CalcTaskServiceImpl extends ServiceImpl<CalcTaskMapper, CalcTask> i
                                IEvalIndicatorSystemService indicatorSystemService,
                                IIndicatorTreeWeightService indicatorTreeWeightService,
                                IObjectiveWeightService objectiveWeightService,
+                               ISubjectiveWeightService subjectiveWeightService,
                                IAlgorithmInfoService algorithmInfoService,
                                IEvalResultService evalResultService,
                                IReportTemplateService reportTemplateService,
                                XxlJobAdminClient xxlJobAdminClient,
-                               EvaluationResultLineageClient evaluationResultLineageClient) {
+                               EvaluationResultLineageClient evaluationResultLineageClient,
+                               IEvalCriterionService evalCriterionService) {
         this.stageLogMapper = stageLogMapper;
         this.calcFlowTemplateService = calcFlowTemplateService;
         this.indicatorSystemService = indicatorSystemService;
         this.indicatorTreeWeightService = indicatorTreeWeightService;
         this.objectiveWeightService = objectiveWeightService;
+        this.subjectiveWeightService = subjectiveWeightService;
         this.algorithmInfoService = algorithmInfoService;
         this.evalResultService = evalResultService;
         this.reportTemplateService = reportTemplateService;
         this.xxlJobAdminClient = xxlJobAdminClient;
         this.evaluationResultLineageClient = evaluationResultLineageClient;
+        this.evalCriterionService = evalCriterionService;
     }
 
     @Override
@@ -183,13 +192,9 @@ public class CalcTaskServiceImpl extends ServiceImpl<CalcTaskMapper, CalcTask> i
         // 4. 创建任务记录（PENDING 状态）
         CalcTask task = new CalcTask();
         task.setTaskName(StringUtils.isNotBlank(request.getTaskName()) ? request.getTaskName() : buildTaskName(template));
-        // 优先使用请求显式传入的 assessTaskId，否则从所选指标体系的关联需求ID获取
-        Long assessTaskId = request.getAssessTaskId();
-        if (assessTaskId == null || assessTaskId <= 0) {
-            assessTaskId = indicatorSystem.getRequirementId();
-            if (assessTaskId == null) {
-                log.warn("指标体系[{}]未关联需求ID，外部接口模式下将降级为模拟数据", indicatorSystemId);
-            }
+        Long assessTaskId = indicatorSystem.getRequirementId();
+        if (assessTaskId == null) {
+            log.warn("指标体系[{}]未关联需求ID，外部接口模式下将降级为模拟数据", indicatorSystemId);
         }
         task.setAssessTaskId(assessTaskId);
         task.setCalcFlowTemplateId(template.getId());
@@ -210,39 +215,50 @@ public class CalcTaskServiceImpl extends ServiceImpl<CalcTaskMapper, CalcTask> i
                 weightedTreeJson = ZhpgIndicatorSystemTreeHelper.jsonForWeightCalculation(indicatorSystem);
                 log.info("任务 {} 使用指标体系权重", task.getId());
             } else {
-                // 调用算法服务计算客观权重（类似指标体系客观赋权，但不持久化到数据库）
-                log.info("任务 {} 开始调用算法服务计算权重", task.getId());
+                String weightSource = resolveWeightSourceMode(weightConfig);
                 JSONObject options = new JSONObject();
                 options.put("persist", false);  // 不覆盖指标体系权重，仅本次任务使用
-                // 可选：从配置中读取样本行数
-                int sampleRows = weightConfig.getIntValue("mockSampleRows", 8);
-                options.put("mockSampleRows", sampleRows);
-                Long overrideAlgorithmId = weightConfig.getLong("overrideAlgorithmId");
-                if (overrideAlgorithmId == null || overrideAlgorithmId <= 0) {
-                    // 兼容旧字段名：weightAlgorithmId
-                    overrideAlgorithmId = weightConfig.getLong("weightAlgorithmId");
+                if ("SUBJECTIVE".equalsIgnoreCase(weightSource)) {
+                    log.info("任务 {} 开始按指标体系节点上保存的主观赋权配置计算权重", task.getId());
+                    SubjectiveWeightComputeResult sr = subjectiveWeightService.computeForSystem(
+                            indicatorSystem.getId(), options, SecurityUtils.getUsername());
+                    weightedTreeJson = sr.getIndicatorTreeWeight();
+                    log.info("任务 {} 主观赋权完成，父节点 {} 个，AHP 失败 {} 个",
+                            task.getId(), sr.getParentNodeCount(), sr.getAhpFailCount());
+                } else {
+                    // 默认走客观赋权：调用算法服务（类似指标体系客观赋权，但不持久化到数据库）
+                    log.info("任务 {} 开始调用算法服务计算客观权重", task.getId());
+                    int sampleRows = weightConfig.getIntValue("mockSampleRows", 8);
+                    options.put("mockSampleRows", sampleRows);
+                    Long overrideAlgorithmId = weightConfig.getLong("overrideAlgorithmId");
+                    if (overrideAlgorithmId == null || overrideAlgorithmId <= 0) {
+                        // 兼容旧字段名：weightAlgorithmId
+                        overrideAlgorithmId = weightConfig.getLong("weightAlgorithmId");
+                    }
+                    if (overrideAlgorithmId != null && overrideAlgorithmId > 0) {
+                        options.put("overrideAlgorithmId", overrideAlgorithmId);
+                    }
+                    ObjectiveWeightComputeResult weightResult = objectiveWeightService.computeForSystem(
+                            indicatorSystem.getId(),
+                            options,
+                            SecurityUtils.getUsername()
+                    );
+                    weightedTreeJson = weightResult.getIndicatorTreeWeight();
+                    log.info("任务 {} 算法权重计算完成，调用算法 {} 次", task.getId(), weightResult.getAlgorithmCallCount());
                 }
-                if (overrideAlgorithmId != null && overrideAlgorithmId > 0) {
-                    options.put("overrideAlgorithmId", overrideAlgorithmId);
-                }
-                String missingWeightPolicy = weightConfig.getString("missingWeightPolicy");
-                if (StringUtils.isNotBlank(missingWeightPolicy)) {
-                    options.put("missingWeightPolicy", missingWeightPolicy);
-                }
-
-                ObjectiveWeightComputeResult weightResult = objectiveWeightService.computeForSystem(
-                        indicatorSystem.getId(),
-                        options,
-                        SecurityUtils.getUsername()
-                );
-                weightedTreeJson = weightResult.getIndicatorTreeWeight();
-                log.info("任务 {} 算法权重计算完成，调用算法 {} 次", task.getId(), weightResult.getAlgorithmCallCount());
             }
         } catch (Exception e) {
             task.setRunStatus("FAILED");
             task.setResultSummaryJson("{\"message\":\"权重计算失败: " + e.getMessage() + "\"}");
             baseMapper.updateById(task);
             throw new ServiceException("权重计算失败: " + e.getMessage());
+        }
+
+        // 5.5 在这里把准则集中的准则注入到 weightedTreeJson 树节点中
+        try {
+            weightedTreeJson = injectCriteriaIntoTree(weightedTreeJson, task.getAssessTaskId());
+        } catch (Exception e) {
+            log.error("注入评估准则到指标树失败", e);
         }
 
         // 6. 构建 XXL-JOB 执行参数
@@ -264,6 +280,13 @@ public class CalcTaskServiceImpl extends ServiceImpl<CalcTaskMapper, CalcTask> i
         executorParam.put("startTime", task.getStartTime() != null
                 ? new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(task.getStartTime()) : "");
         executorParam.put("assessTaskId", task.getAssessTaskId());
+
+        // 传递预处理批次ID到执行器
+        Long batchId = request.getBatchId();
+        if (batchId == null && comprehensiveConfig != null) {
+            batchId = comprehensiveConfig.getLong("batchId");
+        }
+        executorParam.put("batchId", batchId);
 
         // 报告输出配置
         JSONObject reportConfig = stageConfig(stages.getJSONObject("reportOutput"));
@@ -513,6 +536,25 @@ public class CalcTaskServiceImpl extends ServiceImpl<CalcTaskMapper, CalcTask> i
             return true;
         }
         return "INDICATOR_SYSTEM".equalsIgnoreCase(src.trim());
+    }
+
+    /**
+     * 当 weightStage 启用且未跳过时（即不是 INDICATOR_SYSTEM），解析 weightSource 决定走客观还是主观分支。
+     * 默认 OBJECTIVE。
+     */
+    private String resolveWeightSourceMode(JSONObject weightConfig) {
+        if (weightConfig == null) {
+            return "OBJECTIVE";
+        }
+        String src = weightConfig.getString("weightSource");
+        if (StringUtils.isBlank(src)) {
+            return "OBJECTIVE";
+        }
+        String t = src.trim().toUpperCase();
+        if ("SUBJECTIVE".equals(t)) {
+            return "SUBJECTIVE";
+        }
+        return "OBJECTIVE";
     }
 
     private void enrichComprehensiveConfigForExecutor(JSONObject comprehensiveConfig) {
@@ -1014,5 +1056,81 @@ public class CalcTaskServiceImpl extends ServiceImpl<CalcTaskMapper, CalcTask> i
             }
         }
         return count;
+    }
+
+    private String injectCriteriaIntoTree(String treeJson, Long assessTaskId) {
+        if (StringUtils.isBlank(treeJson) || assessTaskId == null) {
+            return treeJson;
+        }
+        List<com.ruoyi.domain.zhpg.EvalCriterion> criteria = evalCriterionService.selectCriterionListByTaskId(assessTaskId);
+        if (criteria == null || criteria.isEmpty()) {
+            return treeJson;
+        }
+        
+        // 构造以 indicatorId 为 Key 的 Map
+        Map<Long, com.ruoyi.domain.zhpg.EvalCriterion> criterionMap = new java.util.HashMap<>();
+        for (com.ruoyi.domain.zhpg.EvalCriterion c : criteria) {
+            if (c.getIndicatorId() != null) {
+                criterionMap.put(c.getIndicatorId(), c);
+            }
+        }
+        
+        try {
+            Object jsonVal = JSON.parse(treeJson);
+            if (jsonVal instanceof JSONArray) {
+                JSONArray arr = (JSONArray) jsonVal;
+                for (int i = 0; i < arr.size(); i++) {
+                    injectCriteriaIntoNode(arr.getJSONObject(i), criterionMap);
+                }
+                return arr.toJSONString();
+            } else if (jsonVal instanceof JSONObject) {
+                JSONObject obj = (JSONObject) jsonVal;
+                if (obj.containsKey("treeData")) {
+                    Object td = obj.get("treeData");
+                    if (td instanceof JSONObject) {
+                        injectCriteriaIntoNode((JSONObject) td, criterionMap);
+                    } else if (td instanceof JSONArray) {
+                        JSONArray arr = (JSONArray) td;
+                        for (int i = 0; i < arr.size(); i++) {
+                            injectCriteriaIntoNode(arr.getJSONObject(i), criterionMap);
+                        }
+                    }
+                } else {
+                    injectCriteriaIntoNode(obj, criterionMap);
+                }
+                return obj.toJSONString();
+            }
+        } catch (Exception e) {
+            log.error("解析指标树JSON并注入评估准则失败", e);
+        }
+        return treeJson;
+    }
+
+    private void injectCriteriaIntoNode(JSONObject node, Map<Long, com.ruoyi.domain.zhpg.EvalCriterion> criterionMap) {
+        if (node == null) {
+            return;
+        }
+        // 优先使用 id，其次使用 uid
+        String idStr = node.getString("id");
+        if (StringUtils.isBlank(idStr)) {
+            idStr = node.getString("uid");
+        }
+        if (StringUtils.isNotBlank(idStr)) {
+            try {
+                Long id = Long.parseLong(idStr.trim());
+                com.ruoyi.domain.zhpg.EvalCriterion criterion = criterionMap.get(id);
+                if (criterion != null) {
+                    node.put("evalCriterion", JSON.parseObject(JSON.toJSONString(criterion)));
+                }
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        // 递归子节点
+        JSONArray children = node.getJSONArray("children");
+        if (children != null) {
+            for (int i = 0; i < children.size(); i++) {
+                injectCriteriaIntoNode(children.getJSONObject(i), criterionMap);
+            }
+        }
     }
 }

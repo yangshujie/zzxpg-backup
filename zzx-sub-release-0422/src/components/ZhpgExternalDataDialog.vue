@@ -98,9 +98,9 @@
 import { ref, reactive, computed, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { listExternalData } from '@/api/zhpg/externalData'
-import { useDict } from '@/utils/dict'
+import { ZHPG_DATA_SOURCE_CENTER_OPTIONS, getZhpgEquipmentTypeLabel } from '@/constants/zhpgIndicatorSystem'
 
-const { zhpg_equipment_type } = useDict('zhpg_equipment_type')
+const zhpg_equipment_type = ZHPG_DATA_SOURCE_CENTER_OPTIONS
 
 const props = defineProps({
   visible: { type: Boolean, default: false }
@@ -259,8 +259,7 @@ function handleSelectionChange(newSelections) {
 /** 检查分中心显示标签 */
 function getSourceLabel(val) {
   if (!val) return ''
-  const dict = zhpg_equipment_type.value.find(item => item.value === val)
-  return dict ? dict.label : val
+  return getZhpgEquipmentTypeLabel(val)
 }
 
 /** 监听分中心变化，如果已有选择则提醒 */

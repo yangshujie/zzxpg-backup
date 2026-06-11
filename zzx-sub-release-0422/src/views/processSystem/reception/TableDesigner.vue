@@ -190,14 +190,13 @@ import {
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { getCollectForm, queryTableDataPage } from '@/api/dataCollection'
-import { useDict } from '@/utils/dict'
+import { getZhpgEquipmentTypeLabel } from '@/constants/zhpgIndicatorSystem'
 
 const route = useRoute()
 const router = useRouter()
 const isGenerating = ref(false)
 const rightTab = ref('info')
 const formTitle = ref('未命名数据采集模板')
-const { zhpg_equipment_type } = useDict('zhpg_equipment_type')
 const collectStatus = ref('')
 const statusOptions = ref([
   { label: '未下发', value: 'NOT_ISSUED' },
@@ -257,10 +256,9 @@ const loadFormData = async (id) => {
       if (data.items && Array.isArray(data.items)) {
         tableData.value = data.items.map(item => {
           const constraint = JSON.parse(item.dataConstraint)
-          console.log("zhpg_equipment_type", zhpg_equipment_type)
           return {
             name: item.dataItemName || '未标定字段',
-            dataSourceId: zhpg_equipment_type.value.find(dict => dict.value === item.dataSourceId)?.label || item.dataSourceId || '',
+            dataSourceId: item.dataSourceId ? getZhpgEquipmentTypeLabel(item.dataSourceId) : '',
             relatedIndicator: item.relatedIndicator || '',
             tableCode: item.tableCode || '',
             fieldCode: item.fieldCode || '',

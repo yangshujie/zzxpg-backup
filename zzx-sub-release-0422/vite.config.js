@@ -4,7 +4,7 @@ import createVitePlugins from './vite/plugins'
 
 const kexiUrl = 'http://127.0.0.1:9401/' // 后端接口
 // const kexiUrl = 'http://10.150.166.150:9401' // 后端接口
-const huageUrl = "http://172.16.2.89:9501"
+const huageUrl = "http://127.0.0.1:9501"
 // const huageUrl = "http://10.150.166.222:9501"
 const xiaoyangUrl = "http://127.0.0.1:9303" // 
 
@@ -58,7 +58,7 @@ export default defineConfig(({ mode, command }) => {
           rewrite: (p) => p.replace(/^\/kexi-api/, '')
         },
         '/dev-api': {
-          target: 'http://192.168.0.157:9201',
+          target: 'http://127.0.0.1:9201',
           changeOrigin: true,
           rewrite: (p) => p.replace(/^\/dev-api/, '')
         },

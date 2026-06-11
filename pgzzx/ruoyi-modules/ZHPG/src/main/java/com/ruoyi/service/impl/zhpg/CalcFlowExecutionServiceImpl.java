@@ -138,7 +138,6 @@ public class CalcFlowExecutionServiceImpl extends ServiceImpl<CalcFlowExecutionM
         calcRequest.setCalcFlowTemplateId(execution.getTemplateId());
         calcRequest.setIndicatorSystemId(execution.getIndicatorSystemId());
         calcRequest.setTaskName(request.getTaskName());
-        calcRequest.setAssessTaskId(request.getAssessTaskId());
         calcRequest.setRuntimeConfigJson(execution.getRuntimeConfigJson());
         calcRequest.setSkipWeightLog(request.getSkipWeightLog());
 

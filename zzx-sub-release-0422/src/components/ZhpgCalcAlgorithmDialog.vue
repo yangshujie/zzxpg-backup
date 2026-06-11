@@ -164,6 +164,7 @@
             <template #label><span>{{ p.paramName || p.paramField }}</span><span v-if="p.paramDesc" class="param-desc">{{ p.paramDesc }}</span></template>
             <el-input v-if="!p.paramType || p.paramType === 'string' || p.paramType === 'tel' || p.paramType === 'template'" v-model="paramEditValues[p.paramField]" :placeholder="defaultPlaceholder(p)" clearable />
             <el-input-number v-else-if="p.paramType === 'number'" v-model="paramNumberModels[p.paramField]" controls-position="right" style="width: 100%" @change="v => syncNumberParam(p.paramField, v)" />
+            <el-switch v-else-if="p.paramType === 'boolean'" v-model="paramEditValues[p.paramField]" active-value="true" inactive-value="false" />
             <el-input v-else-if="p.paramType === 'date'" v-model="paramEditValues[p.paramField]" placeholder="YYYY-MM-DD HH:mm:ss" clearable />
             <el-input v-else v-model="paramEditValues[p.paramField]" type="textarea" :rows="2" :placeholder="defaultPlaceholder(p)" />
           </el-form-item>
@@ -185,7 +186,6 @@
 
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue'
-import { useDict } from '@/utils/dict'
 import { Graph } from '@antv/x6'
 import { ElMessage } from 'element-plus'
 import { listAllAlgorithm, getAlgorithm } from '@/api/zhpg/algorithm'
@@ -223,8 +223,7 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'update:visible', 'update:workMode', 'saved'])
 
-const { zhpg_equipment_type } = useDict('zhpg_equipment_type')
-const sourceCenterOptions = computed(() => (zhpg_equipment_type.value || []).filter(o => o.value !== '无'))
+const sourceCenterOptions = ZHPG_DATA_SOURCE_CENTER_OPTIONS
 const workModeOptions = ZHPG_WORK_MODE_OPTIONS
 const localWorkMode = ref(props.workMode)
 const algorithmLoading = ref(false)

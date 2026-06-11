@@ -48,10 +48,10 @@ public class EvalIndicatorSystem extends BaseEntity {
     @ApiModelProperty(value = "工作模式")
     private String workMode;
 
-    @ApiModelProperty(value = "原始指标树结构JSON（主分协同下为粗建/未回传版本，不被回传覆盖）")
+    @ApiModelProperty(value = "当前指标树结构JSON（回传细化和结构编辑均更新此字段）")
     private String indicatorTree;
 
-    @ApiModelProperty(value = "结果/加权指标树JSON（包含回传细化后的结构或权重计算后的结果）")
+    @ApiModelProperty(value = "权重计算/调优后的指标树快照；结构变化时清空，业务读取为空则回退 indicatorTree")
     private String indicatorTreeWeight;
 
 

@@ -39,7 +39,8 @@ public class CalcExecutorServiceTest {
 
         Assert.assertEquals(new BigDecimal("20.00"), response.getScore());
         Assert.assertTrue(externalClient.called);
-        Assert.assertEquals(Long.valueOf(39L), externalClient.lastTaskId);
+        Assert.assertEquals("39", externalClient.lastRequirementCode);
+        Assert.assertNull(externalClient.lastBatchId);
     }
 
     @Test
@@ -105,13 +106,15 @@ public class CalcExecutorServiceTest {
 
     private static class FakeExternalClient extends ExternalEvaluationDataClient {
         private boolean called;
-        private Long lastTaskId;
+        private Long lastBatchId;
+        private String lastRequirementCode;
         private List<ExternalDataItem> items = Collections.emptyList();
 
         @Override
-        public List<ExternalDataItem> fetchEvaluationData(Long evaluationTaskId, List<String> indicatorCodes) {
+        public List<ExternalDataItem> fetchEvaluationData(Long batchId, String requirementCode, List<String> indicatorCodes) {
             this.called = true;
-            this.lastTaskId = evaluationTaskId;
+            this.lastBatchId = batchId;
+            this.lastRequirementCode = requirementCode;
             return items;
         }
     }

@@ -631,6 +631,10 @@ public class ReportGenerationService {
         }
         if (scoredIndicatorTree instanceof JSONObject) {
             JSONObject object = (JSONObject) scoredIndicatorTree;
+            JSONObject treeData = object.getJSONObject("treeData");
+            if (treeData != null) {
+                return parseTree(treeData);
+            }
             JSONArray children = object.getJSONArray("children");
             if (children != null) {
                 return children;

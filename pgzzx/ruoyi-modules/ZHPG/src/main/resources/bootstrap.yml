@@ -21,7 +21,7 @@ spring:
 # ZHPG
 zhpg:
   huage:
-    base-url: http://172.16.2.89:9501
+    base-url: http://127.0.0.1:9501
     lineage-path: /lineage/node/with-edge
     lineage-interval-ms: 200
     connect-timeout-ms: 3000

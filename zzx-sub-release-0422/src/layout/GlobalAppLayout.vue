@@ -129,7 +129,7 @@ const menuData = [
     icon: markRaw(Document),
     children: [
       { label: '预处理流程模板管理', path: '/process/process-sys/templates' },
-      { label: '任务模板管理', path: '' },
+      { label: '任务模板管理', path: '/major/template-library/task' },
       { label: '综合分析计算流程模板管理', path: '/major/template-library' },
       { label: '需求设计流程模板管理', path: '/major/requirement-sys/template/flow' },
       { label: '需求分析结果模板管理', path: '' },

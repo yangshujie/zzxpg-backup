@@ -88,8 +88,8 @@ public class EvalIndicator extends BaseEntity {
 
     /** 是否为底层指标（1=底层叶子节点，0=中间/根节点） */
     @TableField("is_bottom_node")
-    @ApiModelProperty(value = "是否为底层指标")
-    private Boolean isBottomNode;
+    @ApiModelProperty(value = "是否为底层指标：1=底层 0=非底层")
+    private Integer isBottomNode;
 
     /** 是否模板（0=指标实例 1=指标模板） */
     @TableField("is_template")

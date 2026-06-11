@@ -54,6 +54,7 @@
       <div class="toolbar-btns">
         <el-button type="primary" icon="Plus" @click="handleAdd">{{ isTemplateMode ? '新增模板' : '新增' }}</el-button>
         <el-button v-if="!isTemplateMode" type="success" plain icon="DocumentCopy" @click="handleCreateFromTemplate">从模板创建</el-button>
+        <el-button type="warning" plain icon="Setting" @click="handleGotoCriterionList">评估准则管理</el-button>
         <el-button type="danger" plain icon="Delete" :disabled="multiple" @click="handleDelete">删除</el-button>
       </div>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" />
@@ -97,10 +98,25 @@
       <el-table-column label="更新时间" min-width="160" show-overflow-tooltip>
         <template #default="scope">{{ formatLatestTime(scope.row) }}</template>
       </el-table-column>
-      <el-table-column label="操作" width="280" align="center" fixed="right">
+      <el-table-column label="操作" width="400" align="center" fixed="right">
         <template #default="scope">
           <div class="table-ops">
             <el-button link type="primary" size="small" icon="Edit" @click="handleUpdate(scope.row)">编辑</el-button>
+            <el-button
+              v-if="!isTemplateMode"
+              link
+              type="warning"
+              size="small"
+              icon="DataAnalysis"
+              @click="handleOpenWeightWorkbench(scope.row)"
+            >权重调优</el-button>
+            <el-button
+              link
+              type="primary"
+              size="small"
+              icon="Finished"
+              @click="handleOpenCriterion(scope.row)"
+            >评估准则</el-button>
             <el-button link type="primary" size="small" icon="Download" @click="handleExportJson(scope.row)">下载</el-button>
             <template v-if="isTemplateMode">
               <el-button
@@ -175,11 +191,7 @@
                   </el-form-item>
                   <el-form-item label="全局算法配置" class="zhpg-sidebar-form-item zhpg-sidebar-form-item--tight">
                     <div class="zhpg-global-algo-row zhpg-global-algo-row--sidebar">
-                      <el-button type="primary" plain @click="globalAlgoDialogVisible = true">配置体系全局</el-button>
-                      <div class="zhpg-global-algo-tags">
-                        <el-tag type="info" effect="plain" class="zhpg-algo-tag">赋权：{{ globalWeightAssignSummaryTag }}</el-tag>
-                        <el-tag type="info" effect="plain" class="zhpg-algo-tag">传导：{{ globalConductionSummaryTag }}</el-tag>
-                      </div>
+                      <el-button type="primary" plain @click="globalAlgoDialogVisible = true" style="width: 100%">配置体系全局</el-button>
                     </div>
                   </el-form-item>
                   <!-- 主分协同阶段提示（仅指标体系实例展示，模板无运行期阶段） -->
@@ -241,59 +253,20 @@
             :show-template-import="!isTemplateMode"
             fill-parent-height
             :preferred-root-label="form.systemName"
-            weight-tuning-mode="full"
+            weight-tuning-mode="none"
             :conduction-algorithm="form.conductionAlgorithm"
             :global-work-mode="form.workMode"
             :hide-leaf-calc-method="false"
-            :show-objective-weight="!isTemplateMode"
-            :objective-weight-loading="objectiveWeightLoading"
-            :objective-weight-disabled="!form.id || !treeData.length || objectiveWeightLoading"
+            :show-objective-weight="false"
+            :system-id="form.id"
             @import-indicators="importTreeFromIndicators"
             @import-template="importTreeFromTemplate"
-            @run-objective-weight="runObjectiveWeight"
           />
         </div>
       </div>
       <template #footer>
         <el-button @click="dialogVisible = false">取 消</el-button>
         <el-button type="primary" @click="submitForm">确 定</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- 客观赋权：分步进度说明（计算过程） -->
-    <el-dialog
-      v-model="objectiveWeightProgressVisible"
-      title="客观赋权计算"
-      width="520px"
-      append-to-body
-      align-center
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-      :show-close="objectiveWeightDone"
-      destroy-on-close
-      class="zhpg-objective-weight-progress-dialog"
-      @closed="onObjectiveWeightDialogClosed"
-    >
-      <div class="zhpg-owp-body">
-        <el-steps direction="vertical" :active="objectiveWeightStepsActive" finish-status="success">
-          <el-step title="校验与准备" description="确认指标体系已保存，并解析当前指标树结构" />
-          <el-step
-            title="组装层级数据"
-            description="按各父节点下的子指标生成用于赋权的样本矩阵"
-          />
-          <el-step
-            title="客观赋权计算"
-            description="根据体系或节点上选择的赋权方法，提交至算法服务逐层计算子节点权重；指标层级多、调用次数多时，等待时间会相应变长"
-          />
-          <el-step title="回写与刷新" description="对权重做层内归一化，保存带权重的指标树快照，并刷新左侧树与中间图形" />
-        </el-steps>
-        <div v-if="objectiveWeightLoading" class="zhpg-owp-status">
-          <el-icon class="zhpg-owp-spin is-loading"><Loading /></el-icon>
-          <span>正在计算，请稍候，勿关闭本窗口</span>
-        </div>
-      </div>
-      <template v-if="objectiveWeightDone" #footer>
-        <el-button type="primary" @click="closeObjectiveWeightProgressDialog">知道了</el-button>
       </template>
     </el-dialog>
 
@@ -407,15 +380,41 @@
     </el-dialog>
 
 
-    <el-dialog title="体系全局 · 算法配置" v-model="globalAlgoDialogVisible" width="min(520px, 95vw)" append-to-body>
+    <el-dialog
+      title="体系全局 · 算法配置"
+      v-model="globalAlgoDialogVisible"
+      width="min(560px, 95vw)"
+      append-to-body
+      class="zhpg-global-algo-dialog"
+      modal-class="zhpg-global-algo-modal"
+    >
       <el-form label-width="120px">
         <el-divider content-position="left">权重分配默认配置</el-divider>
         <el-form-item label="分配方法">
-          <el-select v-model="form.weightAssignAlgorithm" placeholder="未选" clearable style="width: 100%">
-            <el-option v-for="item in weightAssignOptions" :key="item.value" :label="item.label" :value="item.value" />
+          <el-select
+            v-model="form.weightAssignAlgorithm"
+            placeholder="未选"
+            clearable
+            style="width: 100%"
+            @change="onGlobalWeightAlgorithmChange"
+          >
+            <el-option
+              v-for="o in weightAssignOptions"
+              :key="o.value"
+              :label="o.label + (o.isSubjective ? '（主观）' : '（客观）')"
+              :value="o.value"
+            />
           </el-select>
         </el-form-item>
-        <template v-if="globalWeightAssignParamsDef.length">
+        <el-form-item v-if="globalSelectedSubtype" label="主观参数">
+          <div class="global-subj-row">
+            <el-button type="primary" plain icon="Setting" @click="openGlobalSubjectiveParamsDialog">
+              重新配置主观参数（{{ globalSelectedSubtype }}）
+            </el-button>
+            <span class="global-subj-hint">选择主观算法时已自动弹出参数窗；点击此按钮可再次打开重新配置</span>
+          </div>
+        </el-form-item>
+        <template v-else-if="globalWeightAssignParamsDef.length">
           <el-form-item
             v-for="p in globalWeightAssignParamsDef"
             :key="p.paramField"
@@ -446,14 +445,32 @@
         </template>
       </el-form>
       <template #footer>
-        <el-button type="primary" @click="saveGlobalAlgoAndSyncToNodes">保存并刷新所有节点</el-button>
+        <div class="global-algo-footer">
+          <el-button @click="globalAlgoDialogVisible = false">取 消</el-button>
+          <el-button type="primary" @click="saveGlobalAlgoAndSyncToNodes">保存并刷新所有节点</el-button>
+        </div>
       </template>
     </el-dialog>
+
+    <ZhpgGlobalSubjectiveParamsDialog
+      v-model="globalSubjectiveParamsVisible"
+      :tree-data="treeData"
+      :subtype="globalSelectedSubtype"
+      @done="onGlobalSubjectiveParamsDone"
+    />
+
+    <ZhpgWeightWorkbenchDialog
+      v-model="weightWorkbenchVisible"
+      :system-id="weightWorkbenchSystemId"
+      :system-name="weightWorkbenchSystemName"
+      @updated="onWeightWorkbenchUpdated"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, watch, computed, onMounted, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
 import {
   listIndicatorSystem,
   getIndicatorSystem,
@@ -465,10 +482,11 @@ import {
   disableIndicatorSystem,
   exportIndicatorSystemJson,
   createFromTemplate,
-  objectiveWeightIndicatorSystem
+  checkSystemReferences
 } from '@/api/zhpg/indicatorSystem'
 import { listAllIndicator, getIndicatorTree } from '@/api/zhpg/indicator'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { listSets, addSet } from '@/api/zhpg/evalCriterion'
+import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
 import { Loading } from '@element-plus/icons-vue'
 import {
   ZHPG_EQUIPMENT_TYPE_OPTIONS,
@@ -483,9 +501,11 @@ import {
   parseWeightAssignConfig
 } from '@/constants/zhpgIndicatorSystemAlgorithms'
 import { fetchZhpgConductionMethodSelectOptions } from '@/utils/zhpg/zhpgConductionAlgorithms'
-import { fetchZhpgWeightAssignSelectOptions } from '@/utils/zhpg/zhpgWeightAssignAlgorithms'
+import { fetchZhpgWeightAssignSelectOptions, resolveSubtypeFromOptions } from '@/utils/zhpg/zhpgWeightAssignAlgorithms'
 import { getAlgorithmParams } from '@/api/zhpg/algorithm'
 import IndicatorTreeWorkbench from '@/views/zhpg/components/IndicatorTreeWorkbench.vue'
+import ZhpgGlobalSubjectiveParamsDialog from '@/views/zhpg/components/subjective/ZhpgGlobalSubjectiveParamsDialog.vue'
+import ZhpgWeightWorkbenchDialog from '@/views/zhpg/components/ZhpgWeightWorkbenchDialog.vue'
 import {
   getCalcMethodWorkMode,
   setCalcMethodWorkMode,
@@ -494,6 +514,10 @@ import {
 } from '@/utils/zhpg/calcMethodAlgorithm'
 import { parseIndicatorTreeToForest, serializeForestToIndicatorTree } from '@/utils/zhpg/zhpgIndicatorTreeJson'
 import { buildIndicatorSystemTreePayload } from '@/utils/zhpg/indicatorSystemSavePayload'
+import {
+  syncGlobalAlgorithmsToParentNodes,
+  removeWeightAssignSubtypeFromParentNodes
+} from '@/utils/zhpg/indicatorSystemGlobalAlgorithms'
 import {
   ZHPG_WORK_MODE,
   ZHPG_WORK_MODE_OPTIONS,
@@ -508,6 +532,7 @@ import {
 } from '@/constants/zhpgWorkMode'
 import { useThemeStore } from '@/store/theme'
 
+const router = useRouter()
 const themeStore = useThemeStore()
 const isDarkTheme = computed(() => themeStore.currentThemeName === 'dark-theme')
 const equipmentTypeOptions = ZHPG_EQUIPMENT_TYPE_OPTIONS
@@ -579,6 +604,130 @@ const templateDialogVisible = ref(false)
 const templateSearchLoading = ref(false)
 const templateSearchOptions = ref([])
 const globalAlgoDialogVisible = ref(false)
+const globalSubjectiveParamsVisible = ref(false)
+/** 当前选定算法对应的主观 subtype（6 种中文之一），客观算法 / 未选 时为 ''  */
+const globalSelectedSubtype = computed(() => {
+  return resolveSubtypeFromOptions(form.weightAssignAlgorithm, weightAssignOptions.value) || ''
+})
+
+/** 选择算法后：客观 → 显示参数表单；主观 → 立即弹出整树参数对话框 */
+function onGlobalWeightAlgorithmChange() {
+  const subtype = globalSelectedSubtype.value
+  if (!subtype) return
+  if (!treeData.value?.length) {
+    ElMessage.warning('指标树为空，请先添加节点后再配置主观参数')
+    return
+  }
+  globalSubjectiveParamsVisible.value = true
+}
+
+function openGlobalSubjectiveParamsDialog() {
+  if (!treeData.value?.length) {
+    ElMessage.warning('指标树为空，请先添加节点')
+    return
+  }
+  globalSubjectiveParamsVisible.value = true
+}
+
+function onGlobalSubjectiveParamsDone(/* { subtype } */) {
+  ElMessage.success('已将所选主观算法 + 参数刷写至全部父节点')
+}
+
+// ============== 列表页：权重调优工作台 ==============
+const weightWorkbenchVisible = ref(false)
+const weightWorkbenchSystemId = ref(null)
+const weightWorkbenchSystemName = ref('')
+
+function handleOpenWeightWorkbench(row) {
+  if (!row?.id) {
+    ElMessage.warning('指标体系尚未保存，无法调优')
+    return
+  }
+  weightWorkbenchSystemId.value = row.id
+  weightWorkbenchSystemName.value = row.systemName || ''
+  weightWorkbenchVisible.value = true
+}
+
+function onWeightWorkbenchUpdated() {
+  // 调优窗口刷新过后端，刷新一下列表（拿最新更新时间等）
+  getList()
+}
+
+function handleOpenCriterion(row) {
+  if (!row?.id) {
+    ElMessage.warning('指标体系无效，无法配置评估准则')
+    return
+  }
+  const loadingInstance = ElLoading.service({
+    lock: true,
+    text: '正在检查评估准则集...',
+    background: 'rgba(0, 0, 0, 0.7)'
+  })
+  listSets({ indicatorSystemId: row.id }).then(res => {
+    loadingInstance.close()
+    if (res.rows && res.rows.length > 0) {
+      // 已经存在准则集，直接跳转到设计师
+      const setId = res.rows[0].id
+      router.push({
+        name: 'TemplateCriterionDesigner',
+        query: { setId: setId }
+      })
+    } else {
+      // 不存在，弹窗提示并自动创建
+      ElMessageBox.confirm(
+        `该指标体系暂无关联的评估准则配置，是否立即创建并开始设计？`,
+        '提示',
+        {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'info'
+        }
+      ).then(() => {
+        const createLoading = ElLoading.service({
+          lock: true,
+          text: '正在初始化评估准则集...',
+          background: 'rgba(0, 0, 0, 0.7)'
+        })
+        const params = {
+          setName: (row.systemName || '') + '评估准则',
+          setCode: 'CRIT_' + Date.now() + '_' + Math.random().toString(36).substring(2, 5),
+          indicatorSystemId: row.id,
+          equipmentType: '无',
+          status: 'PUBLISHED',
+          versionNo: 'V1.0',
+          description: `由指标体系 [${row.systemName}] 自动生成的评估准则集`
+        }
+        addSet(params).then(addRes => {
+          createLoading.close()
+          ElMessage.success('评估准则集初始化成功')
+          // 跳转
+          const newSetId = addRes.data ? (addRes.data.id || addRes.data) : addRes
+          router.push({
+            name: 'TemplateCriterionDesigner',
+            query: { setId: newSetId }
+          })
+        }).catch(err => {
+          createLoading.close()
+          console.error(err)
+          ElMessage.error('初始化评估准则集失败：' + (err.msg || err.message || '未知错误'))
+        })
+      }).catch(() => {
+        // 取消
+      })
+    }
+  }).catch(err => {
+    loadingInstance.close()
+    console.error(err)
+    ElMessage.error('查询评估准则集状态失败：' + (err.msg || err.message || '未知错误'))
+  })
+}
+
+function handleGotoCriterionList() {
+  router.push({
+    name: 'TemplateCriterion'
+  })
+}
+
 const importIndicatorVisible = ref(false)
 const importIndicatorLoading = ref(false)
 const importIndicatorType = ref('')
@@ -659,13 +808,7 @@ const isCurrentInitialDraft = computed(() =>
 )
 
 
-const globalConductionSummaryTag = computed(() =>
-  getZhpgConductionMethodLabel(form.conductionAlgorithm, conductionMethodOptions.value)
-)
 
-const globalWeightAssignSummaryTag = computed(() =>
-  getZhpgWeightAssignLabel(form.weightAssignAlgorithm, weightAssignOptions.value)
-)
 
 const templateForm = reactive({
   templateId: undefined,
@@ -710,33 +853,15 @@ function applyWorkModeToLeafNodes(nodes, workMode) {
   }
 }
 
-/** 将全局赋权/传导配置同步到所有非叶子节点 */
-function syncGlobalAlgoToAllNodes(nodes) {
-  for (const node of nodes || []) {
-    const isLeaf = !node.children || node.children.length === 0
-    if (!isLeaf) {
-      // 非叶子节点：同步全局赋权算法
-      if (form.weightAssignAlgorithm) {
-        node.weightAssignAlgorithm = /^\d+$/.test(form.weightAssignAlgorithm) ? Number(form.weightAssignAlgorithm) : form.weightAssignAlgorithm
-        node.weightAssignAlgorithmParams = { ...(form.weightAssignAlgorithmParams || {}) }
-      }
-      // 非叶子节点：同步全局传导算法
-      if (form.conductionAlgorithm) {
-        node.conductionAlgorithm = /^\d+$/.test(form.conductionAlgorithm) ? Number(form.conductionAlgorithm) : form.conductionAlgorithm
-        node.conductionAlgorithmParams = { ...(form.conductionAlgorithmParams || {}) }
-      }
-      // 递归处理子节点
-      if (node.children?.length) {
-        syncGlobalAlgoToAllNodes(node.children)
-      }
-    }
-  }
-}
-
 /** 保存全局配置并同步到所有节点 */
 function saveGlobalAlgoAndSyncToNodes() {
   // 同步全局配置到所有节点
-  syncGlobalAlgoToAllNodes(treeData.value)
+  syncGlobalAlgorithmsToParentNodes(treeData.value, {
+    weightAssignAlgorithm: form.weightAssignAlgorithm,
+    weightAssignAlgorithmParams: form.weightAssignAlgorithmParams,
+    conductionAlgorithm: form.conductionAlgorithm,
+    conductionAlgorithmParams: form.conductionAlgorithmParams
+  })
   // 关闭对话框
   globalAlgoDialogVisible.value = false
   ElMessage.success("全局配置已同步到所有节点")
@@ -751,11 +876,6 @@ watch(
 )
 const selectedNode = ref(null)
 const workbenchRef = ref(null)
-const objectiveWeightLoading = ref(false)
-const objectiveWeightProgressVisible = ref(false)
-const objectiveWeightStep = ref(0)
-const objectiveWeightDone = ref(false)
-let objectiveWeightStepTimers = []
 
 const saveLoading = ref(false)
 const saveProgressVisible = ref(false)
@@ -785,29 +905,7 @@ function onSaveDialogClosed() {
   saveStep.value = 0
 }
 
-/** 完成后 el-steps 置为全部完成态（4 步对应 active=4） */
-const objectiveWeightStepsActive = computed(() => {
-  if (objectiveWeightDone.value) {
-    return 4
-  }
-  return objectiveWeightStep.value
-})
-
-function clearObjectiveWeightStepTimers() {
-  objectiveWeightStepTimers.forEach(id => clearTimeout(id))
-  objectiveWeightStepTimers = []
-}
-
-function closeObjectiveWeightProgressDialog() {
-  objectiveWeightProgressVisible.value = false
-}
-
-function onObjectiveWeightDialogClosed() {
-  clearObjectiveWeightStepTimers()
-  objectiveWeightLoading.value = false
-  objectiveWeightDone.value = false
-  objectiveWeightStep.value = 0
-}
+// 客观赋权进度逻辑已迁移到 ZhpgWeightWorkbenchDialog（列表页「权重调优」按钮触发）。
 
 /** 全局传导里「主机/表决」等下拉：默认取第一个根节点的直接子节点 */
 const rules = reactive({
@@ -898,7 +996,7 @@ function resetQuery() {
 
 function handleSelectionChange(selection) {
   ids.value = selection.map(item => item.id)
-  multiple = !selection.length
+  multiple.value = !selection.length
 }
 
 function resetForm() {
@@ -1024,6 +1122,7 @@ function submitForm() {
     saveStepTimers.push(setTimeout(() => { saveStep.value = 3 }, 3200))
 
     applyWorkModeToLeafNodes(treeData.value, form.workMode)
+    removeWeightAssignSubtypeFromParentNodes(treeData.value)
     syncTreeRootToSystemName()
     syncTreeRootWorkMode()
     const serialized = serializeForestToIndicatorTree(treeData.value, {
@@ -1088,62 +1187,65 @@ function submitForm() {
   })
 }
 
-/** 客观赋权：后端模拟样本矩阵 → 算法服务，持久化 indicator_tree_weight 并刷新工作台 */
-async function runObjectiveWeight() {
-  if (!form.id) {
-    ElMessage.warning('请先保存指标体系后再进行客观赋权')
-    return
-  }
-  if (!treeData.value?.length) {
-    ElMessage.warning('指标树为空')
-    return
-  }
+/** 权重调优对话框「完成 / 保存」回调：用后端归一化后的权重树替换本地树。 */
+// 客观/主观/手动微调的执行已迁移至列表页「权重调优」按钮 → ZhpgWeightWorkbenchDialog，
+// 编辑窗口只负责算法配置（"配置体系全局" + "配置本节点算法"），不再触发计算。
 
-  clearObjectiveWeightStepTimers()
-  objectiveWeightStep.value = 0
-  objectiveWeightDone.value = false
-  objectiveWeightProgressVisible.value = true
-  objectiveWeightLoading.value = true
-
-  objectiveWeightStepTimers.push(setTimeout(() => {
-    objectiveWeightStep.value = 1
-  }, 320))
-  objectiveWeightStepTimers.push(setTimeout(() => {
-    objectiveWeightStep.value = 2
-  }, 880))
-
-  try {
-    const res = await objectiveWeightIndicatorSystem(form.id, { persist: true, mockSampleRows: 8 })
-    clearObjectiveWeightStepTimers()
-
-    objectiveWeightStep.value = 3
-    const payload = res.data || {}
-    const tw = payload.indicatorTreeWeight
-    if (tw) {
-      form.indicatorTreeWeight = tw
-      treeData.value = parseTreeJson(tw)
-      await nextTick()
-      workbenchRef.value?.renderGraph?.()
-    }
-
-    objectiveWeightLoading.value = false
-    objectiveWeightDone.value = true
-
-    ElMessage.success(res.msg || '客观赋权完成')
-    if (payload.hint) {
-      ElMessage.info(String(payload.hint))
-    }
-  } catch {
-    clearObjectiveWeightStepTimers()
-    objectiveWeightProgressVisible.value = false
-    objectiveWeightLoading.value = false
-    objectiveWeightStep.value = 0
-    objectiveWeightDone.value = false
-  }
-}
-
-function handleDelete(row) {
+async function handleDelete(row) {
   const delIds = row.id ? [row.id] : ids.value
+  if (!delIds || delIds.length === 0) return
+
+  // 1. 调用后端检测关联引用
+  const loadingInstance = ElLoading.service({
+    lock: true,
+    text: '正在检查指标体系关联引用状态...',
+    background: 'rgba(0, 0, 0, 0.7)'
+  })
+  try {
+    const res = await checkSystemReferences(delIds.join(','))
+    loadingInstance.close()
+    const refMap = res.data || {}
+    const refKeys = Object.keys(refMap)
+    
+    if (refKeys.length > 0) {
+      // 有关联，组装友好错误提示
+      let messageHtml = '<div style="max-height: 300px; overflow-y: auto; text-align: left; font-size: 14px; line-height: 1.6;">'
+      messageHtml += '<p style="font-weight: bold; color: var(--el-color-danger); margin-bottom: 8px;">所选的部分指标体系已被其他模块关联，无法删除：</p>'
+      
+      for (const key of refKeys) {
+        const sysId = Number(key)
+        // 找到对应行的指标体系名称
+        let sysName = 'ID: ' + sysId
+        const matchedRow = systemList.value.find(item => item.id === sysId)
+        if (matchedRow) {
+          sysName = matchedRow.systemName
+        }
+        messageHtml += `<div style="margin-bottom: 12px; border-bottom: 1px dashed var(--el-border-color-light); padding-bottom: 8px;">`
+        messageHtml += `  <strong style="color: var(--el-color-primary);">[${sysName}]</strong> 存在以下引用：`
+        messageHtml += `  <ul style="margin: 4px 0 0 16px; padding: 0; list-style-type: disc;">`
+        for (const refInfo of refMap[key]) {
+          messageHtml += `    <li>${refInfo}</li>`
+        }
+        messageHtml += `  </ul>`
+        messageHtml += `</div>`
+      }
+      messageHtml += '<p style="color: var(--el-text-color-secondary); margin-top: 8px;">请先在对应模块（评估准则集、评估任务模板或计算流程模板）中解除引用，或直接删除关联数据后再试。</p>'
+      messageHtml += '</div>'
+      
+      ElMessageBox.alert(messageHtml, '删除失败：存在关联引用', {
+        dangerouslyUseHTMLString: true,
+        confirmButtonText: '知道了',
+        type: 'error'
+      })
+      return
+    }
+  } catch (e) {
+    loadingInstance.close()
+    console.error('检查关联关系失败', e)
+    // 出错时允许降级，不拦截，直接走后端硬校验
+  }
+
+  // 2. 无关联，进入常规删除流程
   ElMessageBox.confirm('是否确认删除所选的指标体系？', '警告', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
@@ -1153,6 +1255,7 @@ function handleDelete(row) {
   }).then(() => {
     getList()
     ElMessage.success('删除成功')
+    ids.value = [] // 成功删除后清空已选行缓存
   }).catch(() => {})
 }
 
@@ -1477,12 +1580,7 @@ getList()
   align-items: stretch;
   gap: 8px;
 }
-.zhpg-global-algo-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  align-items: center;
-}
+
 .zhpg-sidebar-alert {
   margin-top: 8px;
 }
@@ -1543,8 +1641,22 @@ getList()
   align-items: center;
   gap: 8px;
 }
-.zhpg-algo-tag {
-  max-width: 100%;
+
+.global-subj-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+}
+.global-subj-hint {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+.global-algo-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .zhpg-indicator-tree-dialog.dark-theme .zhpg-indicator-meta-panel {
@@ -1617,5 +1729,79 @@ getList()
 .zhpg-objective-weight-progress-dialog .zhpg-owp-spin {
   font-size: 20px;
   color: var(--el-color-primary);
+}
+
+html.dark .zhpg-global-algo-modal,
+body[data-theme="dark"] .zhpg-global-algo-modal,
+.dark-theme .zhpg-global-algo-modal {
+  background-color: rgba(0, 5, 12, 0.62);
+}
+
+html.dark .zhpg-global-algo-dialog,
+body[data-theme="dark"] .zhpg-global-algo-dialog,
+.dark-theme .zhpg-global-algo-dialog {
+  --global-algo-bg: #071426;
+  --global-algo-panel: #08192c;
+  --global-algo-border: rgba(0, 194, 255, 0.24);
+  --global-algo-border-strong: rgba(0, 224, 255, 0.36);
+  --global-algo-text: #dbeafe;
+  --global-algo-muted: #8fb0c8;
+  background: var(--global-algo-bg);
+  border: 1px solid var(--global-algo-border);
+  box-shadow: 0 26px 80px rgba(0, 0, 0, 0.68);
+}
+
+html.dark .zhpg-global-algo-dialog .el-dialog__header,
+html.dark .zhpg-global-algo-dialog .el-dialog__body,
+html.dark .zhpg-global-algo-dialog .el-dialog__footer,
+body[data-theme="dark"] .zhpg-global-algo-dialog .el-dialog__header,
+body[data-theme="dark"] .zhpg-global-algo-dialog .el-dialog__body,
+body[data-theme="dark"] .zhpg-global-algo-dialog .el-dialog__footer,
+.dark-theme .zhpg-global-algo-dialog .el-dialog__header,
+.dark-theme .zhpg-global-algo-dialog .el-dialog__body,
+.dark-theme .zhpg-global-algo-dialog .el-dialog__footer {
+  background: var(--global-algo-bg);
+}
+
+html.dark .zhpg-global-algo-dialog .el-dialog__title,
+body[data-theme="dark"] .zhpg-global-algo-dialog .el-dialog__title,
+.dark-theme .zhpg-global-algo-dialog .el-dialog__title,
+html.dark .zhpg-global-algo-dialog .el-form-item__label,
+body[data-theme="dark"] .zhpg-global-algo-dialog .el-form-item__label,
+.dark-theme .zhpg-global-algo-dialog .el-form-item__label {
+  color: var(--global-algo-text);
+}
+
+html.dark .zhpg-global-algo-dialog .el-dialog__headerbtn .el-dialog__close,
+body[data-theme="dark"] .zhpg-global-algo-dialog .el-dialog__headerbtn .el-dialog__close,
+.dark-theme .zhpg-global-algo-dialog .el-dialog__headerbtn .el-dialog__close {
+  color: #6bdcff;
+}
+
+html.dark .zhpg-global-algo-dialog .el-divider__text,
+body[data-theme="dark"] .zhpg-global-algo-dialog .el-divider__text,
+.dark-theme .zhpg-global-algo-dialog .el-divider__text {
+  color: #7ee7ff;
+  background: var(--global-algo-bg);
+}
+
+html.dark .zhpg-global-algo-dialog .el-input__wrapper,
+html.dark .zhpg-global-algo-dialog .el-select__wrapper,
+html.dark .zhpg-global-algo-dialog .el-input-number .el-input__wrapper,
+body[data-theme="dark"] .zhpg-global-algo-dialog .el-input__wrapper,
+body[data-theme="dark"] .zhpg-global-algo-dialog .el-select__wrapper,
+body[data-theme="dark"] .zhpg-global-algo-dialog .el-input-number .el-input__wrapper,
+.dark-theme .zhpg-global-algo-dialog .el-input__wrapper,
+.dark-theme .zhpg-global-algo-dialog .el-select__wrapper,
+.dark-theme .zhpg-global-algo-dialog .el-input-number .el-input__wrapper {
+  background: var(--global-algo-panel);
+  border: 1px solid var(--global-algo-border-strong);
+  box-shadow: none;
+}
+
+html.dark .zhpg-global-algo-dialog .global-subj-hint,
+body[data-theme="dark"] .zhpg-global-algo-dialog .global-subj-hint,
+.dark-theme .zhpg-global-algo-dialog .global-subj-hint {
+  color: var(--global-algo-muted);
 }
 </style>

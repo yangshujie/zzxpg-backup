@@ -66,4 +66,9 @@ public class CalcExecuteRequest implements Serializable {
      * 运行时策略配置
      */
     private Object runtimePolicy;
+
+    /**
+     * 预处理批次ID
+     */
+    private Long batchId;
 }

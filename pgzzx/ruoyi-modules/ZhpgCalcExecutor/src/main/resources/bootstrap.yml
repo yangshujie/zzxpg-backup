@@ -40,6 +40,6 @@ zhpg:
     # 数据输入模式：MOCK=模拟随机数据，EXTERNAL_API=通过外部接口获取真实数据
     data-input-mode: MOCK
     external-data:
-      url: http://172.16.2.89:9501/evaluationData/list
+      url: http://172.16.2.89:9501/table-data/field-mapping-data/preprocess-level1
       connect-timeout-ms: 10000
       read-timeout-ms: 20000

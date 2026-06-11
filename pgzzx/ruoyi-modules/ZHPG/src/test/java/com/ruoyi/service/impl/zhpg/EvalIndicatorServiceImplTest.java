@@ -1,6 +1,7 @@
 package com.ruoyi.service.impl.zhpg;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.ruoyi.common.core.exception.ServiceException;
 import com.ruoyi.domain.zhpg.EvalIndicator;
 import com.ruoyi.mapper.zhpg.EvalIndicatorMapper;
 import org.junit.Test;
@@ -9,6 +10,7 @@ import org.mockito.ArgumentCaptor;
 import java.lang.reflect.Field;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -26,7 +28,7 @@ public class EvalIndicatorServiceImplTest {
                 .setIndicatorName("干扰动作时间戳")
                 .setIndicatorType("space_defense")
                 .setParentId(0L)
-                .setIsBottomNode(true)
+                .setIsBottomNode(1)
                 .setIsTemplate(0)
                 .setCalcMethod("{\"data\":\"ind_665\",\"method\":{\"node\":[{\"type\":\"start\"}]}}");
 
@@ -36,7 +38,7 @@ public class EvalIndicatorServiceImplTest {
                 .setIndicatorName("干扰动作时间戳")
                 .setIndicatorType("space_defense")
                 .setParentId(0L)
-                .setIsBottomNode(true)
+                .setIsBottomNode(1)
                 .setIsTemplate(0);
 
         when(mapper.selectById(665L)).thenReturn(existing);
@@ -53,5 +55,30 @@ public class EvalIndicatorServiceImplTest {
         ArgumentCaptor<EvalIndicator> captor = ArgumentCaptor.forClass(EvalIndicator.class);
         verify(mapper).updateById(captor.capture());
         assertEquals(existing.getCalcMethod(), captor.getValue().getCalcMethod());
+    }
+
+    @Test
+    public void insertIndicatorRejectsUnknownEquipmentTypeWithoutSystemDictCache() throws Exception {
+        EvalIndicatorMapper mapper = mock(EvalIndicatorMapper.class);
+        when(mapper.selectCount(any())).thenReturn(0L);
+
+        EvalIndicatorServiceImpl service = new EvalIndicatorServiceImpl();
+        Field field = ServiceImpl.class.getDeclaredField("baseMapper");
+        field.setAccessible(true);
+        field.set(service, mapper);
+
+        EvalIndicator incoming = new EvalIndicator()
+                .setIndicatorName("未知装备指标")
+                .setIndicatorType("unknown_equipment")
+                .setParentId(0L)
+                .setIsBottomNode(1)
+                .setIsTemplate(0);
+
+        try {
+            service.insertIndicator(incoming);
+            fail("Expected unknown equipment type to be rejected by ZHPG-owned validation");
+        } catch (ServiceException ex) {
+            assertEquals("指标类型不在 ZHPG 装备类型允许范围内", ex.getMessage());
+        }
     }
 }

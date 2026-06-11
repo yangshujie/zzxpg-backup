@@ -10,6 +10,8 @@ import com.ruoyi.service.zhpg.IEvalResultService;
 import com.ruoyi.service.zhpg.IIndicatorTreeWeightService;
 import com.ruoyi.service.zhpg.IObjectiveWeightService;
 import com.ruoyi.service.zhpg.IReportTemplateService;
+import com.ruoyi.service.zhpg.ISubjectiveWeightService;
+import com.ruoyi.service.zhpg.IEvalCriterionService;
 import com.ruoyi.mapper.zhpg.CalcTaskStageLogMapper;
 import org.junit.Test;
 
@@ -38,11 +40,13 @@ public class CalcTaskServiceImplTest {
                 indicatorSystemService,
                 mock(IIndicatorTreeWeightService.class),
                 mock(IObjectiveWeightService.class),
+                mock(ISubjectiveWeightService.class),
                 mock(IAlgorithmInfoService.class),
                 mock(IEvalResultService.class),
                 mock(IReportTemplateService.class),
                 mock(XxlJobAdminClient.class),
-                mock(EvaluationResultLineageClient.class)
+                mock(EvaluationResultLineageClient.class),
+                mock(IEvalCriterionService.class)
         );
 
         CalcExecutionRequest request = new CalcExecutionRequest();
@@ -54,6 +58,15 @@ public class CalcTaskServiceImplTest {
 
         assertEquals(Long.valueOf(14L), resolved.getId());
         assertEquals(Long.valueOf(14L), request.getIndicatorSystemId());
+    }
+
+    @Test
+    public void calcExecutionRequestDoesNotExposeAssessTaskIdInput() {
+        for (Method method : CalcExecutionRequest.class.getMethods()) {
+            if ("getAssessTaskId".equals(method.getName()) || "setAssessTaskId".equals(method.getName())) {
+                fail("CalcExecutionRequest should not expose assessTaskId as an input field");
+            }
+        }
     }
 
     @Test
@@ -70,11 +83,13 @@ public class CalcTaskServiceImplTest {
                 indicatorSystemService,
                 mock(IIndicatorTreeWeightService.class),
                 mock(IObjectiveWeightService.class),
+                mock(ISubjectiveWeightService.class),
                 mock(IAlgorithmInfoService.class),
                 mock(IEvalResultService.class),
                 mock(IReportTemplateService.class),
                 mock(XxlJobAdminClient.class),
-                mock(EvaluationResultLineageClient.class)
+                mock(EvaluationResultLineageClient.class),
+                mock(IEvalCriterionService.class)
         );
 
         CalcExecutionRequest request = new CalcExecutionRequest();

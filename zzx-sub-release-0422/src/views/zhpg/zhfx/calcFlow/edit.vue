@@ -68,20 +68,12 @@
             </el-col>
           </el-row>
           <el-row :gutter="20">
-            <el-col :span="12">
+            <el-col :span="24">
               <el-form-item label="阻塞处理策略">
                 <el-select v-model="runtimePolicy.blockStrategy" style="width: 100%">
                   <el-option label="单机串行（SERIAL_EXECUTION）" value="SERIAL_EXECUTION" />
                   <el-option label="丢弃后续调度（DISCARD_LATER）" value="DISCARD_LATER" />
                   <el-option label="覆盖之前调度（COVER_EARLY）" value="COVER_EARLY" />
-                </el-select>
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="错过调度策略">
-                <el-select v-model="runtimePolicy.misfireStrategy" style="width: 100%">
-                  <el-option label="忽略（DO_NOTHING）" value="DO_NOTHING" />
-                  <el-option label="立即补触发一次（FIRE_ONCE_NOW）" value="FIRE_ONCE_NOW" />
                 </el-select>
               </el-form-item>
             </el-col>
@@ -102,36 +94,9 @@
 
         <!-- 阶段二：权重计算 -->
         <div v-show="activeStage === 'weightCalc'" class="stage-form">
-          <div class="stage-hint">
-            <el-alert type="info" :closable="false" show-icon>
-              <template #title>执行计算时将使用请求中指定的指标体系；权重算法与权重值来自该体系，此处仅配置运行时执行策略</template>
-            </el-alert>
-          </div>
-          <el-row :gutter="20">
-            <el-col :span="8">
-              <el-form-item label="权重来源">
-                <el-select v-model="stageConfig.weightCalc.config.weightSource" style="width: 100%">
-                  <el-option label="沿用运行时指标体系权重" value="INDICATOR_SYSTEM" />
-                  <el-option label="流程覆盖（重新计算）" value="TEMPLATE_OVERRIDE" />
-                </el-select>
-              </el-form-item>
-            </el-col>
-            <el-col :span="8" v-show="stageConfig.weightCalc.config.weightSource === 'TEMPLATE_OVERRIDE'">
-              <el-form-item label="覆盖算法">
-                <el-select v-model="stageConfig.weightCalc.config.overrideAlgorithmId" placeholder="请选择权重分配算法" filterable clearable style="width: 100%">
-                  <el-option v-for="alg in weightAlgorithmList" :key="alg.id" :label="alg.algorithmName" :value="alg.id" />
-                </el-select>
-              </el-form-item>
-            </el-col>
-            <el-col :span="8">
-              <el-form-item label="权重缺失处理">
-                <el-select v-model="stageConfig.weightCalc.config.missingWeightPolicy" style="width: 100%">
-                  <el-option label="同层均分补齐" value="EQUAL_DISTRIBUTE" />
-                  <el-option label="终止计算" value="TERMINATE" />
-                </el-select>
-              </el-form-item>
-            </el-col>
-          </el-row>
+          <el-alert type="info" :closable="false" show-icon>
+            <template #title>指标体系本体内嵌权重算法与权重值。流程模板与指标体系解耦，在此处无需进行额外配置。实际执行时，将自动加载任务指定的指标体系并允许在运行侧进行权重确认与调优。</template>
+          </el-alert>
         </div>
 
         <!-- 阶段三：综合分析计算（运行时计算编排，算法定义在SFMX中维护） -->
@@ -141,7 +106,7 @@
               <template #title>算法模型及其参数由算法模型配置(SFMX)统一管理，此处配置计算编排、聚合与结果处理策略</template>
             </el-alert>
           </div>
-          <!-- 第一行：执行方式 + 空数据处理 + 中间结果 -->
+          <!-- 第一行：执行方式 + 空数据处理 + 预处理批次ID -->
           <el-row :gutter="20">
             <el-col :span="8">
               <el-form-item label="执行方式">
@@ -162,6 +127,11 @@
                   <el-option label="补零参与计算" value="ZERO_FILL" />
                   <el-option label="终止计算" value="TERMINATE" />
                 </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="预处理批次ID">
+                <el-input v-model.number="stageConfig.comprehensiveCalc.config.batchId" type="number" placeholder="请输入批次ID（选填）" clearable style="width: 100%" />
               </el-form-item>
             </el-col>
           </el-row>
@@ -384,10 +354,6 @@ const reportTemplateList = ref([])
 
 const taskPropertyOptions = TASK_PROPERTY_OPTIONS
 
-// 权重分配算法列表（类型为"权重分配"的算法）
-const weightAlgorithmList = computed(() => {
-  return algorithmList.value.filter(alg => alg.algorithmType === '权重分配')
-})
 
 // 聚合算法列表（类型为"聚合传导"的算法）
 const aggregationAlgorithmList = computed(() => {
@@ -452,8 +418,7 @@ const stageConfig = reactive({
     enabled: true,
     config: {
       weightSource: 'INDICATOR_SYSTEM',       // 权重来源：沿用指标体系 / 流程覆盖
-      overrideAlgorithmId: null,              // 仅 TEMPLATE_OVERRIDE 时生效，覆盖算法ID
-      missingWeightPolicy: 'EQUAL_DISTRIBUTE' // 权重缺失处理：同层均分补齐 / 终止计算
+      overrideAlgorithmId: null               // 仅 TEMPLATE_OVERRIDE 时生效，覆盖算法ID
     }
   },
   comprehensiveCalc: {
@@ -472,7 +437,8 @@ const stageConfig = reactive({
         { name: '良好', threshold: 75 },
         { name: '及格', threshold: 60 }
       ],
-      intermediateResultOutput: false          // 是否输出中间计算结果
+      intermediateResultOutput: false,          // 是否输出中间计算结果
+      batchId: null                            // 默认预处理批次ID
     }
   },
   reportOutput: {
@@ -569,15 +535,13 @@ function resetStageConfig() {
   // 重置调度策略配置
   stageConfig.scheduleConfig.config = {
     routeStrategy: 'FIRST',
+    blockStrategy: 'SERIAL_EXECUTION',
+    misfireStrategy: 'DO_NOTHING',
     timeoutSeconds: 300,
     retryTimes: 0
   }
   // 重置权重计算配置
-  stageConfig.weightCalc.config = {
-    weightSource: 'INDICATOR_SYSTEM',
-    overrideAlgorithmId: null,
-    missingWeightPolicy: 'EQUAL_DISTRIBUTE'
-  }
+  stageConfig.weightCalc.config = {}
   // 重置综合分析计算配置
   stageConfig.comprehensiveCalc.config = {
     algorithmChainMode: 'SERIAL',
@@ -590,7 +554,8 @@ function resetStageConfig() {
       { name: '良好', threshold: 75 },
       { name: '及格', threshold: 60 }
     ],
-    intermediateResultOutput: false
+    intermediateResultOutput: false,
+    batchId: null
   }
   // 重置报告输出配置
   stageConfig.reportOutput.config = {
@@ -738,8 +703,17 @@ async function loadTemplate(id) {
           ].filter(l => l.threshold > 0)
         }
       }
-      if (cfg.runtimePolicy) {
-        Object.assign(runtimePolicy, cfg.runtimePolicy)
+      
+      // 兼容处理运行时策略，多路读取并统一回写到各处
+      const blockStrategy = cfg.stages?.scheduleConfig?.config?.blockStrategy || cfg.runtimePolicy?.blockStrategy || 'SERIAL_EXECUTION'
+      const misfireStrategy = cfg.stages?.scheduleConfig?.config?.misfireStrategy || cfg.runtimePolicy?.misfireStrategy || 'DO_NOTHING'
+      
+      runtimePolicy.blockStrategy = blockStrategy
+      runtimePolicy.misfireStrategy = misfireStrategy
+      
+      if (stageConfig.scheduleConfig?.config) {
+        stageConfig.scheduleConfig.config.blockStrategy = blockStrategy
+        stageConfig.scheduleConfig.config.misfireStrategy = misfireStrategy
       }
     } catch (e) {
       console.warn('解析 configJson 失败', e)
@@ -777,6 +751,12 @@ async function handleSave() {
   }
 
   normalizeReportOutputConfig()
+
+  // 运行时策略双写
+  if (stageConfig.scheduleConfig?.config) {
+    stageConfig.scheduleConfig.config.blockStrategy = runtimePolicy.blockStrategy
+    stageConfig.scheduleConfig.config.misfireStrategy = runtimePolicy.misfireStrategy
+  }
 
   // 组装 configJson
   const configJson = JSON.stringify({

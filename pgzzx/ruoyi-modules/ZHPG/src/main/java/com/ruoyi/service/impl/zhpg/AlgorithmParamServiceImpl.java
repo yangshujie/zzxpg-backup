@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.domain.zhpg.AlgorithmParam;
 import com.ruoyi.mapper.zhpg.AlgorithmParamMapper;
 import com.ruoyi.service.zhpg.IAlgorithmParamService;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,6 +50,9 @@ public class AlgorithmParamServiceImpl extends ServiceImpl<AlgorithmParamMapper,
                 param.setAlgorithmId(algorithmId);
                 param.setCreateBy(username);
                 param.setCreateTime(now);
+                if (StringUtils.isBlank(param.getParamName())) {
+                    param.setParamName(param.getParamField());
+                }
                 if (param.getSortOrder() == null) {
                     param.setSortOrder(i + 1);
                 }

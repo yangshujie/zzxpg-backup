@@ -136,7 +136,13 @@ function toPersistNode(node) {
 export function parseIndicatorTreeToForest(json) {
   if (json == null || json === '') return []
   try {
-    const parsed = typeof json === 'string' ? JSON.parse(json) : json
+    let parsed
+    if (typeof json === 'string') {
+      const safeJsonStr = json.replace(/:\s*([0-9]{15,})/g, ': "$1"')
+      parsed = JSON.parse(safeJsonStr)
+    } else {
+      parsed = json
+    }
     if (Array.isArray(parsed)) {
       return normalizeForest(parsed)
     }

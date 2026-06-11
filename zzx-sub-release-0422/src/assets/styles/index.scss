@@ -119,6 +119,12 @@ body {
         color: rgba(255, 255, 255, 0.3) !important;
         box-shadow: none !important;
         cursor: not-allowed;
+
+        :global(.light-clean) & {
+            background: #f5f7fa !important;
+            border-color: #e4e7ed !important;
+            color: #c0c4cc !important;
+        }
     }
 }
 
@@ -256,14 +262,26 @@ body {
         color: $text-color-secondary !important;
     }
 
-    .el-input__inner {
-        color: $primary-color !important;
-        background: rgba(0, 242, 255, 0.05) !important;
-        border: 1px solid rgba(0, 242, 255, 0.2) !important;
-    }
-    
-    .el-select .el-input__wrapper {
+    .el-input__wrapper {
         background-color: rgba(0, 242, 255, 0.05) !important;
         box-shadow: 0 0 0 1px rgba(0, 242, 255, 0.2) inset !important;
+        transition: all 0.3s ease;
+        border: none !important;
+
+        &:hover {
+            box-shadow: 0 0 0 1px rgba(0, 242, 255, 0.5) inset !important;
+        }
+
+        &.is-focus {
+            box-shadow: 0 0 0 1px $primary-color inset, 0 0 8px rgba(0, 242, 255, 0.2) !important;
+        }
+    }
+
+    .el-input__inner {
+        color: $primary-color !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        text-align: center;
     }
 }

@@ -6,41 +6,77 @@ import numpy as np
 from algsmanagement.models import *
 import time
 from algsmanagement.XZ_orbitPos import getOrbitPic
-
-from algs.dataProcess.association_match.fuzzy_match import fuzzy_match
-from algs.dataProcess.association_match.inner_join import inner_join
-from algs.dataProcess.association_match.time_window import tw_match
-from algs.dataProcess.cartesian import cartesian
-from algs.dataProcess.conditional import conditional
-from algs.dataProcess.normalization.decimal_norm import decimal_norm
-from algs.dataProcess.normalization.minmax_norm import minmax_norm
-from algs.dataProcess.normalization.robust_scale import robust_scale
-from algs.dataProcess.normalization.zscore_standard import zscore_standard
-from algsmanagement.models import *
-import time
-from algsmanagement.XZ_orbitPos import getOrbitPic
-
-from algs.dataProcess.anomaly_detection.dbscan_outlier import dbscan_outlier
-from algs.dataProcess.anomaly_detection.iqr_outlier import iqr_outlier
-from algs.dataProcess.anomaly_detection.mad_outlier import mad_outlier
-from algs.dataProcess.anomaly_detection.regression_outlier import regression_outlier
-from algs.dataProcess.anomaly_detection.smooth_zscore import smooth_zscore
-from algs.dataProcess.anomaly_detection.three_sigma import three_sigma
-from algs.dataProcess.anomaly_detection.two_way_smooth_zscore import two_way_smooth_zscore
-from algs.dataProcess.data_bfill import data_bfill
-from algs.dataProcess.data_deduplicate.full_deduplicate import full_deduplicate
-from algs.dataProcess.data_deduplicate.subset_deduplicate import subset_deduplicate
-from algs.dataProcess.data_deduplicate.timestamp_deduplicate import timestamp_deduplicate
-from algs.dataProcess.data_ffill import data_ffill
-from algs.dataProcess.time_format.time_range import time_range
-from algsmanagement.utils.kingbase_util import KingbaseDB
-from config.config import FIELD_MAPPING_URL
+from algsmanagement.kingbase_util import KingbaseDB
+from config.config import FIELD_MAPPING_URL, KINGBASE_CONFIG_zhpq
 import requests
 
 # ======================== 通用 ========================
 
 # 模块导入缓存，避免重复导入（90天数据只需导入2次，而不是180次）
 _module_cache = {}
+
+# s_preprocess预处理算子动态导入说明：
+# 新接口参考s_algs_load，由接口参数定位算法，避免新增algs算法文件后修改service.py。
+# 参数约定：
+#   1. algs是固定算法根目录，不需要由接口传入。
+#   2. algs_type是算法分类标识，预处理算法固定传 "dataProcess"。
+#   3. algs_name是具体算法文件夹名，取自code_url里的zip名称。
+#      例如 code_url = "algs/dataProcess/timestamp_deduplicate.zip"，则 algs_name = "timestamp_deduplicate"。
+# 路径拼接规则：algs.<algs_type>.<algs_name>.<algs_name>
+# 请求示例：{"operator": "数据值时间去重", "algs_type": "dataProcess", "algs_name": "timestamp_deduplicate", "parameters": {}}
+# 旧接口兼容：如果step只传operator，则根据operator查询pypz_algorithm.algorithm_code_url，
+#             再从code_url解析algs_type和algs_name。新增算法只需保证算法表有对应记录。
+# 注意：zip解压后的目录和算法入口文件需同名，并提供 algsMain(data=current_data, params=params)。
+
+
+def _module_path_from_algorithm_code_url(code_url):
+    """根据algs/dataProcess/demo.zip解析为algs.dataProcess.demo.demo。"""
+    if not code_url:
+        return None
+
+    normalized_url = code_url.replace('\\', '/')
+    parts = [part for part in normalized_url.split('/') if part]
+    if len(parts) < 3:
+        return None
+
+    algs_type = parts[-2]
+    zip_name = parts[-1]
+    algs_name = zip_name[:-4] if zip_name.lower().endswith('.zip') else zip_name
+    if not algs_type or not algs_name:
+        return None
+    return "algs" + "." + algs_type + "." + algs_name + "." + algs_name
+
+
+def _query_preprocess_module_path_by_operator(operator):
+    """兼容旧接口：根据中文operator从算法表查询code_url并解析模块路径。"""
+    if not operator:
+        return None
+    try:
+        table_name = "pgzc_algorithm"
+        sql = f"""
+            SELECT algorithm_code_url
+            FROM {table_name}
+            WHERE algorithm_name = %s
+            LIMIT 1
+        """
+        with KingbaseDB(database=KINGBASE_CONFIG_zhpq["database"],schema=KINGBASE_CONFIG_zhpq["schema"]) as db2:
+            result = db2.query(sql, (operator,))
+        if not result:
+            return None
+        return _module_path_from_algorithm_code_url(result[0][0])
+    except Exception as e:
+        import traceback
+        print("❌ Actual error:")
+        print(traceback.format_exc())
+        print(f"Type: {type(e)}, Message: {e}")
+
+def _resolve_preprocess_module_path(step):
+    """根据新接口参数或旧operator查询结果解析预处理算法模块路径。"""
+    algs_type = step.get("algs_type")
+    algs_name = step.get("algs_name")
+    if algs_type and algs_name:
+        return "algs" + "." + algs_type + "." + algs_name + "." + algs_name
+    return _query_preprocess_module_path_by_operator(step.get("operator"))
 
 # 性能统计字典，记录各个预处理步骤的耗时
 _performance_stats = {
@@ -53,8 +89,6 @@ _performance_stats = {
     'data_convert': [],        # 数据转换耗时（tolist等）
     'total_per_day': []        # 每天总耗时
 }
-
-
 
 def to_json_safe(obj):
     if isinstance(obj, dict):
@@ -115,6 +149,8 @@ def s_save_preprocessed_to_kingbase(table_name, data):
                         col_name_lower = col_name.lower()
                         if col_name_lower == 'time' or col_name_lower == 'timestamp':
                             col_type = 'TIMESTAMP'
+                        elif col_name_lower == 'batch_id':
+                            col_type = 'BIGINT'
                         else:
                             col_type = infer_sql_type(value)
                         db.add_column(table_name, col_name, col_type)
@@ -127,6 +163,8 @@ def s_save_preprocessed_to_kingbase(table_name, data):
                     col_name_lower = col_name.lower()
                     if col_name_lower == 'time' or col_name_lower == 'timestamp':
                         columns[col_name] = 'TIMESTAMP'
+                    elif col_name_lower == 'batch_id':
+                        columns[col_name] = 'BIGINT'
                     else:
                         columns[col_name] = infer_sql_type(value)
                 db.create_table(table_name, columns)
@@ -156,12 +194,24 @@ def s_save_preprocessed_to_kingbase(table_name, data):
 
 def s_preprocess(task):
     """
-    执行数据预处理流程
+    执行数据预处理流程（动态加载算法版本）
     :param task: dict 或 JSON 字符串，包含数据源和步骤配置
-                 data_sources格式: {"表名": ["字段1", "字段2", ...], ...}
+                 data_sources格式: {"表名": {"字段1": "id1", "字段2": "id2", ...}, ...}
+                 steps: 预处理步骤列表
                  可选字段: start_time, end_time 用于时间筛选
+                 可选字段: custom_algorithms 自定义算法路径映射 {"算法名": "模块路径", ...}
+                 可选字段: enable_reload 是否重新加载模块（开发环境可设为True）
+                 可选字段: algorithm_category 算法分类目录，默认"dataProcess"
     :return: (bool, json_str) 成功返回 True 和结果 JSON，失败返回 False 和错误 JSON
     """
+    # 预处理算法耗时统计
+    preprocess_stats = {
+        'module_load': [],      # 模块加载耗时
+        'algorithm_exec': [],   # 算法执行耗时
+        'total': []             # 总耗时
+    }
+    total_start_time = time.time()
+
     try:
         # 解析输入
         if isinstance(task, str):
@@ -177,16 +227,20 @@ def s_preprocess(task):
         if not steps or not data_sources:
             return False, json.dumps({"error": "缺少 steps 或 data_sources"})
 
-        start_time = task.get("start_time",None)
-        end_time = task.get("end_time",None)
+        start_time = task.get("start_time", None)
+        end_time = task.get("end_time", None)
+
+        # 算法分类目录（默认为dataProcess）
+        algorithm_category = task.get("algorithm_category", "dataProcess")
 
         # 从Kingbase查询数据源
-
         time_fields = {'time', 'timestamp'}
         dataframes = {}
         with KingbaseDB() as db:
             for table_name, fields in data_sources.items():
-                fields = fields.keys()
+                fields = set(fields.keys())
+                if "timestamp" not in fields:
+                    fields.add('timestamp')
                 rows = db.query_data(table_name, fields=fields, start_time=start_time, end_time=end_time)
                 if not rows:
                     return False, json.dumps({"error": f"表 {table_name} 查询结果为空"})
@@ -201,107 +255,96 @@ def s_preprocess(task):
 
         # 解析模板
         current_data = dataframes
-        # 构建函数名映射：功能名_方法名 -> 函数对象
-        func_mapping = {
-    # ========== 野值剔除处理 (6个) ==========
-            "3sigma剔野": three_sigma,
-            'Z-score剔野': smooth_zscore,
-             'IQR离群点剔野': iqr_outlier,
-            '回归残差剔野': regression_outlier,
-            'MAD离群点剔野': mad_outlier,
-             'DBSCAN离群点剔野': dbscan_outlier,
-            "双向Z-score剔野": two_way_smooth_zscore,
-            # ========== 数据值去重 (3个) ==========
-             "数据值完全去重": full_deduplicate,
-             "数据值子集去重": subset_deduplicate,
-            "数据值时间去重": timestamp_deduplicate,
-            # ========== 数据关联匹配 (3个) ==========
-             '精准匹配': inner_join,
-            '时间窗口匹配': tw_match,
-            '模糊匹配': fuzzy_match,
-            # ========== 数据排序 (3个) ==========
-            # ('数据排序', '单列排序'): single_sort,
-            # ('数据排序', '多列排序'): multi_sort,
-            # ('数据排序', '时间排序'): time_sort,
-            # ========== 一致性检验 (3个) ==========
-            # ('一致性检验', '范围一致性'): range_consistency,
-            # ('一致性检验', '格式一致性'): format_consistency,
-            # ('一致性检验', '逻辑一致性'): logic_consistency,
-            # ========== 数据格式转换 (3个) ==========
-            # ('数据格式转换', '时间格式转换'): time_format,
-            # ('数据格式转换', '数值类型转换'): type_convert,
-            # ('数据格式转换', '宽表转长表'): wide_to_long,
-            # ========== 数据规范化 (4个) ==========
-            '标准化': zscore_standard,
-            '归一化': minmax_norm,
-            '小数定标': decimal_norm,
-            '鲁棒标准化': robust_scale,
-            # ========== 数据统计分析 (4个) ==========
-            # '描述统计': descriptive_stats,
-            # '频率分布': frequency_dist,
-            # '相关性分析': correlation,
-            # '分位数统计': quantile_stats,
-            # ========== 数据置信度评估 (3个) ==========
-            # '缺失率评估': missing_rate,
-            # '数据质量评分': quality_score,
-            # '置信区间评估': confidence_interval,
-            # ========== 表格合并 (3个) ==========
-            # '内连接合并': inner_merge,
-            # '外连接合并': outer_merge,
-            # '时间对齐合并': time_align,
-            # ========== 交叉合并 (2个) ==========
-            '笛卡尔积': cartesian,
-            '条件交叉': conditional,
-            # ========== 值域合并 (1个) ==========
-            # '值域并集': range_union,
-            # ========== 时间选择 (1个) ==========
-            '时间范围选择': time_range,
-            # ========== 数据值填充 (1个) ==========
-            '后向填充':data_bfill,
-            '前向填充': data_ffill
-        }
         ret['analysis'] = {}
+        ret['performance'] = {}  # 存储各步骤耗时统计
+
         for step in steps:
-        #取消     name = step.get('type_code')
             enabled = step.get('enabled', True)
             if not enabled:
                 continue
-            # method = step.get('operator_code')
+
             method = step.get('operator')
-            params = step.get('parameters', {})
+            raw_params = step.get('parameters', {})
+            #兼容paramters为list格式和dict格式
+            if isinstance(raw_params, list):
+                params = {}
+                for item in raw_params:
+                    if 'name' not in item:
+                        continue
+                    val = item['value']
+                    ptype = item.get('type','string')
+                    if ptype == 'boolean':
+                        val = str(val).lower() in ('true', '1', 'yes')
+                    elif ptype == 'number':
+                        val = float(val) if '.' in str(val) else int(val)
+                    elif ptype == 'array':
+                        if isinstance(val, str):
+                            val = json.loads(val)
+                    #string类型保持原样
+                    params[item['name']] = val
+            else:
+                params = raw_params
+            if not method:
+                return False, json.dumps({"error": "步骤缺少 operator 字段"})
+            module_path = _resolve_preprocess_module_path(step)
+            if not module_path:
+                return False, json.dumps(
+                    {"error": f"预处理算子 {method} 缺少algs_type/algs_name，且未在算法表查询到code_url"},
+                    ensure_ascii=False)
 
-            func = func_mapping.get(method)
-            if func is None:
-                return False, json.dumps({"error": f"未知的预处理方法: {method}"})
+            step_start_time = time.time()
 
+            # 动态加载算法模块
             try:
+                module_load_start = time.time()
+                # 使用 _get_module 动态加载（带缓存）
+                func = _get_module(module_path)
+                module_load_time = time.time() - module_load_start
+                preprocess_stats['module_load'].append(module_load_time)
+                # 执行算法
+                alg_exec_start = time.time()
                 success, this_step_ret = func.algsMain(data=current_data, params=params)
+                alg_exec_time = time.time() - alg_exec_start
+                preprocess_stats['algorithm_exec'].append(alg_exec_time)
+
                 if not success:
-                    return False, json.dumps({"error": f"预处理算子{method} 执行失败: {this_step_ret}"})
+                    return False, json.dumps({"error": f"预处理算子 {method} 执行失败: {this_step_ret}"})
+
                 current_data = this_step_ret['data']
                 ret['analysis'][method] = to_json_safe(this_step_ret['analysis'])
+
+                # 记录该步骤耗时
+                step_total_time = time.time() - step_start_time
+                ret['performance'][method] = {
+                    'module_load_time': round(module_load_time, 4),
+                    'exec_time': round(alg_exec_time, 4),
+                    'total_time': round(step_total_time, 4)
+                }
+
             except Exception as e:
                 return False, json.dumps({"error": f"预处理算子 {method} 执行异常: {str(e)}"})
-        # success, this_step_ret = timestamp_deduplicate.algsMain(data=current_data)
-        # current_data = this_step_ret['data']
-        # success, this_step_ret = two_way_smooth_zscore.algsMain(data=current_data)
-        # current_data = this_step_ret['data']
-        # 将最终数据存入结果，同样处理类型转换
+
+        # 将最终数据存入结果
+        batch_id = task.get("batchId")
         ret['preprocessed'] = {}
         for name, df in current_data.items():
             ret['preprocessed']["pre_" + name] = to_json_safe(df.to_dict(orient='records'))
-            s_save_preprocessed_to_kingbase("pre_" + name, df.to_dict(orient='records'))
+            records = df.to_dict(orient='records')
+            if batch_id is not None:
+                for row in records:
+                    row['batch_id'] = int(batch_id)
+            s_save_preprocessed_to_kingbase("pre_" + name,records)
 
         # 调用字段映射关系接口，将字段信息同步到评估平台
-        # 新逻辑：根据新表名锁定旧表名，将旧表的字段映射到新表
+
+        field_mapping = {}
+        field_mapping["batchId"] = batch_id
         field_mapping_list = []
         for new_table_name in ret['preprocessed'].keys():
-            # 从新表名中找出所有被包含的旧表名
             matched_old_tables = []
             for old_table_name in data_sources.keys():
                 if old_table_name in new_table_name:
                     matched_old_tables.append(old_table_name)
-            # 将匹配的旧表的字段映射到新表
             for old_table_name in matched_old_tables:
                 for field_name, field_id in data_sources[old_table_name].items():
                     field_mapping_list.append({
@@ -309,13 +352,14 @@ def s_preprocess(task):
                         "id": field_id,
                         "tableName3": new_table_name
                     })
+        field_mapping["relations"] = field_mapping_list
         try:
-            resp = requests.post(FIELD_MAPPING_URL, json=field_mapping_list, timeout=10)
+            resp = requests.post(FIELD_MAPPING_URL, json=field_mapping, timeout=10)
             resp.raise_for_status()
         except Exception as e:
             print(f"调用字段映射关系接口失败: {str(e)}")
 
-        #修改ycl_task表中指定task_id的status为"已完成"
+        # 修改ycl_task表中指定task_id的status为"已完成"
         task_id = task.get("task_id")
         if task_id:
             try:
@@ -324,9 +368,20 @@ def s_preprocess(task):
                     if not success:
                         print(f"更新任务状态失败: {msg}")
             except Exception as e:
-                # 更新状态失败不影响主流程，仅记录日志
                 print(f"更新任务状态异常: {str(e)}")
+
+        # 汇总性能统计
+        total_time = time.time() - total_start_time
+        preprocess_stats['total'].append(total_time)
+        ret['summary_performance'] = {
+            'total_time': round(total_time, 4),
+            'module_load_avg': round(sum(preprocess_stats['module_load']) / len(preprocess_stats['module_load']), 4) if preprocess_stats['module_load'] else 0,
+            'algorithm_exec_avg': round(sum(preprocess_stats['algorithm_exec']) / len(preprocess_stats['algorithm_exec']), 4) if preprocess_stats['algorithm_exec'] else 0,
+            'steps_count': len([s for s in steps if s.get('enabled', True)])
+        }
+
         return True, json.dumps(ret, ensure_ascii=False)
+
     except Exception as e:
         task_id = task.get("task_id") if isinstance(task, dict) else None
         if task_id:
@@ -336,7 +391,6 @@ def s_preprocess(task):
                     if not success:
                         print(f"更新任务状态失败: {msg}")
             except Exception as e:
-                # 更新状态失败不影响主流程，仅记录日志
                 print(f"更新任务状态异常: {str(e)}")
         return False, json.dumps({"error": f"全局异常: {str(e)}"})
 
@@ -899,8 +953,6 @@ def data_prehandle(dataframes):
     except Exception as e:
         return False, e.args
 
-
-#========================================
 
 def s_algs_load(task):
     try:

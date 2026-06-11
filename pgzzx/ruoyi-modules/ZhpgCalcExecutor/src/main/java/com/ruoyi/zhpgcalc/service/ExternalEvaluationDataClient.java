@@ -22,7 +22,7 @@ import java.util.List;
 @Component
 public class ExternalEvaluationDataClient {
 
-    @Value("${zhpg.calc.external-data.url:http://127.0.0.1:9501/evaluationData/list}")
+    @Value("${zhpg.calc.external-data.url:http://127.0.0.1:9501/table-data/field-mapping-data/preprocess-level1}")
     private String url;
 
     @Value("${zhpg.calc.external-data.connect-timeout-ms:10000}")
@@ -31,51 +31,73 @@ public class ExternalEvaluationDataClient {
     @Value("${zhpg.calc.external-data.read-timeout-ms:20000}")
     private int readTimeoutMs;
 
-    public List<ExternalDataItem> fetchEvaluationData(Long evaluationTaskId, List<String> indicatorCodes) {
-        if (evaluationTaskId == null || evaluationTaskId <= 0 || CollectionUtils.isEmpty(indicatorCodes)) {
+    /**
+     * 获取外部评估数据
+     *
+     * @param batchId         预处理批次ID
+     * @param requirementCode 需求标识（String 形式，原 assessTaskId）
+     * @param indicatorCodes  指标标识列表
+     */
+    public List<ExternalDataItem> fetchEvaluationData(Long batchId, String requirementCode, List<String> indicatorCodes) {
+        if (batchId == null || !StringUtils.hasText(requirementCode) || CollectionUtils.isEmpty(indicatorCodes)) {
             return Collections.emptyList();
         }
-        String requestUrl = buildUrl(evaluationTaskId, indicatorCodes);
-        log.info("[外部接口] 请求URL: {}", requestUrl);
-        ResponseEntity<String> response = buildRestTemplate().getForEntity(requestUrl, String.class);
-        log.info("[外部接口] 响应状态: {}, 响应体: {}", response.getStatusCode(), response.getBody());
-        if (!response.getStatusCode().is2xxSuccessful() || !StringUtils.hasText(response.getBody())) {
-            throw new IllegalStateException("external data api response is empty");
-        }
-        JSONObject root = JSON.parseObject(response.getBody());
-        Integer code = root.getInteger("code");
-        if (code == null || code != 200) {
-            throw new IllegalStateException("external data api returned non-200 business code: " + code);
-        }
-        JSONArray data = root.getJSONArray("data");
-        if (data == null || data.isEmpty()) {
-            return Collections.emptyList();
-        }
+
         List<ExternalDataItem> items = new ArrayList<>();
-        for (int i = 0; i < data.size(); i++) {
-            JSONObject row = data.getJSONObject(i);
-            if (row == null) {
+        RestTemplate restTemplate = buildRestTemplate();
+
+        for (String indicatorCode : indicatorCodes) {
+            if (!StringUtils.hasText(indicatorCode)) {
                 continue;
             }
-            ExternalDataItem item = new ExternalDataItem();
-            item.setIndicatorCode(row.getString("indicatorCode"));
-            item.setTableCode(row.getString("tableCode"));
-            item.setDataItemCode(row.getString("dataItemCode"));
-            item.setDataJson(row.getString("dataJson"));
-            items.add(item);
+            try {
+                String requestUrl = buildUrl(batchId, requirementCode, indicatorCode);
+                log.info("[外部接口] 请求URL: {}", requestUrl);
+                ResponseEntity<String> response = restTemplate.getForEntity(requestUrl, String.class);
+                log.info("[外部接口] 响应状态: {}, 响应体: {}", response.getStatusCode(), response.getBody());
+
+                if (!response.getStatusCode().is2xxSuccessful() || !StringUtils.hasText(response.getBody())) {
+                    log.warn("[外部接口] 请求失败: url={}, response={}", requestUrl, response);
+                    continue;
+                }
+
+                JSONObject root = JSON.parseObject(response.getBody());
+                Integer code = root.getInteger("code");
+                if (code == null || code != 200) {
+                    log.warn("[外部接口] 业务响应码错误: code={}, body={}", code, response.getBody());
+                    continue;
+                }
+
+                JSONObject data = root.getJSONObject("data");
+                if (data == null || data.isEmpty()) {
+                    continue;
+                }
+
+                for (String key : data.keySet()) {
+                    JSONArray array = data.getJSONArray(key);
+                    if (array == null) {
+                        continue;
+                    }
+                    ExternalDataItem item = new ExternalDataItem();
+                    item.setIndicatorCode(indicatorCode);
+                    item.setTableCode(""); // 新接口没有 tableCode，置空
+                    item.setDataItemCode(key);
+                    item.setDataJson(array.toJSONString());
+                    items.add(item);
+                }
+            } catch (Exception ex) {
+                log.error("[外部接口] 请求异常: indicatorCode={}, error={}", indicatorCode, ex.getMessage(), ex);
+            }
         }
         return items;
     }
 
-    private String buildUrl(Long evaluationTaskId, List<String> indicatorCodes) {
-        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url)
-                .queryParam("evaluationTaskId", evaluationTaskId);
-        for (String indicatorCode : indicatorCodes) {
-            if (StringUtils.hasText(indicatorCode)) {
-                builder.queryParam("indicatorCodes", indicatorCode.trim());
-            }
-        }
-        return builder.build(false).toUriString();
+    private String buildUrl(Long batchId, String requirementCode, String indicatorCode) {
+        return UriComponentsBuilder.fromHttpUrl(url)
+                .queryParam("batchId", batchId)
+                .queryParam("indicatorCode", indicatorCode.trim())
+                .queryParam("requirementCode", requirementCode.trim())
+                .build(false).toUriString();
     }
 
     private RestTemplate buildRestTemplate() {
