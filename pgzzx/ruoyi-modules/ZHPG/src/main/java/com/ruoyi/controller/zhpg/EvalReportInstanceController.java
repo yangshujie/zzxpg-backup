@@ -31,12 +31,8 @@ public class EvalReportInstanceController extends BaseController {
         PageDomain pageDomain = TableSupport.buildPageRequest();
         Integer pageNum = pageDomain.getPageNum();
         Integer pageSize = pageDomain.getPageSize();
-        if (pageNum == null) {
-            pageNum = 1;
-        }
-        if (pageSize == null) {
-            pageSize = 10;
-        }
+        if (pageNum == null) pageNum = 1;
+        if (pageSize == null) pageSize = 10;
         Page<EvalReportInstance> page = new Page<>(pageNum, pageSize);
         Page<EvalReportInstance> result = reportInstanceService.selectReportPage(page, query);
         return getDataTable(result);
@@ -48,11 +44,24 @@ public class EvalReportInstanceController extends BaseController {
         return AjaxResult.success(reportInstanceService.listByResult(evalResultId));
     }
 
-    @ApiOperation("基于评估结果生成一版报告")
+    @ApiOperation("基于评估结果生成一版报告（异步，返回 PENDING 实例）")
     @PostMapping("/result/{evalResultId}")
     public AjaxResult generate(@PathVariable Long evalResultId,
                                @Validated @RequestBody EvalReportGenerateRequest request) {
         return AjaxResult.success(reportInstanceService.generateForResult(evalResultId, request));
+    }
+
+    @ApiOperation("快速渲染 HTML 预览（不生成 DOCX/PDF）")
+    @PostMapping("/result/{evalResultId}/preview")
+    public AjaxResult preview(@PathVariable Long evalResultId,
+                              @Validated @RequestBody EvalReportGenerateRequest request) {
+        return AjaxResult.success(reportInstanceService.previewHtml(evalResultId, request));
+    }
+
+    @ApiOperation("查询某一版报告的生成进度")
+    @GetMapping("/{reportId}/progress")
+    public AjaxResult progress(@PathVariable Long reportId) {
+        return AjaxResult.success(reportInstanceService.getProgress(reportId));
     }
 
     @ApiOperation("获取某一版报告的预览和下载链接")

@@ -982,8 +982,12 @@
             <template #title>{{ stepStaleReason('reportOutput') || '当前报告已过期，请重新生成。' }}</template>
           </el-alert>
           <el-button type="primary" icon="Document" :disabled="!canGenerateReport || reportGenerating"
-            :loading="reportGenerating" @click="generateReport">
+            :loading="reportGenerating" @click="generateReport" style="margin-right: 8px;">
             {{ reportGenerated ? '再次生成报告' : '生成报告' }}
+          </el-button>
+          <el-button plain icon="View" :disabled="!canGenerateReport" :loading="reportHtmlPreviewLoading"
+            @click="previewReportHtml">
+            预览HTML
           </el-button>
           <span v-if="!calcFinished" class="hint-text">请先在「综合分析计算」完成计算</span>
           <span v-else-if="calcStale" class="hint-text">指标体系已修改，请重新计算后再生成报告</span>
@@ -997,17 +1001,41 @@
               <template #default="{ row }">第 {{ row.generationNo }} 版</template>
             </el-table-column>
             <el-table-column prop="reportTemplateName" label="报告模板" min-width="180" />
-            <el-table-column prop="renderStatus" label="状态" width="110">
+            <el-table-column prop="renderStatus" label="状态" width="170">
               <template #default="{ row }">
-                <el-tag :type="row.renderStatus === 'SUCCESS' ? 'success' : 'warning'" size="small">{{ row.renderStatus
-                  }}</el-tag>
+                <template v-if="row.renderStatus === 'PENDING'">
+                  <div class="report-progress-bar">
+                    <el-progress
+                      :percentage="PROGRESS_MAP[pollingProgress[row.id]?.renderProgress]?.pct ?? 0"
+                      :status="pollingProgress[row.id]?.renderProgress === 'FAILED' ? 'exception' : undefined"
+                      :stroke-width="8"
+                      :show-text="false"
+                    />
+                    <span class="report-progress-text">
+                      {{ PROGRESS_MAP[pollingProgress[row.id]?.renderProgress]?.label || '等待中...' }}
+                    </span>
+                  </div>
+                </template>
+                <template v-else-if="row.renderStatus === 'SUCCESS'">
+                  <el-tag type="success" size="small">已生成</el-tag>
+                </template>
+                <template v-else-if="row.renderStatus === 'FAILED'">
+                  <el-tooltip :content="row.errorMessage || '生成失败'" placement="top">
+                    <el-tag type="danger" size="small">失败</el-tag>
+                  </el-tooltip>
+                </template>
+                <template v-else>
+                  <el-tag type="warning" size="small">{{ row.renderStatus }}</el-tag>
+                </template>
               </template>
             </el-table-column>
             <el-table-column prop="createTime" label="生成时间" width="180" />
-            <el-table-column label="操作" width="220" fixed="right">
+            <el-table-column label="操作" width="280" fixed="right">
               <template #default="{ row }">
                 <div style="display: flex; align-items: center;">
                   <el-button link type="primary" :icon="Document" @click="openGeneratedReport(row)">预览</el-button>
+                  <el-button v-if="row.renderStatus === 'FAILED'" link type="danger" icon="Refresh"
+                    @click="retryGenerateReport(row)" style="margin-left: 4px;">重试</el-button>
                   <el-dropdown @command="(cmd) => handleReportDownloadCommand(cmd, row)" trigger="click"
                     style="margin-left: 12px">
                     <el-button link type="primary" icon="Download" style="display: flex; align-items: center;">
@@ -1034,6 +1062,21 @@
           <div class="report-preview-body" v-loading="reportPreviewLoading">
             <iframe v-if="reportPreviewUrl" :src="reportPreviewUrl" class="report-preview-frame" frameborder="0" />
             <el-empty v-else description="暂无可预览地址，可先下载 Word 报告" />
+          </div>
+        </el-dialog>
+
+        <!-- 方向四: HTML 快速预览弹窗 -->
+        <el-dialog v-if="mode === 'execute'" v-model="reportHtmlPreviewVisible" title="HTML 预览" width="80%" append-to-body top="5vh">
+          <div class="report-html-preview-body" v-loading="reportHtmlPreviewLoading">
+            <div class="report-html-preview-toolbar">
+              <el-tag type="warning" size="small">HTML预览为快速渲染结果，最终正式报告以 DOCX/PDF 为准</el-tag>
+              <el-button size="small" type="primary" :disabled="reportGenerating" :loading="reportGenerating"
+                @click="generateReport" style="margin-left: 12px;">
+                确认无误，生成正式报告
+              </el-button>
+            </div>
+            <iframe v-if="reportHtmlPreviewContent" :srcdoc="reportHtmlPreviewContent" class="report-preview-frame" frameborder="0" />
+            <el-empty v-else description="暂无预览内容" />
           </div>
         </el-dialog>
       </div>
@@ -1134,7 +1177,7 @@ import { getCalcTask, runCalcTask } from '@/api/zhpg/calcTask'
 import { getCalcFlowExecution, initCalcFlowExecution, runCalcFlowExecution, saveCalcFlowExecutionConfig } from '@/api/zhpg/calcFlowExecution'
 import { getIndicatorSystem, updateIndicatorSystem, selectIndicatorSystem } from '@/api/zhpg/indicatorSystem'
 import { getEvalResult, getEvalResultByTask, listEvalResult } from '@/api/zhpg/evalResult'
-import { generateEvalReport, getEvalReportLinks, listEvalReportsByResult } from '@/api/zhpg/evalReport'
+import { generateEvalReport, getEvalReportLinks, getEvalReportProgress, previewEvalReportHtml, listEvalReportsByResult } from '@/api/zhpg/evalReport'
 import { listTemplates, getTemplate } from '@/api/zhpg/report'
 import { listAllAlgorithm, previewAlgorithmCode } from '@/api/zhpg/algorithm'
 import { listPreprocessBatch } from '@/api/zhpg/externalData'
@@ -2257,10 +2300,32 @@ const reportGenerating = ref(false)
 const reportInstances = ref([])
 const reportGenerated = computed(() => reportInstances.value.length > 0)
 const canGenerateReport = computed(() => calcFinished.value && !calcStale.value && !!currentEvalResult.value?.id && !!stageConfig.reportOutput.config.reportTemplateId)
+
+// 方向四: 异步生成进度轮询
+const reportPollTimers = ref({})
+const pollingProgress = ref({})
+
 const reportPreviewVisible = ref(false)
 const reportPreviewLoading = ref(false)
 const reportPreviewUrl = ref('')
 const currentReportLinks = ref(null)
+
+// 方向四: HTML 预览（独立于完整生成）
+const reportHtmlPreviewVisible = ref(false)
+const reportHtmlPreviewContent = ref('')
+const reportHtmlPreviewLoading = ref(false)
+
+// 进度步骤 → 中文标签 + 百分比
+const PROGRESS_MAP = {
+  PENDING:             { label: '等待生成',     pct: 0 },
+  HTML_RENDERING:      { label: '生成图表',     pct: 20 },
+  CHART_GENERATING:    { label: '生成图表',     pct: 35 },
+  DOCX_CONVERTING:     { label: '生成DOCX',     pct: 55 },
+  PDF_CONVERTING:      { label: '转换PDF',      pct: 75 },
+  UPLOADING:           { label: '上传文件',     pct: 90 },
+  DONE:                { label: '完成',          pct: 100 },
+  FAILED:              { label: '生成失败',     pct: -1 }
+}
 const STANDARD_REPORT_TEMPLATE_CODE = 'COMM_COUNTERMEASURE_STANDARD_REPORT'
 
 function getAutoIndicatorGroups(row) {
@@ -2286,15 +2351,123 @@ async function generateReport() {
     const report = res?.data || res
     if (report?.id) {
       await loadReportInstances()
+      // 启动进度轮询
+      startPollingReport(report.id)
     }
-    reportGenerating.value = false
     markStepCompleted(flowStepState, 'reportOutput', { reportId: report?.id })
     await saveExecutionDraft({ silent: true, status: 'REPORT_READY', currentStep: 'reportOutput' })
-    ElMessage.success(`报告已生成${report?.generationNo ? `（第 ${report.generationNo} 版）` : ''}`)
+    ElMessage.success(`后台生成已启动${report?.generationNo ? `（第 ${report.generationNo} 版）` : ''}`)
   } catch (e) {
-    ElMessage.error(e?.message || '报告生成失败')
+    ElMessage.error(e?.message || '报告生成启动失败')
   } finally {
     reportGenerating.value = false
+  }
+}
+
+/** 重试失败的报告生成 */
+async function retryGenerateReport(row) {
+  if (!currentEvalResult.value?.id) return
+  reportGenerating.value = true
+  try {
+    // 从实例的 mappingJson 读回原始的 mappings 和 fields
+    let mappings, fields
+    try {
+      const parsed = JSON.parse(row.mappingJson || '{}')
+      mappings = parsed.mappings || stageConfig.reportOutput.config.placeholderMappings
+      fields = parsed.fields || buildReportFields()
+    } catch {
+      mappings = stageConfig.reportOutput.config.placeholderMappings
+      fields = buildReportFields()
+    }
+
+    const res = await generateEvalReport(currentEvalResult.value.id, {
+      reportTemplateId: row.reportTemplateId || stageConfig.reportOutput.config.reportTemplateId,
+      mappings,
+      fields
+    })
+    const report = res?.data || res
+    if (report?.id) {
+      await loadReportInstances()
+      startPollingReport(report.id)
+    }
+    ElMessage.success('已重新发起报告生成')
+  } catch (e) {
+    ElMessage.error(e?.message || '重试失败')
+  } finally {
+    reportGenerating.value = false
+  }
+}
+
+/** 启动报告进度轮询 */
+function startPollingReport(reportId) {
+  // 清理已有轮询（防止重复）
+  stopPollingReport(reportId)
+  const poll = async () => {
+    try {
+      const res = await getEvalReportProgress(reportId)
+      const data = res?.data || {}
+      pollingProgress.value[reportId] = {
+        renderProgress: data.renderProgress,
+        renderProgressDetail: data.renderProgressDetail,
+        renderStatus: data.renderStatus,
+        errorMessage: data.errorMessage
+      }
+      // 强制触发响应式更新
+      pollingProgress.value = { ...pollingProgress.value }
+
+      // 生成完成或失败 → 停止轮询并刷新列表
+      if (data.renderStatus === 'SUCCESS' || data.renderProgress === 'DONE') {
+        stopPollingReport(reportId)
+        await loadReportInstances()
+        ElMessage.success(`报告已生成完成`)
+      } else if (data.renderStatus === 'FAILED' || data.renderProgress === 'FAILED') {
+        stopPollingReport(reportId)
+        await loadReportInstances()
+        ElMessage.error(data.errorMessage || '报告生成失败')
+      }
+    } catch {
+      // 轮询超时或网络错误 → 继续重试（不中断）
+    }
+  }
+  // 立即执行一次
+  poll()
+  // 每 2 秒轮询
+  reportPollTimers.value[reportId] = setInterval(poll, 2000)
+}
+
+/** 停止指定报告的进度轮询 */
+function stopPollingReport(reportId) {
+  if (reportPollTimers.value[reportId]) {
+    clearInterval(reportPollTimers.value[reportId])
+    delete reportPollTimers.value[reportId]
+  }
+}
+
+/** 快速 HTML 预览 */
+async function previewReportHtml() {
+  if (!currentEvalResult.value?.id || !stageConfig.reportOutput.config.reportTemplateId) {
+    ElMessage.warning('请先选择报告模板')
+    return
+  }
+  reportHtmlPreviewLoading.value = true
+  try {
+    const res = await previewEvalReportHtml(currentEvalResult.value.id, {
+      reportTemplateId: stageConfig.reportOutput.config.reportTemplateId,
+      mappings: stageConfig.reportOutput.config.placeholderMappings,
+      fields: buildReportFields()
+    })
+    const data = res?.data || {}
+    if (data.reportUrl) {
+      reportHtmlPreviewContent.value = data.reportUrl
+      reportHtmlPreviewVisible.value = true
+      ElMessage.success('预览渲染完成')
+    } else {
+      ElMessage.warning('预览渲染为空')
+    }
+  } catch (e) {
+    ElMessage.error(e?.message || '预览渲染失败')
+  } finally {
+    reportHtmlPreviewLoading.value = false
   }
 }
 
@@ -2817,6 +2990,11 @@ onBeforeUnmount(() => {
   clearCalcPolling()
   stopTraceFlowPan()
   stopPreprocessChartPan()
+  // 清理报告进度轮询
+  Object.keys(reportPollTimers.value).forEach(id => {
+    clearInterval(reportPollTimers.value[id])
+  })
+  reportPollTimers.value = {}
   if (traceFlowWheelFrame != null) {
     window.cancelAnimationFrame(traceFlowWheelFrame)
     traceFlowWheelFrame = null
@@ -5931,6 +6109,32 @@ function buildMockTree(rootName) {
   height: 100%;
   border: 0;
   background: #f5f7fa;
+}
+
+/* 方向四: 报告进度条 */
+.report-progress-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+}
+.report-progress-text {
+  font-size: 12px;
+  color: #909399;
+  line-height: 1.2;
+}
+
+/* 方向四: HTML 预览弹窗 */
+.report-html-preview-body {
+  height: 75vh;
+  display: flex;
+  flex-direction: column;
+}
+.report-html-preview-toolbar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-shrink: 0;
 }
 
 /* 源码预览弹窗：减少全局半透明主题穿透，并复用算法管理的代码阅读样式 */

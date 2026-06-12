@@ -63,6 +63,12 @@ public class EvalReportInstance extends BaseEntity {
     @ApiModelProperty(value = "文件格式")
     private String fileFormat;
 
+    @ApiModelProperty(value = "生成进度(PENDING/HTML_RENDERING/CHART_GENERATING/DOCX_CONVERTING/PDF_CONVERTING/UPLOADING/DONE/FAILED)")
+    private String renderProgress;
+
+    @ApiModelProperty(value = "进度详情")
+    private String renderProgressDetail;
+
     @ApiModelProperty(value = "错误信息")
     private String errorMessage;
 
