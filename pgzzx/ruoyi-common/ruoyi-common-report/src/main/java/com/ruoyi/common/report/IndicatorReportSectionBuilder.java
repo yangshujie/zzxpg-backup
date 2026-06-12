@@ -364,4 +364,29 @@ public class IndicatorReportSectionBuilder {
             this.chartImg = chartImg;
         }
     }
+
+    // ==================== 公用工具方法 ====================
+
+    /**
+     * 为叶子 Section 批量渲染指标柱状图。
+     * 原先在 EvalReportInstanceServiceImpl 和 ReportGenerationService 中各有一份完全重复的实现。
+     *
+     * @param sections Section 列表
+     * @param renderer ChartRenderer 实例
+     */
+    public static void enrichSectionCharts(List<Section> sections, ChartRenderer renderer) {
+        if (sections == null || sections.isEmpty()) return;
+        for (Section section : sections) {
+            if (section != null && section.isLeaf()) {
+                try {
+                    java.math.BigDecimal evalValue = section.getEvalValue() != null
+                            ? section.getEvalValue() : section.getScore();
+                    section.setChartImg(renderer.renderIndicatorBar(
+                            section.getTitle(), evalValue, section.getReferenceValue()));
+                } catch (Exception e) {
+                    // 图表渲染失败不中断报告生成
+                }
+            }
+        }
+    }
 }

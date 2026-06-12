@@ -181,7 +181,7 @@ public class ReportGenerationService {
                 data.put("indicatorTree", parseIndicatorTree(parsedTree));
                 data.put("treeNodeCount", countTreeNodes(parsedTree));
                 indicatorSections = IndicatorReportSectionBuilder.buildSections(scoredIndicatorTree);
-                enrichSectionCharts(indicatorSections);
+                IndicatorReportSectionBuilder.enrichSectionCharts(indicatorSections, chartRenderer);
             } catch (Exception e) {
                 log.warn("解析指标树失败: {}", e.getMessage());
                 data.put("indicatorTree", new ArrayList<>());
@@ -301,25 +301,6 @@ public class ReportGenerationService {
         appendTableRow(html, "能力维度数", String.valueOf(dimensions != null ? dimensions.size() : 0));
         html.append("</table>");
         return html.toString();
-    }
-
-    private void enrichSectionCharts(List<IndicatorReportSectionBuilder.Section> sections) {
-        if (sections == null || sections.isEmpty()) {
-            return;
-        }
-        for (IndicatorReportSectionBuilder.Section section : sections) {
-            if (section != null && section.isLeaf()) {
-                try {
-                    section.setChartImg(chartRenderer.renderIndicatorBar(
-                            section.getTitle(),
-                            section.getEvalValue() != null ? section.getEvalValue() : section.getScore(),
-                            section.getReferenceValue()
-                    ));
-                } catch (Exception e) {
-                    log.warn("渲染指标图表失败: title={}, error={}", section.getTitle(), e.getMessage());
-                }
-            }
-        }
     }
 
     private String renderRadarChart(List<Map<String, Object>> dimensions) {

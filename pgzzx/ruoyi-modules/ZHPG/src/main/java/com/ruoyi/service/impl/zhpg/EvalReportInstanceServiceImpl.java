@@ -439,7 +439,7 @@ public class EvalReportInstanceServiceImpl extends ServiceImpl<EvalReportInstanc
         Object scoredIndicatorTree = findScoredIndicatorTree(result, fields);
         List<IndicatorReportSectionBuilder.Section> indicatorSections =
                 IndicatorReportSectionBuilder.buildSections(scoredIndicatorTree);
-        enrichSectionCharts(indicatorSections);
+        IndicatorReportSectionBuilder.enrichSectionCharts(indicatorSections, chartRenderer);
         fields.put("IndicatorSections", indicatorSections);
         fields.put("indicatorSections", indicatorSections);
 
@@ -504,21 +504,6 @@ public class EvalReportInstanceServiceImpl extends ServiceImpl<EvalReportInstanc
         } catch (Exception e) {
             log.warn("渲染能力雷达图失败: {}", e.getMessage());
             return "";
-        }
-    }
-
-    private void enrichSectionCharts(List<IndicatorReportSectionBuilder.Section> sections) {
-        if (sections == null || sections.isEmpty()) return;
-        for (IndicatorReportSectionBuilder.Section section : sections) {
-            if (section != null && section.isLeaf()) {
-                try {
-                    BigDecimal evalValue = section.getEvalValue() != null ? section.getEvalValue() : section.getScore();
-                    section.setChartImg(chartRenderer.renderIndicatorBar(
-                            section.getTitle(), evalValue, section.getReferenceValue()));
-                } catch (Exception e) {
-                    log.warn("渲染指标图表失败: title={}, error={}", section.getTitle(), e.getMessage());
-                }
-            }
         }
     }
 
