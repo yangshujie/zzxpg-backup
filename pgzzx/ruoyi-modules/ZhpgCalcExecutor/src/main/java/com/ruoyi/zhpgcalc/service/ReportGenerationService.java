@@ -9,10 +9,12 @@ import com.aspose.words.SaveFormat;
 import com.ruoyi.common.core.domain.R;
 import com.ruoyi.common.report.ChartRenderer;
 import com.ruoyi.common.report.IndicatorReportSectionBuilder;
+import com.ruoyi.common.report.ReportEngine;
+import com.ruoyi.common.report.ReportEngineRequest;
+import com.ruoyi.common.report.ReportEngineResult;
 import com.ruoyi.system.api.RemoteFileService;
 import com.ruoyi.system.api.domain.SysFile;
 import com.ruoyi.zhpgcalc.dto.CalcExecuteResponse;
-import com.ruoyi.zhpgcalc.report.ReportEngine;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -83,11 +85,14 @@ public class ReportGenerationService {
             }
 
             Map<String, Object> templateData = buildTemplateData(taskId, response, request);
-            byte[] wordBytes = reportEngine.generateDocx(
-                    templateName != null ? templateName : "report",
-                    htmlContent,
-                    templateData
-            );
+            ReportEngineRequest engineReq = ReportEngineRequest.builder()
+                    .templateName(templateName != null ? templateName : "report")
+                    .htmlContent(htmlContent)
+                    .dataModel(templateData)
+                    .enableChapterNumbering(true)
+                    .build();
+            ReportEngineResult engineResult = reportEngine.generate(engineReq);
+            byte[] wordBytes = engineResult.getDocxBytes();
             byte[] pdfBytes = convertWordToPdf(wordBytes);
 
             String datePath = new SimpleDateFormat("yyyyMM").format(new Date());

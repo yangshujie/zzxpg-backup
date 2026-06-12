@@ -1,6 +1,9 @@
 package com.ruoyi.zhpgcalc.report;
 
 import com.ruoyi.common.report.ChartRenderer;
+import com.ruoyi.common.report.ReportEngine;
+import com.ruoyi.common.report.ReportEngineRequest;
+import com.ruoyi.common.report.ReportEngineResult;
 import org.junit.Test;
 
 import javax.imageio.ImageIO;
@@ -68,22 +71,24 @@ public class ChartRendererTest {
                 capability("抗毁生存", "0.40", "76.25")
         )));
 
-        byte[] docx = new ReportEngine().generateDocx(
-                "chart-report",
-                "<h1>图表报告</h1><p><img src=\"{{CapabilityRadarChart}}\" alt=\"能力雷达图\" /></p>",
-                data
-        );
+        ReportEngineRequest chartReq = ReportEngineRequest.builder()
+                .templateName("chart-report")
+                .htmlContent("<h1>图表报告</h1><p><img src=\"{{CapabilityRadarChart}}\" alt=\"能力雷达图\" /></p>")
+                .dataModel(data)
+                .build();
+        byte[] docx = new ReportEngine().generate(chartReq).getDocxBytes();
 
         assertTrue(containsWordMedia(docx));
     }
 
     @Test
     public void generatedDocxUsesWordHeadingStyles() throws Exception {
-        byte[] docx = new ReportEngine().generateDocx(
-                "heading-report",
-                "<h1>试验评估报告</h1><h2>概况</h2><p>正文</p>",
-                new HashMap<>()
-        );
+        ReportEngineRequest headingReq = ReportEngineRequest.builder()
+                .templateName("heading-report")
+                .htmlContent("<h1>试验评估报告</h1><h2>概况</h2><p>正文</p>")
+                .dataModel(new HashMap<>())
+                .build();
+        byte[] docx = new ReportEngine().generate(headingReq).getDocxBytes();
 
         String documentXml = readZipEntry(docx, "word/document.xml");
         String stylesXml = readZipEntry(docx, "word/styles.xml");

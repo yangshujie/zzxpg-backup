@@ -9,7 +9,9 @@ import com.ruoyi.common.security.utils.SecurityUtils;
 import com.ruoyi.domain.zhpg.ReportTemplate;
 import com.ruoyi.domain.zhpg.dto.*;
 import com.ruoyi.mapper.zhpg.ReportTemplateMapper;
-import com.ruoyi.zhpg.report.ReportEngine;
+import com.ruoyi.common.report.ReportEngine;
+import com.ruoyi.common.report.ReportEngineRequest;
+import com.ruoyi.common.report.ReportEngineResult;
 import com.ruoyi.service.zhpg.IReportTemplateService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -145,17 +147,22 @@ public class ReportTemplateServiceImpl extends ServiceImpl<ReportTemplateMapper,
     @Override
     public ReportDownloadData renderDocxDownload(Long templateId, ReportTemplateRenderRequest request) {
         ReportTemplate template = findTemplate(templateId);
-        String freemarkerTemplate = placeholderService.toFreemarkerTemplate(template.getHtmlContent());
         try {
             ReportEngine engine = new ReportEngine();
             byte[] docxBytes;
             String fileName;
             if (hasEditedHtml(request)) {
-                docxBytes = engine.generateDocxFromRenderedHtml(request.getEditedHtml());
+                docxBytes = engine.generateFromRenderedHtml(request.getEditedHtml());
                 fileName = templateId + "-edited.docx";
             } else {
-                docxBytes = engine.generateDocx(String.valueOf(templateId), freemarkerTemplate,
-                        request.getFields() == null ? new HashMap<>() : request.getFields());
+                ReportEngineRequest engineRequest = ReportEngineRequest.builder()
+                        .templateName(String.valueOf(templateId))
+                        .htmlContent(template.getHtmlContent())
+                        .dataModel(request.getFields() == null ? new HashMap<>() : request.getFields())
+                        .enableChapterNumbering(false)
+                        .build();
+                ReportEngineResult result = engine.generate(engineRequest);
+                docxBytes = result.getDocxBytes();
                 fileName = templateId + ".docx";
             }
             return new ReportDownloadData(fileName, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", docxBytes);
