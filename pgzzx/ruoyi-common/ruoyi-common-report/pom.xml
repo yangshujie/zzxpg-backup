@@ -74,5 +74,12 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
         </dependency>
+        <!-- Aspose.Words — provided scope, 运行时由各业务模块提供 system-scope jar -->
+        <dependency>
+            <groupId>com.aspose</groupId>
+            <artifactId>aspose-words</artifactId>
+            <version>15.8.0</version>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 </project>

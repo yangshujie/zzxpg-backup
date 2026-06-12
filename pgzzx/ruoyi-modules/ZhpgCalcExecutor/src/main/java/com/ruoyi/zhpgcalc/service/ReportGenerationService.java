@@ -3,12 +3,10 @@ package com.ruoyi.zhpgcalc.service;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
-import com.aspose.words.Document;
-import com.aspose.words.License;
-import com.aspose.words.SaveFormat;
 import com.ruoyi.common.core.domain.R;
 import com.ruoyi.common.report.ChartRenderer;
 import com.ruoyi.common.report.IndicatorReportSectionBuilder;
+import com.ruoyi.common.report.PdfConverter;
 import com.ruoyi.common.report.ReportEngine;
 import com.ruoyi.common.report.ReportEngineRequest;
 import com.ruoyi.common.report.ReportEngineResult;
@@ -21,7 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -47,8 +44,6 @@ public class ReportGenerationService {
     private static final String STORAGE_ROOT = "zhpg/evalReport/";
     private static final String WORD_CONTENT_TYPE =
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-    private static volatile boolean ASPOSE_LICENSE_LOADED = false;
-
     @Value("${custom-config.minio.bucketName:test}")
     private String bucketName;
 
@@ -93,7 +88,7 @@ public class ReportGenerationService {
                     .build();
             ReportEngineResult engineResult = reportEngine.generate(engineReq);
             byte[] wordBytes = engineResult.getDocxBytes();
-            byte[] pdfBytes = convertWordToPdf(wordBytes);
+            byte[] pdfBytes = PdfConverter.getInstance().wordToPdf(wordBytes);
 
             String datePath = new SimpleDateFormat("yyyyMM").format(new Date());
             String wordObjectName = STORAGE_ROOT + datePath + "/calc" + taskId + "_report.docx";
@@ -126,53 +121,6 @@ public class ReportGenerationService {
         Files.write(wordFile, wordBytes);
         Files.write(pdfFile, pdfBytes);
         return new LocalReportPaths(wordFile.toAbsolutePath().toString(), pdfFile.toAbsolutePath().toString());
-    }
-
-    private byte[] convertWordToPdf(byte[] wordBytes) {
-        try {
-            ensureAsposeLicense();
-            try (ByteArrayInputStream input = new ByteArrayInputStream(wordBytes);
-                 ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-                Document document = new Document(input);
-                document.save(output, SaveFormat.PDF);
-                return output.toByteArray();
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Word转PDF失败: " + e.getMessage(), e);
-        }
-    }
-
-    private void ensureAsposeLicense() {
-        if (ASPOSE_LICENSE_LOADED) {
-            return;
-        }
-        synchronized (ReportGenerationService.class) {
-            if (ASPOSE_LICENSE_LOADED) {
-                return;
-            }
-            String xml = "<License>\n"
-                    + "    <Data>\n"
-                    + "        <Products>\n"
-                    + "            <Product>Aspose.Total for Java</Product>\n"
-                    + "            <Product>Aspose.Words for Java</Product>\n"
-                    + "        </Products>\n"
-                    + "        <EditionType>Enterprise</EditionType>\n"
-                    + "        <SubscriptionExpiry>20991231</SubscriptionExpiry>\n"
-                    + "        <LicenseExpiry>20991231</LicenseExpiry>\n"
-                    + "        <SerialNumber>8bfe198c-7f0c-4ef8-8ff0-acc3237bf0d7</SerialNumber>\n"
-                    + "    </Data>\n"
-                    + "    <Signature>\n"
-                    + "        sNLLKGMUdF0r8O1kKilWAGdgfs2BvJb/2Xp8p5iuDVfZXmhppo+d0Ran1P9TKdjV4ABwAgKXxJ3jcQTqE/2IRfqwnPf8itN8aFZlV3TJPYeD3yWE7IT55Gz6EijUpC7aKeoohTb4w2fpox58wWoF3SNp6sK6jDfiAUGEHYJ9pjU=\n"
-                    + "    </Signature>\n"
-                    + "</License>";
-            try (InputStream inputStream = new ByteArrayInputStream(xml.getBytes())) {
-                License license = new License();
-                license.setLicense(inputStream);
-            } catch (Exception e) {
-                log.warn("Aspose 许可加载失败，继续尝试转换: {}", e.getMessage());
-            }
-            ASPOSE_LICENSE_LOADED = true;
-        }
     }
 
     /**

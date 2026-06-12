@@ -2,9 +2,6 @@ package com.ruoyi.service.impl.zhpg;
 
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
-import com.aspose.words.Document;
-import com.aspose.words.License;
-import com.aspose.words.SaveFormat;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -13,6 +10,7 @@ import com.ruoyi.common.core.exception.ServiceException;
 import com.ruoyi.common.core.web.domain.AjaxResult;
 import com.ruoyi.common.report.ChartRenderer;
 import com.ruoyi.common.report.IndicatorReportSectionBuilder;
+import com.ruoyi.common.report.PdfConverter;
 import com.ruoyi.common.security.utils.SecurityUtils;
 import com.ruoyi.domain.zhpg.EvalReportInstance;
 import com.ruoyi.domain.zhpg.EvalResult;
@@ -29,10 +27,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -51,7 +45,6 @@ import java.util.stream.Collectors;
 public class EvalReportInstanceServiceImpl extends ServiceImpl<EvalReportInstanceMapper, EvalReportInstance>
         implements IEvalReportInstanceService {
 
-    private static volatile boolean ASPOSE_LICENSE_LOADED = false;
     private final ChartRenderer chartRenderer = new ChartRenderer();
 
     private final EvalReportInstanceMapper reportInstanceMapper;
@@ -110,7 +103,7 @@ public class EvalReportInstanceServiceImpl extends ServiceImpl<EvalReportInstanc
         // 生成 PDF 并上传
         String pdfUrl = null;
         try {
-            byte[] pdfBytes = convertWordToPdf(docx.getBytes());
+            byte[] pdfBytes = PdfConverter.getInstance().wordToPdf(docx.getBytes());
             pdfUrl = fileStorageService.uploadEvalReport(
                     result.getTaskId() == null ? 0L : result.getTaskId(),
                     reportCode,
@@ -407,53 +400,6 @@ public class EvalReportInstanceServiceImpl extends ServiceImpl<EvalReportInstanc
         update.setUpdateBy(safeUsername());
         update.setUpdateTime(new Date());
         evalResultMapper.updateById(update);
-    }
-
-    private byte[] convertWordToPdf(byte[] wordBytes) {
-        try {
-            ensureAsposeLicense();
-            try (ByteArrayInputStream input = new ByteArrayInputStream(wordBytes);
-                 ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-                Document document = new Document(input);
-                document.save(output, SaveFormat.PDF);
-                return output.toByteArray();
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Word转PDF失败: " + e.getMessage(), e);
-        }
-    }
-
-    private void ensureAsposeLicense() {
-        if (ASPOSE_LICENSE_LOADED) {
-            return;
-        }
-        synchronized (EvalReportInstanceServiceImpl.class) {
-            if (ASPOSE_LICENSE_LOADED) {
-                return;
-            }
-            String xml = "<License>\n"
-                    + "    <Data>\n"
-                    + "        <Products>\n"
-                    + "            <Product>Aspose.Total for Java</Product>\n"
-                    + "            <Product>Aspose.Words for Java</Product>\n"
-                    + "        </Products>\n"
-                    + "        <EditionType>Enterprise</EditionType>\n"
-                    + "        <SubscriptionExpiry>20991231</SubscriptionExpiry>\n"
-                    + "        <LicenseExpiry>20991231</LicenseExpiry>\n"
-                    + "        <SerialNumber>8bfe198c-7f0c-4ef8-8ff0-acc3237bf0d7</SerialNumber>\n"
-                    + "    </Data>\n"
-                    + "    <Signature>\n"
-                    + "        sNLLKGMUdF0r8O1kKilWAGdgfs2BvJb/2Xp8p5iuDVfZXmhppo+d0Ran1P9TKdjV4ABwAgKXxJ3jcQTqE/2IRfqwnPf8itN8aFZlV3TJPYeD3yWE7IT55Gz6EijUpC7aKeoohTb4w2fpox58wWoF3SNp6sK6jDfiAUGEHYJ9pjU=\n"
-                    + "    </Signature>\n"
-                    + "</License>";
-            try (InputStream inputStream = new ByteArrayInputStream(xml.getBytes())) {
-                License license = new License();
-                license.setLicense(inputStream);
-            } catch (Exception e) {
-                log.warn("Aspose 许可加载失败: {}", e.getMessage());
-            }
-            ASPOSE_LICENSE_LOADED = true;
-        }
     }
 
     private static boolean isFileServiceAjaxSuccess(AjaxResult result) {
